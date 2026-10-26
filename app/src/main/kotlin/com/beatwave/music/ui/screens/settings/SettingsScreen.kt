@@ -8,6 +8,7 @@ package com.beatwave.music.ui.screens.settings
 import com.beatwave.music.R
 import android.os.Build
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +51,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.beatwave.music.BuildConfig
 import com.beatwave.music.LocalPlayerAwareWindowInsets
@@ -428,7 +430,7 @@ private fun SettingsSectionHeader(title: String) {
         text = title.uppercase(),
         style = MaterialTheme.typography.labelMedium.copy(
             fontWeight = FontWeight.Bold,
-            letterSpacing = androidx.compose.ui.unit.sp(1.1f),
+            letterSpacing = 1.1.sp,
         ),
         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
         modifier = Modifier.padding(
