@@ -108,7 +108,7 @@ fun AboutScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp),
     ) {
-        // Header with Official BeatWave Logo
+        // Header with Official Pulse Wave Adobe-style Pw Logo
         Column(
             modifier = Modifier
                 .fillMaxWidth()

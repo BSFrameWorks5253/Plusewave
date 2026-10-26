@@ -1,7 +1,30 @@
 {
-  "description": "Pulse Wave 6.1.5 — Fixed playlist visibility bug, refined luxury Apple Glass dark theme without bluish tint, instant Spotify-style heart button, resilient background playback without crashes, automatic GitHub update prompts, and versioned APK naming.",
+  "description": "Pulse Wave 6.1.7 — Adobe-inspired 'Pw' official app icon, Apple Music / iOS 18 liquid glassmorphism UI, Spotify-like swipe-to-queue and song radio, complete brand refinement eliminating all leftover references, and seamless in-place updates with persistent keystore.",
   "image": "",
   "changelog": [
+    {
+      "title": "Adobe-Inspired 'Pw' App Icon & Branding",
+      "items": [
+        "New official master app icon inspired by Adobe applications (Ps, Ai, Pr): modern rounded squircle container with an electric neon cyan-to-violet glowing contour border, specular frosted glass highlight, and centered bold 'Pw' typographic emblem with an integrated audio pulse.",
+        "Generated ultra-crisp adaptive launcher icons across all mipmap densities (mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi), Android 12+ monochrome themed icons, and Desktop branding.",
+        "Completely scrubbed all leftover legacy 'BeatWave' mentions from Settings, About screens, ListenBrainz scrobbler, and diagnostics."
+      ]
+    },
+    {
+      "title": "Apple Music & iOS 18 Glass Experience",
+      "items": [
+        "Refined frosted glassmorphism across mini player, floating navigation dock, and now-playing sheet with specular border highlights and fluid spring physics.",
+        "Dynamic ambient blurred album background mesh creating glowing liquid depth behind currently playing tracks.",
+        "Continuous curvature squircles (ContinuousRoundedRectangle) across all cards, navigation pills, and player controls."
+      ]
+    },
+    {
+      "title": "Desktop App & Local Wi-Fi Sync",
+      "items": [
+        "Standalone PulseWave Desktop player in desktop/ with Spotify 3-pane dark obsidian layout.",
+        "Zero-cloud local Wi-Fi sync server on port 5253 for instant bidirectional playlist synchronization between PC and Android phone."
+      ]
+    },
     {
       "title": "Universal Playlist & Album Importer",
       "items": [

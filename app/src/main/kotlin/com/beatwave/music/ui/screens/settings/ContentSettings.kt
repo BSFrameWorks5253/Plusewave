@@ -750,7 +750,7 @@ fun ContentSettings(
                     onClick = {
                         clientProbeOutput?.let { text ->
                             val clipboard = context.getSystemService(ClipboardManager::class.java)
-                            clipboard?.setPrimaryClip(ClipData.newPlainText("BeatWave client probe", text))
+                            clipboard?.setPrimaryClip(ClipData.newPlainText("Pulse Wave client probe", text))
                         }
                         showClientProbeDialog = false
                     },
@@ -1361,7 +1361,7 @@ fun ContentSettings(
         val currentIntervalText = intervalOptions.find { it.first == wrappedIntervalDays }?.second ?: "$wrappedIntervalDays Days"
 
         Material3SettingsGroup(
-            title = "BeatWave Wrapped",
+            title = "Pulse Wave Wrapped",
             items = listOf(
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.trending_up),

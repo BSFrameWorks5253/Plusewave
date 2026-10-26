@@ -151,7 +151,7 @@ fun SuggestionScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "Help us improve BeatWave! Let us know what features you want or report any bugs you find.",
+                        text = "Help us improve Pulse Wave! Let us know what features you want or report any bugs you find.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
