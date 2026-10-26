@@ -70,6 +70,7 @@ import com.beatwave.music.constants.DonationUpiId
 import com.beatwave.music.constants.DonationUpiUri
 import com.beatwave.music.R
 import com.beatwave.music.ui.component.IconButton
+import com.beatwave.music.ui.component.PulseWaveLogo
 import com.beatwave.music.ui.component.Material3SettingsGroup
 import com.beatwave.music.ui.component.Material3SettingsItem
 import com.beatwave.music.ui.utils.appTopBarWindowInsets
@@ -136,19 +137,12 @@ fun AboutScreen(
                 )
                 // Elevated Master Logo
                 Surface(
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(22.dp),
                     color = Color.Transparent,
-                    shadowElevation = 12.dp,
+                    shadowElevation = 8.dp,
                     modifier = Modifier.size(96.dp)
                 ) {
-                    Image(
-                        painter = painterResource(R.drawable.pulsewave_logo),
-                        contentDescription = stringResource(R.string.wrapped_logo_content_description),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(24.dp)),
-                        contentScale = ContentScale.Crop
-                    )
+                    PulseWaveLogo(size = 96.dp)
                 }
             }
 

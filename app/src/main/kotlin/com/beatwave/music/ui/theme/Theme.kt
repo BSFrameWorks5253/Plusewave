@@ -7,6 +7,8 @@ package com.beatwave.music.ui.theme
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -77,17 +79,43 @@ fun vivimusicTheme(
 
     val (appTextColorInt) = rememberPreference(AppTextColorKey, defaultValue = 0)
 
-    val colorScheme = remember(baseColorScheme, pureBlack, darkTheme, themeColor, appTextColorInt) {
-        val withApple = if (darkTheme) baseColorScheme.appleSurfaces() else baseColorScheme
+    val targetColorScheme = remember(baseColorScheme, pureBlack, darkTheme, themeColor, appTextColorInt) {
+        val withApple = if (darkTheme) baseColorScheme.appleSurfaces() else baseColorScheme.appleLightSurfaces()
         val withBlack = if (darkTheme && pureBlack) withApple.pureBlack(true) else withApple
         val withAccentText = withBlack.accentText(themeColor, darkTheme)
-        // Theme screen's explicit text color, when set, replaces the accent-tinted
-        // text roles everywhere they're read from MaterialTheme.colorScheme — this
-        // is the single root override every screen's default Text() picks up, same
-        // mechanism accentText itself uses. Fill/control roles (primary, onPrimary)
-        // are left alone; only text roles change.
         if (appTextColorInt != 0) withAccentText.flatText(Color(appTextColorInt)) else withAccentText
     }
+
+    val themeSpring = spring<Color>(dampingRatio = 0.85f, stiffness = 300f)
+    val animatedBg by animateColorAsState(targetColorScheme.background, animationSpec = themeSpring, label = "themeBg")
+    val animatedSurface by animateColorAsState(targetColorScheme.surface, animationSpec = themeSpring, label = "themeSurface")
+    val animatedScLowest by animateColorAsState(targetColorScheme.surfaceContainerLowest, animationSpec = themeSpring, label = "themeScLowest")
+    val animatedScLow by animateColorAsState(targetColorScheme.surfaceContainerLow, animationSpec = themeSpring, label = "themeScLow")
+    val animatedSc by animateColorAsState(targetColorScheme.surfaceContainer, animationSpec = themeSpring, label = "themeSc")
+    val animatedScHigh by animateColorAsState(targetColorScheme.surfaceContainerHigh, animationSpec = themeSpring, label = "themeScHigh")
+    val animatedScHighest by animateColorAsState(targetColorScheme.surfaceContainerHighest, animationSpec = themeSpring, label = "themeScHighest")
+    val animatedSurfaceVar by animateColorAsState(targetColorScheme.surfaceVariant, animationSpec = themeSpring, label = "themeSurfaceVar")
+    val animatedOnBg by animateColorAsState(targetColorScheme.onBackground, animationSpec = themeSpring, label = "themeOnBg")
+    val animatedOnSurface by animateColorAsState(targetColorScheme.onSurface, animationSpec = themeSpring, label = "themeOnSurface")
+    val animatedOnSurfaceVar by animateColorAsState(targetColorScheme.onSurfaceVariant, animationSpec = themeSpring, label = "themeOnSurfaceVar")
+    val animatedOutline by animateColorAsState(targetColorScheme.outline, animationSpec = themeSpring, label = "themeOutline")
+    val animatedOutlineVar by animateColorAsState(targetColorScheme.outlineVariant, animationSpec = themeSpring, label = "themeOutlineVar")
+
+    val colorScheme = targetColorScheme.copy(
+        background = animatedBg,
+        surface = animatedSurface,
+        surfaceContainerLowest = animatedScLowest,
+        surfaceContainerLow = animatedScLow,
+        surfaceContainer = animatedSc,
+        surfaceContainerHigh = animatedScHigh,
+        surfaceContainerHighest = animatedScHighest,
+        surfaceVariant = animatedSurfaceVar,
+        onBackground = animatedOnBg,
+        onSurface = animatedOnSurface,
+        onSurfaceVariant = animatedOnSurfaceVar,
+        outline = animatedOutline,
+        outlineVariant = animatedOutlineVar,
+    )
 
     val (selectedFont) = rememberPreference(SelectedFontKey, defaultValue = AppFont.SYSTEM.value)
     val customFont = rememberCustomFontFamily()
@@ -257,6 +285,27 @@ fun ColorScheme.appleSurfaces() = copy(
     onPrimaryContainer = Color.White,
     outline = Color.White.copy(alpha = 0.16f),
     outlineVariant = Color.White.copy(alpha = 0.08f),
+)
+
+/**
+ * Apple-light surface overrides applied in light mode.
+ * Clean, luminous porcelain and snow-white surfaces with crisp slate outlines.
+ */
+fun ColorScheme.appleLightSurfaces() = copy(
+    background = AppleTokens.LightBg,
+    surface = AppleTokens.LightBg,
+    surfaceContainerLowest = AppleTokens.LightBg,
+    surfaceContainerLow = AppleTokens.LightBgElevated,
+    surfaceContainer = AppleTokens.LightCard,
+    surfaceContainerHigh = AppleTokens.LightCard,
+    surfaceContainerHighest = AppleTokens.LightCardSecondary,
+    surfaceVariant = AppleTokens.LightCardSecondary,
+    primary = AppleTokens.PulseElectric,
+    onPrimary = Color.White,
+    primaryContainer = AppleTokens.LightCardSecondary,
+    onPrimaryContainer = Color(0xFF0F172A),
+    outline = Color.Black.copy(alpha = 0.12f),
+    outlineVariant = Color.Black.copy(alpha = 0.06f),
 )
 
 /**

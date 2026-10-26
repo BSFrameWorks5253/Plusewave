@@ -49,6 +49,8 @@ val UseAppleMusicPlayerKey = booleanPreferencesKey("useAppleMusicPlayer")
 val ShowPlayerThumbnailShadowKey = booleanPreferencesKey("showPlayerThumbnailShadow")
 val PlayerThumbnailShadowElevationKey = floatPreferencesKey("playerThumbnailShadowElevation")
 val SelectedFontKey = stringPreferencesKey("selected_font")
+val AutoSyncAppIconKey = booleanPreferencesKey("autoSyncAppIcon")
+val AppIconChoiceKey = stringPreferencesKey("appIconChoice")
 
 enum class AppFont(val value: String) {
     SYSTEM("system"),

@@ -1,7 +1,25 @@
 {
-  "description": "Pulse Wave 6.1.8 — Complete loading screen overhaul with Apple Music / iOS 18 hardware-accelerated icon zoom & dissolve, elimination of double-activity startup bounce and white screen flashes, and butter-smooth 120 FPS cold boot.",
+  "description": "Pulse Wave 6.1.9 — Dynamic UI-synchronized Adobe 'Pw' App Icons, Apple Music Light Mode with porcelain surfaces, cute animated Day/Night switch with smiling sun & sleepy moon, and fluid physics-based dark/light theme morphing.",
   "image": "",
   "changelog": [
+    {
+      "title": "Dynamic Adobe 'Pw' App Icon System",
+      "items": [
+        "Dynamic UI-Responsive Logo: App icon changes automatically to match the active UI accent color and Day/Night mode, both in-app and on the Android launcher.",
+        "5 Flat & Plain Pastel Colorways: Soft Pastel Lavender, Soft Pastel Sky, Soft Sage Mint, Soft Warm Rose, and Soft Porcelain Light Mode.",
+        "Android 13+ Themed Icons: Added pure vector monochrome icon (ic_launcher_mono.xml) so the launcher icon seamlessly adopts system wallpaper and Material You dynamic theming.",
+        "App Icon Style Selector: Added in Appearance Settings with automatic theme synchronization and manual selection options.",
+        "Live In-App Preview: Real-time Adobe 'Pw' squircle preview in Theme Settings and About screen that actively morphs colors as themes are selected."
+      ]
+    },
+    {
+      "title": "Apple Music Light Mode & Fluid Transitions",
+      "items": [
+        "Apple Light Mode Surfaces: Clean, luminous porcelain and snow-white surfaces (#F8F9FA, #FFFFFF) with crisp slate outlines and typography.",
+        "Cute Animated Theme Switch: Smiling golden sun with rotating sunbeams and floating cloud vs sleepy crescent moon with blushing cheeks and twinkling stars.",
+        "Fluid Theme Morphing: Smooth physics-based spring color interpolation across all surfaces, cards, and text when toggling between Day and Night."
+      ]
+    },
     {
       "title": "Butter-Smooth Apple Music iOS 18 Startup",
       "items": [
@@ -12,82 +30,11 @@
       ]
     },
     {
-      "title": "Adobe-Inspired 'Pw' App Icon & Branding",
+      "title": "Desktop Sync & Spotify Features",
       "items": [
-        "New official master app icon inspired by Adobe applications (Ps, Ai, Pr): modern rounded squircle container with an electric neon cyan-to-violet glowing contour border, specular frosted glass highlight, and centered bold 'Pw' typographic emblem with an integrated audio pulse.",
-        "Generated ultra-crisp adaptive launcher icons across all mipmap densities (mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi), Android 12+ monochrome themed icons, and Desktop branding.",
-        "Completely scrubbed all leftover legacy 'BeatWave' mentions from Settings, About screens, ListenBrainz scrobbler, and diagnostics."
-      ]
-    },
-    {
-      "title": "Apple Music & iOS 18 Glass Experience",
-      "items": [
-        "Refined frosted glassmorphism across mini player, floating navigation dock, and now-playing sheet with specular border highlights and fluid spring physics.",
-        "Dynamic ambient blurred album background mesh creating glowing liquid depth behind currently playing tracks.",
-        "Continuous curvature squircles (ContinuousRoundedRectangle) across all cards, navigation pills, and player controls."
-      ]
-    },
-    {
-      "title": "Desktop App & Local Wi-Fi Sync",
-      "items": [
-        "Standalone PulseWave Desktop player in desktop/ with Spotify 3-pane dark obsidian layout.",
-        "Zero-cloud local Wi-Fi sync server on port 5253 for instant bidirectional playlist synchronization between PC and Android phone."
-      ]
-    },
-    {
-      "title": "Universal Playlist & Album Importer",
-      "items": [
-        "Import playlists and albums from Spotify, Apple Music, and Amazon Music simply by pasting their public share links.",
-        "High-accuracy track matching with automatic HTML entity unescaping, cover art retrieval, and instant progress dialogs.",
-        "Batch database insertion and in-memory search query caching for blazing-fast imports without freezing playback or UI."
-      ]
-    },
-    {
-      "title": "Spotify Account & Dual Wrapped Sync",
-      "items": [
-        "Connect your Spotify account directly in Settings > Account alongside YouTube Music with one-tap login/logout.",
-        "Dual Wrapped Playback Sync: songs played in Pulse Wave now automatically sync with both your YouTube Music Recap and Spotify Wrapped / Recently Played.",
-        "Completely fixed Spotify Liked Songs import with robust OAuth token refreshing and multi-tier GraphQL fallback."
-      ]
-    },
-    {
-      "title": "Smart Shuffle & Infinite Genre Automix",
-      "items": [
-        "Fixed shuffle loop issue where single tracks repeated indefinitely: turning on shuffle now dynamically spins up an automix of similar genre and style tracks.",
-        "Fixed single-track queues by linking YouTube Automix radio (RDAMVM) and related genre tracks automatically across Search, Home, and Suggestions.",
-        "Seamless Autoplay: when reaching the end of a queue with Repeat Off, Pulse Wave automatically loads more tracks of the same genre so your music never abruptly stops."
-      ]
-    },
-    {
-      "title": "Device Compatibility & Crash Fixes",
-      "items": [
-        "Fixed critical ExceptionInInitializerError crash on Vivo, Honor, Motorola, Samsung, and Realme devices caused by font variation settings.",
-        "Fixed ConcurrentModificationException crash during dynamic Spotify recommendations background indexing.",
-        "Strengthened Proguard and R8 optimization keep rules for typography and serialization across all architectures."
-      ]
-    },
-    {
-      "title": "Visual Engine & Cover Art Overhaul",
-      "items": [
-        "Crystal-clear high-resolution album art: eliminated blurry/pixelated thumbnails across YouTube Music and Spotify feeds by dynamically serving up to 800x800 and 640x640 covers.",
-        "Smooth hero art tinting: removed pitch-black screen flashes when navigating into albums and artist pages.",
-        "Solid Apple Music-inspired elevated dock for keyboard search bar, eliminating distorted background shaders."
-      ]
-    },
-    {
-      "title": "Audio Playback & Crossfade Polish",
-      "items": [
-        "Instant crossfade activation: changes to crossfade toggles and duration now immediately apply to the actively playing song without requiring a track change or restart.",
-        "Optimized gapless transition detection."
-      ]
-    },
-    {
-      "title": "Admin Panel Enhancements & Mashup Studio",
-      "items": [
-        "Added real-time search filtering and status chips across all User Suggestions and Bug Reports.",
-        "One-tap Admin quick replies for rapid issue triaging ('Fixed in v6.1.1!', 'Investigating now', etc.).",
-        "Added Bug Report deletion support to keep issue queues clean and actionable.",
-        "New Mashup Studio (AI DJ Lab): interactive admin console to configure and preview real-time multi-track beat matching, stem isolation, and line-by-line / verse-by-verse transitions."
+        "PulseWave Desktop Companion App: Full cross-platform desktop player with local Wi-Fi playlist synchronization.",
+        "Persistent Keystore Signature: Updates never reset login session, cache, or imported playlists.",
+        "Spotify Features: Swipe-to-Queue, Song Radio, and Green Heart favorites."
       ]
     }
   ]

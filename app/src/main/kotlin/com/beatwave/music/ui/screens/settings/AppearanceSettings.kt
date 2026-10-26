@@ -107,6 +107,12 @@ import com.beatwave.music.constants.DensityScale
 import com.beatwave.music.ui.utils.appTopBarWindowInsets
 import com.beatwave.music.constants.DensityScaleKey
 import com.beatwave.music.ui.utils.appTopBarWindowInsets
+import com.beatwave.music.constants.AppIconChoiceKey
+import com.beatwave.music.constants.SelectedThemeColorKey
+import com.beatwave.music.ui.theme.DefaultThemeColor
+import com.beatwave.music.utils.AppIconManager
+import com.beatwave.music.constants.DarkModeKey
+import com.beatwave.music.constants.PureBlackKey
 import com.beatwave.music.constants.DynamicThemeKey
 import com.beatwave.music.ui.utils.appTopBarWindowInsets
 import com.beatwave.music.ui.utils.appTopBarWindowInsets
@@ -204,6 +210,8 @@ fun AppearanceSettings(
     activity: Activity,
     snackbarHostState: SnackbarHostState,
 ) {
+    val (darkMode, onDarkModeChange) = rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
+    val (pureBlack, onPureBlackChange) = rememberPreference(PureBlackKey, defaultValue = false)
     val (_, _) = rememberPreference(UseNewMiniPlayerDesignKey, defaultValue = true)
     val (miniBarTabStyle, onMiniBarTabStyleChange) = rememberPreference(MiniBarTabStyleKey, defaultValue = false)
     val (_, _) = rememberPreference(DynamicThemeKey, defaultValue = true)
@@ -523,6 +531,40 @@ fun AppearanceSettings(
         )
     }
 
+    var showAppIconDialog by rememberSaveable { mutableStateOf(false) }
+    val (appIconChoice, onAppIconChoiceChange) = rememberPreference(AppIconChoiceKey, defaultValue = "auto")
+    val (selectedThemeColorInt) = rememberPreference(SelectedThemeColorKey, defaultValue = DefaultThemeColor.toArgb())
+
+    if (showAppIconDialog) {
+        val currentOption = AppIconOption.entries.find { it.value == appIconChoice } ?: AppIconOption.AUTO
+        val context = androidx.compose.ui.platform.LocalContext.current
+        EnumDialog(
+            onDismiss = { showAppIconDialog = false },
+            onSelect = { selectedOption ->
+                onAppIconChoiceChange(selectedOption.value)
+                showAppIconDialog = false
+                if (selectedOption == AppIconOption.AUTO) {
+                    val isDark = if (darkMode == DarkMode.AUTO) isSystemInDarkTheme() else darkMode == DarkMode.ON
+                    AppIconManager.syncWithUiTheme(context, Color(selectedThemeColorInt), isDark)
+                } else {
+                    val alias = when (selectedOption) {
+                        AppIconOption.LAVENDER -> AppIconManager.ALIAS_LAVENDER
+                        AppIconOption.SKY -> AppIconManager.ALIAS_SKY
+                        AppIconOption.SAGE -> AppIconManager.ALIAS_SAGE
+                        AppIconOption.ROSE -> AppIconManager.ALIAS_ROSE
+                        AppIconOption.LIGHT -> AppIconManager.ALIAS_LIGHT
+                        else -> AppIconManager.ALIAS_GLASS
+                    }
+                    AppIconManager.setLauncherIcon(context, alias)
+                }
+            },
+            title = "App Icon Style",
+            current = currentOption,
+            values = AppIconOption.entries,
+            valueText = { it.label }
+        )
+    }
+
     var showGridSizeDialog by rememberSaveable { mutableStateOf(false) }
     if (showGridSizeDialog) {
         EnumDialog(
@@ -550,6 +592,52 @@ fun AppearanceSettings(
     ) {
         item(key = "all_appearance_settings") {
             Column {
+                val isDarkActive = when (darkMode) {
+                    DarkMode.ON -> true
+                    DarkMode.OFF -> false
+                    DarkMode.AUTO -> androidx.compose.foundation.isSystemInDarkTheme()
+                }
+
+                // Apple-grade Glass Card with Cute Day/Night Animated Switch
+                androidx.compose.material3.Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 20.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    tonalElevation = 1.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (isDarkActive) "Night Mode" else "Day Mode",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (isDarkActive) "Peaceful starry obsidian night" else "Luminous smiling sun daylight",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        com.beatwave.music.ui.component.CuteThemeSwitch(
+                            isDark = isDarkActive,
+                            onToggle = { newDark ->
+                                onDarkModeChange(if (newDark) DarkMode.ON else DarkMode.OFF)
+                                if (!newDark) onPureBlackChange(false)
+                            }
+                        )
+                    }
+                }
+
         Material3SettingsGroup(
             title = stringResource(R.string.theme_colors),
             items = listOfNotNull(
@@ -583,6 +671,15 @@ fun AppearanceSettings(
                     onClick = { navController.navigate("settings/appearance/font") }
                 ),
 
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.palette),
+                    title = { Text("App Icon Style") },
+                    description = {
+                        val currentOpt = AppIconOption.entries.find { it.value == appIconChoice } ?: AppIconOption.AUTO
+                        Text(currentOpt.label)
+                    },
+                    onClick = { showAppIconDialog = true }
+                ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.palette),
                     title = { Text(stringResource(R.string.presets)) },
@@ -1608,6 +1705,15 @@ fun AppearanceSettings(
             }
         }
     )
+}
+
+enum class AppIconOption(val value: String, val label: String) {
+    AUTO("auto", "Auto (Changes with Theme Color)"),
+    LAVENDER("lavender", "Soft Pastel Lavender"),
+    SKY("sky", "Soft Pastel Sky"),
+    SAGE("sage", "Soft Pastel Sage"),
+    ROSE("rose", "Soft Warm Rose"),
+    LIGHT("light", "Porcelain Light Mode"),
 }
 
 enum class DarkMode {

@@ -335,13 +335,55 @@ fun ThemeControls(
                 }
             )
 
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
                     text = stringResource(R.string.theme_mode),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                
+
+                // Cute Smiling Sun / Sleeping Moon Day-Night Switch
+                val isDarkActive = when (darkMode) {
+                    DarkMode.ON -> true
+                    DarkMode.OFF -> false
+                    DarkMode.AUTO -> androidx.compose.foundation.isSystemInDarkTheme()
+                }
+
+                // Live Dynamic Adobe "Pw" App Logo Preview (Changes with active UI color)
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        com.beatwave.music.ui.component.PulseWaveLogo(
+                            size = 72.dp,
+                            accentColor = selectedThemeColor,
+                            isDark = isDarkActive
+                        )
+                        Text(
+                            text = "Dynamic App Logo (Adapts to Color & Mode)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    com.beatwave.music.ui.component.CuteThemeSwitch(
+                        isDark = isDarkActive,
+                        onToggle = { newDark ->
+                            onDarkModeChange(if (newDark) DarkMode.ON else DarkMode.OFF)
+                            if (!newDark) onPureBlackChange(false)
+                        }
+                    )
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),

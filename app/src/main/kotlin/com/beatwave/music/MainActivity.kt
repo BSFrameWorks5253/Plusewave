@@ -854,6 +854,15 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        val appContext = androidx.compose.ui.platform.LocalContext.current
+        val (autoSyncAppIcon) = rememberPreference(com.beatwave.music.constants.AutoSyncAppIconKey, defaultValue = true)
+        val (appIconChoice) = rememberPreference(com.beatwave.music.constants.AppIconChoiceKey, defaultValue = "auto")
+        LaunchedEffect(themeColor, useDarkTheme, autoSyncAppIcon, appIconChoice) {
+            if (autoSyncAppIcon && appIconChoice == "auto") {
+                com.beatwave.music.utils.AppIconManager.syncWithUiTheme(appContext, themeColor, useDarkTheme)
+            }
+        }
+
         vivimusicTheme(
             darkTheme = useDarkTheme,
             pureBlack = pureBlack,

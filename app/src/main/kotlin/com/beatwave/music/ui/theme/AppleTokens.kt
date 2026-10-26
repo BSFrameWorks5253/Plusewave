@@ -33,6 +33,15 @@ object AppleTokens {
     val Card = Color(0xFF18181B)
     val CardSecondary = Color(0xFF222226)
 
+    // Light Mode Surfaces — Clean, premium Apple Music snow/porcelain surfaces
+    val LightBg = Color(0xFFF8F9FA)
+    val LightBgElevated = Color(0xFFFFFFFF)
+    val LightCard = Color(0xFFFFFFFF)
+    val LightCardSecondary = Color(0xFFF1F5F9)
+    val LightMetadata = Color(0xFF64748B)
+    val LightGlassSurface = Color(0xE6FFFFFF)
+    val LightGlassBorder = Color(0x14000000)
+
     // Apple Liquid Glass Design System
     val GlassSurface = Color(0x1AFFFFFF)
     val GlassSurfaceElevated = Color(0x28FFFFFF)
