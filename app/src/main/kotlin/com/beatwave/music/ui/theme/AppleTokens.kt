@@ -19,17 +19,25 @@ import androidx.compose.ui.unit.sp
  * adaptive contrast helpers. Every screen references these instead of hardcoding values.
  */
 object AppleTokens {
-    // Pulse Wave Signatures & Accents
+    // Pulse Wave Signatures & Accents (Professional, non-bluish palette)
+    val PulseElectric = Color(0xFF8B5CF6) // Signature Electric Violet
     val PulseCyan = Color(0xFF00E5FF)
-    val PulseViolet = Color(0xFF8A2387)
+    val PulseViolet = Color(0xFF8B5CF6)
     val PulseMagenta = Color(0xFFE040FB)
     val AccentRed = Color(0xFFFA2D48)
+    val SpotifyGreen = Color(0xFF1DB954)
 
-    // Surfaces — Deep luxury obsidian OLED dark tones with refined monotonic elevation ladder
-    val Bg = Color(0xFF0A0B10)
-    val BgElevated = Color(0xFF12141D)
-    val Card = Color(0xFF161824)
-    val CardSecondary = Color(0xFF202334)
+    // Surfaces — True luxury neutral obsidian dark tones (no unwanted bluish tint)
+    val Bg = Color(0xFF08080A)
+    val BgElevated = Color(0xFF111113)
+    val Card = Color(0xFF18181B)
+    val CardSecondary = Color(0xFF222226)
+
+    // Apple Liquid Glass Design System
+    val GlassSurface = Color(0x1AFFFFFF)
+    val GlassSurfaceElevated = Color(0x28FFFFFF)
+    val GlassBorder = Color(0x26FFFFFF)
+    val GlassBorderSubtle = Color(0x14FFFFFF)
 
     /**
      * Hairline rule on whatever surface the caller sits on.

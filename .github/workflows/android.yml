@@ -84,7 +84,7 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Pulse Wave-v4.4.0-latest
+          name: PulseWave-release-apk
           path: app/build/outputs/apk/universalGms/release/*.apk
 
       - name: Upload ProGuard/R8 Mapping

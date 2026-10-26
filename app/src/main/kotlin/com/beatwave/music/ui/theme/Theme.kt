@@ -28,7 +28,7 @@ import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.rememberDynamicColorScheme
 import com.materialkolor.score.Score
 
-val DefaultThemeColor = AppleTokens.PulseCyan
+val DefaultThemeColor = AppleTokens.PulseElectric
 
 /**
  * The user's chosen accent color, provided app-wide. ONLY the nav bar uses this
@@ -72,7 +72,7 @@ fun vivimusicTheme(
         seedColor = themeColor,
         isDark = darkTheme,
         specVersion = ColorSpec.SpecVersion.SPEC_2025,
-        style = PaletteStyle.TonalSpot,
+        style = PaletteStyle.Neutral,
     )
 
     val (appTextColorInt) = rememberPreference(AppTextColorKey, defaultValue = 0)
@@ -251,8 +251,8 @@ fun ColorScheme.appleSurfaces() = copy(
     surfaceContainerHigh = AppleTokens.Card,
     surfaceContainerHighest = AppleTokens.CardSecondary,
     surfaceVariant = AppleTokens.CardSecondary,
-    primary = AppleTokens.PulseCyan,
-    onPrimary = Color(0xFF0A0B10),
+    primary = AppleTokens.PulseElectric,
+    onPrimary = Color.White,
     primaryContainer = AppleTokens.CardSecondary,
     onPrimaryContainer = Color.White,
     outline = Color.White.copy(alpha = 0.16f),

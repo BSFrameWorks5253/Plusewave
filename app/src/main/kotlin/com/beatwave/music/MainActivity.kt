@@ -1521,32 +1521,27 @@ class MainActivity : ComponentActivity() {
                     } catch (_: Exception) {}
 
                     try {
-                        val updateResult = com.beatwave.music.api.SupabaseService.checkLatestUpdate()
-                        if (updateResult.isSuccess) {
-                            val latestUpdate = updateResult.getOrNull()
-                            if (latestUpdate != null) {
-                                val currentVersion = com.beatwave.music.BuildConfig.VERSION_NAME
-                                
-                                fun isNewerVersion(current: String, latest: String): Boolean {
-                                    val cleanCurrent = current.removePrefix("v").removePrefix("V").trim()
-                                    val cleanLatest = latest.removePrefix("v").removePrefix("V").trim()
-                                    val currentParts = cleanCurrent.split(".").mapNotNull { it.toIntOrNull() }
-                                    val latestParts = cleanLatest.split(".").mapNotNull { it.toIntOrNull() }
-                                    val maxParts = maxOf(currentParts.size, latestParts.size)
-                                    for (i in 0 until maxParts) {
-                                        val currVal = currentParts.getOrElse(i) { 0 }
-                                        val latVal = latestParts.getOrElse(i) { 0 }
-                                        if (latVal > currVal) return true
-                                        if (latVal < currVal) return false
-                                    }
-                                    return false
-                                }
+                        checkForUpdate(
+                            context = context,
+                            onSuccess = { tag, isAvailable, changelog, size, date, description, imageUrl, apkUrl ->
+                                if (isAvailable && apkUrl != null) {
+                                    val cleanDescription = if (changelog.isNotEmpty()) {
+                                        changelog.joinToString("\n\n") { section ->
+                                            "${section.title}:\n" + section.items.joinToString("\n") { "• $it" }
+                                        }
+                                    } else description ?: "New performance improvements, design polish, and bug fixes."
 
-                                if (isNewerVersion(currentVersion, latestUpdate.version)) {
-                                    pendingUpdate = latestUpdate
+                                    pendingUpdate = com.beatwave.music.AppUpdateRow(
+                                        title = "New Pulse Wave Update Available!",
+                                        version = tag,
+                                        description = cleanDescription,
+                                        update_type = "optional",
+                                        apk_url = apkUrl
+                                    )
                                 }
-                            }
-                        }
+                            },
+                            onError = {}
+                        )
                     } catch (_: Exception) {}
 
                     try {
@@ -2667,15 +2662,19 @@ class MainActivity : ComponentActivity() {
                                     onClick = {
                                         update.apk_url?.let { url ->
                                             try {
-                                                uriHandler.openUri(url)
-                                            } catch (_: Exception) {}
+                                                navController.navigate("update")
+                                            } catch (_: Exception) {
+                                                try {
+                                                    uriHandler.openUri(url)
+                                                } catch (_: Exception) {}
+                                            }
                                         }
                                         if (update.update_type != "force") {
                                             pendingUpdate = null
                                         }
                                     }
                                 ) {
-                                    Text("Download")
+                                    Text("Update Now")
                                 }
                             },
                             dismissButton = {

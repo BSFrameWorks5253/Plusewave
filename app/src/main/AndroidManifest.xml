@@ -118,7 +118,7 @@
                 <data android:host="sync" />
             </intent-filter>
 
-            <!-- Legacy Sync invite links -->
+            <!-- Pulse Wave Sync invite links -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
@@ -126,18 +126,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data android:scheme="https" />
-                <data android:host="beatwave.de5.net" />
-                <data android:pathPrefix="/sync" />
-            </intent-filter>
-
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="https" />
+                <data android:host="pulsewave.app" />
                 <data android:host="beatwave.app" />
+                <data android:host="beatwave.de5.net" />
                 <data android:pathPrefix="/sync" />
             </intent-filter>
 

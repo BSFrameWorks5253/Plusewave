@@ -33,10 +33,8 @@ class CrashHandler private constructor(
         // the promotion; there's nothing to recover except not killing the
         // process over it — the notification just stays unpromoted until
         // playback next starts in the foreground normally.
-        if (Build.VERSION.SDK_INT >= 31 &&
-            throwable is android.app.ForegroundServiceStartNotAllowedException
-        ) {
-            Timber.tag("CrashHandler").w(throwable, "Foreground service start refused by platform — ignoring, not crashing")
+        if (isForegroundServiceRefusal(throwable)) {
+            Timber.tag("CrashHandler").w(throwable, "Foreground service start refused by platform — recovered, preventing crash")
             return
         }
         try {
@@ -70,6 +68,25 @@ class CrashHandler private constructor(
             Timber.e(e, "Error handling crash")
             defaultHandler?.uncaughtException(thread, throwable)
         }
+    }
+
+    private fun isForegroundServiceRefusal(t: Throwable?): Boolean {
+        var curr = t
+        while (curr != null) {
+            val name = curr.javaClass.name
+            val simpleName = curr.javaClass.simpleName
+            val msg = curr.message.orEmpty()
+            if (simpleName.contains("ForegroundServiceStartNotAllowedException") ||
+                name.contains("ForegroundServiceStartNotAllowedException") ||
+                msg.contains("ForegroundServiceStartNotAllowedException") ||
+                msg.contains("startForegroundService() did not then call startForeground()") ||
+                (msg.contains("startForeground") && msg.contains("not allowed"))
+            ) {
+                return true
+            }
+            curr = curr.cause
+        }
+        return false
     }
 
     private fun buildCrashLog(throwable: Throwable): String {

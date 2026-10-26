@@ -49,21 +49,29 @@ fun ImportPlaylistDialog(
             autoFocus = false,
             onDismiss = onDismiss,
             onDone = { finalName ->
-                val newPlaylist = PlaylistEntity(
-                    name = finalName
-                )
-                database.query { insert(newPlaylist) }
-
+                onDismiss()
                 coroutineScope.launch(Dispatchers.IO) {
-                    val playlist = database.playlist(newPlaylist.id).firstOrNull()
-
-                    if (playlist != null) {
-                        songIds = onGetSong()
-                        database.addSongToPlaylist(playlist, songIds!!)
-                        syncUtils.uploadPlaylistToYouTube(playlist.id, songIds!!)
+                    val now = java.time.LocalDateTime.now()
+                    val newPlaylist = PlaylistEntity(
+                        name = finalName,
+                        bookmarkedAt = now,
+                        lastUpdateTime = now,
+                        isEditable = true,
+                    )
+                    database.withTransaction {
+                        insert(newPlaylist)
                     }
 
-                    onDismiss()
+                    val playlist = database.playlist(newPlaylist.id).firstOrNull()
+                    if (playlist != null) {
+                        val retrievedSongIds = onGetSong()
+                        if (retrievedSongIds.isNotEmpty()) {
+                            database.addSongToPlaylist(playlist, retrievedSongIds)
+                            runCatching {
+                                syncUtils.uploadPlaylistToYouTube(playlist.id, retrievedSongIds)
+                            }
+                        }
+                    }
                 }
             }
         )

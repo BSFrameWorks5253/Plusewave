@@ -65,6 +65,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 import com.beatwave.music.ui.component.Icon as MIcon
+import com.beatwave.music.ui.component.shapes.ContinuousRoundedRectangle
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -216,13 +217,15 @@ fun AppleMiniPlayer(
                 } else baseModifier
             }
     ) {
+        val miniPlayerShape = ContinuousRoundedRectangle(16.dp)
         Box(
             modifier = Modifier
                 .then(if (isTabletLandscape) Modifier.width(500.dp).align(Alignment.Center) else Modifier.fillMaxWidth())
                 .height(64.dp)
                 .offset { IntOffset(offsetXAnimatable.value.roundToInt(), 0) }
-                .clip(RoundedCornerShape(8.dp)) // Apple rectangular shape with slightly rounded corners
+                .clip(miniPlayerShape)
                 .background(color = backgroundColor)
+                .border(0.5.dp, Color.White.copy(alpha = 0.14f), miniPlayerShape)
         ) {
             // Background Layers
             MiniPlayerBackgroundLayer(
@@ -327,6 +330,28 @@ fun AppleMiniPlayer(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                 }
+
+                // Spotify-like Quick Heart / Like Button
+                val currentSongState by playerConnection.currentSong.collectAsState()
+                val isSongLiked = currentSongState?.song?.liked == true
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .clickable {
+                            playerConnection.toggleLike()
+                        }
+                ) {
+                    Icon(
+                        painter = painterResource(if (isSongLiked) R.drawable.favorite else R.drawable.favorite_border),
+                        contentDescription = "Favorite",
+                        tint = if (isSongLiked) MaterialTheme.colorScheme.error else onSurfaceColor.copy(alpha = 0.75f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(6.dp))
 
                 // Play/Pause Button
                 Box(

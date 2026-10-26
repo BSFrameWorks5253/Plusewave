@@ -1497,11 +1497,6 @@ class MusicService :
 
     private fun stopOnError() {
         player.pause()
-        // Drop the foreground service so Media3 dismisses its notification
-        // instead of leaving a stale "paused" one that reappears forever after
-        // a swipe-away. Playback is dead here and has to be restarted anyway;
-        // Media3 re-foregrounds automatically the next time audio starts.
-        stopSelf()
         currentMediaMetadata.value = null
         updateWidgetUI(false)
     }
@@ -2830,7 +2825,7 @@ class MusicService :
         }
 
         // Final fallback
-        if (dataStore.get(AutoSkipNextOnErrorKey, false)) {
+        if (dataStore.get(AutoSkipNextOnErrorKey, true)) {
             Timber.tag(TAG).d("Auto-skipping to next track due to unrecoverable error")
             skipOnError()
         } else {
@@ -3163,7 +3158,7 @@ class MusicService :
      * Handles final failure when all recovery attempts have been exhausted.
      */
     private fun handleFinalFailure() {
-        if (dataStore.get(AutoSkipNextOnErrorKey, false)) {
+        if (dataStore.get(AutoSkipNextOnErrorKey, true)) {
             Timber.tag(TAG).d("All recovery attempts exhausted, auto-skipping to next track")
             skipOnError()
         } else {

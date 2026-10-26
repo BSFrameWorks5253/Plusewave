@@ -1,5 +1,5 @@
 {
-  "description": "Pulse Wave 6.1.4 — Package isolation (com.pulsewave.music) to prevent conflicts with BeatWave, plus release build compilation fixes for Compose design elements.",
+  "description": "Pulse Wave 6.1.5 — Fixed playlist visibility bug, refined luxury Apple Glass dark theme without bluish tint, instant Spotify-style heart button, resilient background playback without crashes, automatic GitHub update prompts, and versioned APK naming.",
   "image": "",
   "changelog": [
     {

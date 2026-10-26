@@ -574,7 +574,7 @@ fun saveUpdateAvailableState(context: Context, available: Boolean) {
 
 fun getAutoUpdateCheckSetting(context: Context): Boolean {
     val sharedPrefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    return sharedPrefs.getBoolean(KEY_AUTO_UPDATE_CHECK, false)
+    return sharedPrefs.getBoolean(KEY_AUTO_UPDATE_CHECK, true)
 }
 
 fun saveAutoUpdateCheckSetting(context: Context, enabled: Boolean) {
@@ -586,7 +586,7 @@ const val KEY_UPDATE_NOTIFICATIONS = "update_notifications"
 
 fun getUpdateNotificationsSetting(context: Context): Boolean {
     val sharedPrefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    return sharedPrefs.getBoolean(KEY_UPDATE_NOTIFICATIONS, false)
+    return sharedPrefs.getBoolean(KEY_UPDATE_NOTIFICATIONS, true)
 }
 
 fun saveUpdateNotificationsSetting(context: Context, enabled: Boolean) {
