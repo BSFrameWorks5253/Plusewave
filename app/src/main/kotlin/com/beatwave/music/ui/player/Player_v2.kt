@@ -747,14 +747,38 @@ fun PlayerV2(
                                         ) {
                                             PlayerGlyph(
                                                 slot = if (isLiked) PlayerIconSlot.V2_LIKED else PlayerIconSlot.V2_LIKE,
-                                                fallback = if (isLiked) R.drawable.star else R.drawable.bookmark_star_library,
-                                                tint = adaptivePrimary,
+                                                fallback = if (isLiked) R.drawable.favorite else R.drawable.favorite_border,
+                                                tint = if (isLiked) Color(0xFF1DB954) else adaptivePrimary,
                                                 contentDescription = "Favorite",
                                                 modifier = Modifier.size(24.dp)
                                             )
                                         }
                                         }
                                         
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        
+                                        // Spotify-Style Instant Song Radio
+                                        Box(
+                                            modifier = Modifier
+                                                .size(40.dp)
+                                                .background(adaptivePrimary.copy(alpha = 0.12f), CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            IconButton(
+                                                onClick = {
+                                                    playerConnection.startRadioSeamlessly()
+                                                    android.widget.Toast.makeText(context, "✨ Started Song Radio", android.widget.Toast.LENGTH_SHORT).show()
+                                                }
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.radio),
+                                                    contentDescription = "Song Radio",
+                                                    tint = adaptivePrimary,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                        }
+
                                         Spacer(modifier = Modifier.width(8.dp))
                                         
                                         Box(

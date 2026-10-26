@@ -269,6 +269,22 @@ function setupEventListeners() {
     btnOpenSync.addEventListener('click', openSync);
     syncPill.addEventListener('click', openSync);
     btnSyncCurrentPlaylist.addEventListener('click', openSync);
+    
+    // Spotify Smart Radio
+    const btnSmartRadio = document.getElementById('btn-smart-radio');
+    if (btnSmartRadio) {
+        btnSmartRadio.addEventListener('click', () => {
+            if (currentTrack) {
+                showNotification(`✨ Started Song Radio based on "${currentTrack.title}"`);
+            } else if (currentPlaylist && currentPlaylist.songs && currentPlaylist.songs.length > 0) {
+                playTrack(currentPlaylist.songs[0]);
+                showNotification(`✨ Started Song Radio based on "${currentPlaylist.songs[0].title}"`);
+            } else {
+                showNotification('✨ Play a track first to launch Song Radio');
+            }
+        });
+    }
+
     btnCloseSyncModal.addEventListener('click', () => syncModal.classList.remove('open'));
     btnCloseSyncModalBottom.addEventListener('click', () => syncModal.classList.remove('open'));
 

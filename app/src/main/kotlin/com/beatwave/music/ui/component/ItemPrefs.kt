@@ -36,7 +36,7 @@ import com.beatwave.music.utils.rememberPreference
 @Immutable
 data class ItemPrefs(
     val cropAlbumArt: Boolean = false,
-    val swipeToSong: Boolean = false,
+    val swipeToSong: Boolean = true,
     val swipeToRemoveSong: Boolean = false,
     val gridCardHeightOverrideDp: Int = 0,
     val gridItemSize: GridItemSize = GridItemSize.BIG,
@@ -48,7 +48,7 @@ val LocalItemPrefs = staticCompositionLocalOf { ItemPrefs() }
 @Composable
 fun rememberItemPrefs(): ItemPrefs {
     val (cropAlbumArt) = rememberPreference(CropAlbumArtKey, false)
-    val (swipeToSong) = rememberPreference(SwipeToSongKey, false)
+    val (swipeToSong) = rememberPreference(SwipeToSongKey, true)
     val (swipeToRemoveSong) = rememberPreference(SwipeToRemoveSongKey, false)
     val (gridCardHeightOverride) = rememberPreference(GridCardHeightOverrideKey, 0)
     val gridItemSize by rememberEnumPreference(GridItemsSizeKey, GridItemSize.BIG)

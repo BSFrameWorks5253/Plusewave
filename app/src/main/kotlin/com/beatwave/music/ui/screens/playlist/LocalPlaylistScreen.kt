@@ -1596,7 +1596,33 @@ fun LocalPlaylistHeader(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.shuffle),
-                        contentDescription = null,
+                        contentDescription = "Shuffle",
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Spotify Smart Recommendations / Radio (Far Right)
+                GlassCircleButton(
+                    onClick = {
+                        val firstSong = songs.firstOrNull()?.song
+                        if (firstSong != null) {
+                            playerConnection.playQueue(
+                                ListQueue(
+                                    title = "${playlist.playlist.name} • Radio",
+                                    items = listOf(firstSong.toMediaItem()),
+                                )
+                            )
+                            playerConnection.startRadioSeamlessly()
+                            android.widget.Toast.makeText(context, "✨ Started Smart Radio based on ${playlist.playlist.name}", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    size = 48.dp,
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.radio),
+                        contentDescription = "Song Radio",
                         modifier = Modifier.size(20.dp),
                     )
                 }
