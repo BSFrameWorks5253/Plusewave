@@ -514,6 +514,10 @@ fun NavGraphBuilder.navigationBuilder(
         ListenTogetherSettings(navController, scrollBehavior)
     }
 
+    sharedComposable(route = "settings/desktop_sync") {
+        com.beatwave.music.ui.screens.settings.DesktopSyncScreen(navController, scrollBehavior)
+    }
+
     sharedComposable("settings/discord/login") {
         DiscordLoginScreen(navController)
     }

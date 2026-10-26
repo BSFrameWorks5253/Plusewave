@@ -231,9 +231,9 @@ fun SettingsScreen(
                 SettingsDivider()
                 SettingsNavItem(
                     icon = painterResource(R.drawable.sync),
-                    iconTint = Color(0xFF5856D6),
-                    title = stringResource(R.string.offline_sync),
-                    onClick = { navController.navigate("settings/integrations/listen_together") },
+                    iconTint = Color(0xFF8B5CF6),
+                    title = "Desktop Wi-Fi Sync",
+                    onClick = { navController.navigate("settings/desktop_sync") },
                 )
                 SettingsDivider()
                 SettingsNavItem(

@@ -1,0 +1,28 @@
+{
+  "name": "pulsewave-desktop",
+  "productName": "PulseWave Desktop",
+  "version": "1.0.0",
+  "description": "PulseWave Desktop - Spotify-Grade Player & Local Wi-Fi Playlist Sync",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron ."
+  },
+  "keywords": [
+    "music",
+    "spotify",
+    "pulsewave",
+    "sync",
+    "playlist"
+  ],
+  "author": "PulseWave Team",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0"
+  }
+}

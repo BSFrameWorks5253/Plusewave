@@ -74,6 +74,13 @@ fun IntegrationScreen(
                     }
                 ),
                 IntegrationCardItem(
+                    icon = painterResource(R.drawable.sync),
+                    title = { Text("Desktop Wi-Fi Sync") },
+                    onClick = {
+                        navController.navigate("settings/desktop_sync")
+                    }
+                ),
+                IntegrationCardItem(
                     icon = painterResource(R.drawable.music_note),
                     title = { Text(stringResource(R.string.lastfm_integration)) },
                     onClick = {

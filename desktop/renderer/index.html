@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulseWave Desktop</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Top Custom Header -->
+    <header class="app-header">
+        <div class="header-left">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-wave-square"></i>
+                </div>
+                <span class="brand-name">PulseWave</span>
+            </div>
+            <div class="nav-arrows">
+                <button class="arrow-btn" id="btn-back"><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="arrow-btn" id="btn-forward"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <div class="header-center">
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="search-input" placeholder="What do you want to play or search?">
+            </div>
+        </div>
+
+        <div class="header-right">
+            <!-- Local Wi-Fi Sync Pill -->
+            <div class="sync-pill" id="sync-pill" title="Click to view Wi-Fi Sync IP & QR details">
+                <span class="sync-dot pulse"></span>
+                <span class="sync-text" id="sync-status-text">Wi-Fi Sync: Ready</span>
+            </div>
+            <button class="sync-btn" id="btn-open-sync">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span>Sync with Phone</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="nav-section">
+                <button class="nav-item active" id="nav-home">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Home</span>
+                </button>
+                <button class="nav-item" id="nav-search">
+                    <i class="fa-solid fa-compass"></i>
+                    <span>Explore & Search</span>
+                </button>
+            </div>
+
+            <div class="library-box">
+                <div class="library-header">
+                    <div class="library-title">
+                        <i class="fa-solid fa-lines-leaning"></i>
+                        <span>Your Library</span>
+                    </div>
+                    <div class="library-actions">
+                        <button class="icon-btn" id="btn-create-playlist" title="Create Playlist"><i class="fa-solid fa-plus"></i></button>
+                        <button class="icon-btn" id="btn-import-spotify" title="Import Spotify Playlist"><i class="fa-brands fa-spotify"></i></button>
+                    </div>
+                </div>
+
+                <div class="library-chips">
+                    <span class="chip active">Playlists</span>
+                    <span class="chip">Synced</span>
+                    <span class="chip">Favorites</span>
+                </div>
+
+                <div class="playlist-list" id="playlist-list">
+                    <!-- Dynamic playlist items injected by JS -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content" id="main-content">
+            <!-- Playlist View Hero -->
+            <div class="playlist-hero">
+                <div class="hero-cover-wrap">
+                    <img id="hero-img" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&q=80" alt="Cover" class="hero-cover">
+                </div>
+                <div class="hero-info">
+                    <span class="hero-type">PLAYLIST • LOCAL WI-FI SYNCED</span>
+                    <h1 class="hero-title" id="hero-title">PulseWave Favorites</h1>
+                    <p class="hero-desc" id="hero-desc">Synced seamlessly across your Android device and PC on the same Wi-Fi connection.</p>
+                    <div class="hero-meta">
+                        <span class="hero-owner" id="hero-owner"><i class="fa-solid fa-circle-user"></i> PulseWave User</span>
+                        <span class="meta-dot">•</span>
+                        <span id="hero-song-count">3 songs</span>
+                        <span class="meta-dot">•</span>
+                        <span id="hero-duration">11 min 13 sec</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Bar -->
+            <div class="action-bar">
+                <button class="btn-play-all" id="btn-play-all" title="Play">
+                    <i class="fa-solid fa-play" id="hero-play-icon"></i>
+                </button>
+                <button class="action-icon-btn" id="btn-favorite-playlist" title="Save to favorites">
+                    <i class="fa-regular fa-heart"></i>
+                </button>
+                <button class="action-pill-btn" id="btn-sync-current-playlist">
+                    <i class="fa-solid fa-wifi"></i>
+                    <span>Sync to Phone Now</span>
+                </button>
+                <button class="action-icon-btn" id="btn-add-track-modal" title="Add Song">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+                <button class="action-icon-btn" id="btn-delete-playlist" title="Delete Playlist">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+
+            <!-- Song Table -->
+            <div class="tracklist-container">
+                <table class="track-table">
+                    <thead>
+                        <tr>
+                            <th class="col-num">#</th>
+                            <th class="col-title">Title</th>
+                            <th class="col-album">Album</th>
+                            <th class="col-date">Date Added</th>
+                            <th class="col-duration"><i class="fa-regular fa-clock"></i></th>
+                            <th class="col-actions"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tracklist-body">
+                        <!-- Dynamic track rows injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Bottom Spotify Playback Bar -->
+    <footer class="player-bar">
+        <!-- Currently Playing Info -->
+        <div class="player-left">
+            <img id="current-track-img" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&q=80" alt="Track" class="current-track-thumb">
+            <div class="current-track-info">
+                <div class="track-name" id="current-track-title">Starboy</div>
+                <div class="track-artist" id="current-track-artist">The Weeknd, Daft Punk</div>
+            </div>
+            <button class="heart-btn" id="btn-like-track"><i class="fa-regular fa-heart"></i></button>
+        </div>
+
+        <!-- Player Controls & Scrubber -->
+        <div class="player-center">
+            <div class="control-buttons">
+                <button class="ctrl-btn" id="btn-shuffle" title="Shuffle"><i class="fa-solid fa-shuffle"></i></button>
+                <button class="ctrl-btn" id="btn-prev" title="Previous"><i class="fa-solid fa-backward-step"></i></button>
+                <button class="ctrl-btn-play" id="btn-play-pause" title="Play/Pause">
+                    <i class="fa-solid fa-play" id="ctrl-play-icon"></i>
+                </button>
+                <button class="ctrl-btn" id="btn-next" title="Next"><i class="fa-solid fa-forward-step"></i></button>
+                <button class="ctrl-btn" id="btn-repeat" title="Repeat"><i class="fa-solid fa-repeat"></i></button>
+            </div>
+            <div class="scrubber-container">
+                <span class="time-label" id="time-current">0:00</span>
+                <div class="progress-bar-wrap" id="progress-wrap">
+                    <div class="progress-bar-fill" id="progress-fill" style="width: 0%;"></div>
+                </div>
+                <span class="time-label" id="time-total">3:50</span>
+            </div>
+        </div>
+
+        <!-- Volume & Wi-Fi Sync Status -->
+        <div class="player-right">
+            <div class="wifi-indicator" title="Connected to Local Wi-Fi Sync">
+                <i class="fa-solid fa-tower-broadcast"></i>
+                <span class="wifi-port" id="footer-wifi-port">Port 5253</span>
+            </div>
+            <button class="volume-btn"><i class="fa-solid fa-volume-high"></i></button>
+            <div class="volume-slider-wrap">
+                <div class="volume-slider-fill" style="width: 75%;"></div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Wi-Fi Sync Modal -->
+    <div class="modal-overlay" id="sync-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <i class="fa-solid fa-wifi modal-icon"></i>
+                    <h2>PulseWave Local Wi-Fi Sync</h2>
+                </div>
+                <button class="modal-close-btn" id="btn-close-sync-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-lead">Sync playlists instantly between this PC and your PulseWave Android app over the same Wi-Fi connection.</p>
+                
+                <div class="sync-ip-card">
+                    <div class="ip-label">Desktop Local IP Address:</div>
+                    <div class="ip-value-row">
+                        <span class="ip-badge" id="modal-ip-address">Loading IP...</span>
+                        <button class="copy-btn" id="btn-copy-ip"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+                    <div class="ip-hint">Port: <strong>5253</strong> • Both devices must be on the same Wi-Fi network.</div>
+                </div>
+
+                <div class="sync-instructions">
+                    <div class="step-item">
+                        <div class="step-num">1</div>
+                        <div class="step-desc">Open <strong>PulseWave</strong> on your Android phone.</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">2</div>
+                        <div class="step-desc">Go to <strong>Settings</strong> &rarr; <strong>Desktop Wi-Fi Sync</strong>.</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">3</div>
+                        <div class="step-desc">Tap <strong>"Sync Playlists Now"</strong>. All playlists on your phone and desktop sync in seconds!</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" id="btn-close-sync-modal-bottom">Got It</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Spotify / Create Playlist Modal -->
+    <div class="modal-overlay" id="create-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <i class="fa-solid fa-plus modal-icon"></i>
+                    <h2>Create or Import Playlist</h2>
+                </div>
+                <button class="modal-close-btn" id="btn-close-create-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Playlist Name</label>
+                    <input type="text" id="input-playlist-name" placeholder="e.g. Chill Beats, Gym Pump">
+                </div>
+                <div class="form-group">
+                    <label>Or Paste Spotify Playlist Link</label>
+                    <input type="text" id="input-spotify-link" placeholder="https://open.spotify.com/playlist/...">
+                </div>
+                <div class="form-group">
+                    <label>Cover Image URL (Optional)</label>
+                    <input type="text" id="input-cover-url" placeholder="https://...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btn-cancel-create">Cancel</button>
+                <button class="btn-primary" id="btn-save-new-playlist">Create & Sync</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -4,6 +4,12 @@
 *.ap_
 *.aab
 
+# Node & Desktop
+node_modules/
+desktop/node_modules/
+desktop/dist/
+desktop/playlists_store.json
+
 # Files for the ART/Dalvik VM
 *.dex
 
