@@ -5,7 +5,7 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     
-    <!-- Outer Adobe Squircle Frame -->
+    <!-- Outer Adobe CC Squircle Container -->
     <path
         android:strokeColor="#FFFFFF"
         android:strokeWidth="3.2"
@@ -14,17 +14,23 @@
         android:pathData="M35,24 L73,24 C82,24 84,26 84,35 L84,73 C84,82 82,84 73,84 L35,84 C26,84 24,82 24,73 L24,35 C24,26 26,24 35,24 Z" />
 
     <!-- Letter 'P' -->
-    <!-- Vertical stem -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M37,40 L43.5,40 L43.5,68 L37,68 Z" />
-    <!-- Loop of 'P' -->
+        android:pathData="M36,36 L43,36 L43,68 L36,68 Z" />
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M43.5,40 L52,40 C56.5,40 59,42.5 59,47 C59,51.5 56.5,54 52,54 L43.5,54 Z M43.5,45.5 L43.5,48.5 L51,48.5 C52.5,48.5 53.5,47.8 53.5,47 C53.5,46.2 52.5,45.5 51,45.5 Z" />
+        android:pathData="M43,36 L52,36 C56.5,36 59.5,38.8 59.5,43.5 C59.5,48.2 56.5,51 52,51 L43,51 Z M43,41.5 L43,45.5 L51,45.5 C52.8,45.5 54,44.8 54,43.5 C54,42.2 52.8,41.5 51,41.5 Z" />
 
     <!-- Letter 'w' -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M59,48.5 L64.5,68 L69,56 L73.5,68 L79,48.5 L73.5,48.5 L71.2,60 L67.2,48.5 L65.3,48.5 L61.3,60 L59,48.5 Z" />
+        android:pathData="M59,44.5 L64.5,68 L69,54 L73.5,68 L79,44.5 L73.5,44.5 L71.2,58 L67.2,44.5 L65.3,44.5 L61.3,58 L59,44.5 Z" />
+
+    <!-- Precision Audio Wave Baseline -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M34,74 L44,74 L47,72 L50,76 L53,70 L56,78 L59,68 L62,80 L65,71 L68,76 L71,73 L74,74 L84,74" />
 </vector>

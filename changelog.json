@@ -1,15 +1,15 @@
 {
-  "description": "Pulse Wave 6.1.9 — Dynamic UI-synchronized Adobe 'Pw' App Icons, Apple Music Light Mode with porcelain surfaces, cute animated Day/Night switch with smiling sun & sleepy moon, and fluid physics-based dark/light theme morphing.",
+  "description": "Pulse Wave 6.1.10 — Official Adobe CC Design 1 App Icon with uncompromised 'Pw' typography and integrated precision digital audio waveform baseline, dynamic UI sync, Apple Music Light Mode, and cute animated Day/Night switch.",
   "image": "",
   "changelog": [
     {
-      "title": "Dynamic Adobe 'Pw' App Icon System",
+      "title": "Official Adobe CC Music App Icon (Design 1)",
       "items": [
-        "Dynamic UI-Responsive Logo: App icon changes automatically to match the active UI accent color and Day/Night mode, both in-app and on the Android launcher.",
-        "5 Flat & Plain Pastel Colorways: Soft Pastel Lavender, Soft Pastel Sky, Soft Sage Mint, Soft Warm Rose, and Soft Porcelain Light Mode.",
-        "Android 13+ Themed Icons: Added pure vector monochrome icon (ic_launcher_mono.xml) so the launcher icon seamlessly adopts system wallpaper and Material You dynamic theming.",
-        "App Icon Style Selector: Added in Appearance Settings with automatic theme synchronization and manual selection options.",
-        "Live In-App Preview: Real-time Adobe 'Pw' squircle preview in Theme Settings and About screen that actively morphs colors as themes are selected."
+        "Authentic Adobe Typography: Clean, bold, uncompromised 'Pw' typography inside a flat squircle container (#14141D) with a thin pastel lavender border.",
+        "Precision Audio Wave Baseline: Integrated razor-sharp digital music frequency pulse wave directly below the letters, unmistakably identifying Pulse Wave as a professional music app.",
+        "Full Adaptive Icon Suite: Baked across all mipmap densities (mdpi to xxxhdpi) in 5 soft pastel colorways (Soft Lavender, Soft Sky, Soft Sage, Soft Rose, and Porcelain Light).",
+        "Android 13+ Themed Icons: Updated vector monochrome icon (ic_launcher_mono.xml) with the Adobe container, Pw glyphs, and audio wave baseline for native launcher theming.",
+        "In-App Dynamic Logo: Responsive Compose PulseWaveLogo component with live preview in Theme Settings and About screen."
       ]
     },
     {
@@ -24,17 +24,7 @@
       "title": "Butter-Smooth Apple Music iOS 18 Startup",
       "items": [
         "Hardware-accelerated native splash exit animation: seamlessly zooms the Adobe 'Pw' squircle (1.0x to 1.15x) and softly dissolves into the Home screen in 320ms via PathInterpolator curve.",
-        "Permanently eliminated startup glitches: removed the double Activity intent jump from WelcomeActivity on returning launches, pointing Launcher directly to MainActivity.",
-        "Fixed white window background flash by setting windowBackground to luxury obsidian #08080A.",
         "Zero dropped frames: removed heavy Compose infinite ripple loops and double-scale transformations that previously contested with database initialization."
-      ]
-    },
-    {
-      "title": "Desktop Sync & Spotify Features",
-      "items": [
-        "PulseWave Desktop Companion App: Full cross-platform desktop player with local Wi-Fi playlist synchronization.",
-        "Persistent Keystore Signature: Updates never reset login session, cache, or imported playlists.",
-        "Spotify Features: Swipe-to-Queue, Song Radio, and Green Heart favorites."
       ]
     }
   ]
