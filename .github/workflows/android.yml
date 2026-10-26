@@ -46,6 +46,19 @@ jobs:
           LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
 
+      - name: Rename Release APK with App Name and Version
+        run: |
+          MAJOR=$(grep 'VERSION_MAJOR' version.properties | cut -d'=' -f2 | tr -d ' \r\n')
+          MINOR=$(grep 'VERSION_MINOR' version.properties | cut -d'=' -f2 | tr -d ' \r\n')
+          PATCH=$(grep 'VERSION_PATCH' version.properties | cut -d'=' -f2 | tr -d ' \r\n')
+          VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+          for f in app/build/outputs/apk/universalGms/release/*.apk; do
+            if [ -f "$f" ]; then
+              mv "$f" "app/build/outputs/apk/universalGms/release/PulseWave-${VERSION}-universal-release.apk"
+              break
+            fi
+          done
+
       - name: Upload Build Failure Logs
         if: always()
         uses: actions/upload-artifact@v4

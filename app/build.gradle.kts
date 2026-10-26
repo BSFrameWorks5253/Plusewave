@@ -47,7 +47,6 @@ android {
         targetSdk = 36
         versionCode = appVersionCode
         versionName = appVersionName
-        setProperty("archivesBaseName", "PulseWave-v${appVersionName}")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

@@ -62,6 +62,16 @@ jobs:
         run: |
           ./gradlew assembleUniversalGmsRelease --no-configuration-cache --console=plain --warning-mode summary --stacktrace -x lint
 
+      - name: Rename Release APK with App Name and Version
+        run: |
+          TAG="${{ github.ref_name || inputs.tag }}"
+          for f in app/build/outputs/apk/universalGms/release/*.apk; do
+            if [ -f "$f" ]; then
+              mv "$f" "app/build/outputs/apk/universalGms/release/PulseWave-${TAG}-universal-release.apk"
+              break
+            fi
+          done
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
