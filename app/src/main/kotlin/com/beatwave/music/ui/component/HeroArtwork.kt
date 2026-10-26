@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -263,63 +265,62 @@ fun rememberAppBackgroundTint(contentTint: Color): Color {
 fun AlbumStyleHeroImage(
     artworkUrl: String?,
     modifier: Modifier = Modifier,
-    // Extra pull-up beyond the status bar, to lift the square higher like AlbumScreen.
-    extraPullUp: androidx.compose.ui.unit.Dp = 48.dp,
-    // Driven by rememberHeroZoom() for pull-to-zoom. Applied to the drawn image
-    // only, so growing it never re-lays-out the list underneath.
+    extraPullUp: androidx.compose.ui.unit.Dp = 0.dp,
     heroScale: Float = 1f,
 ) {
-    val topInset = androidx.compose.foundation.layout.WindowInsets.systemBars
-        .asPaddingValues().calculateTopPadding()
-    val density = LocalDensity.current
-    val pullUpPx = with(density) { (topInset + extraPullUp).roundToPx() }
+    val tint = rememberHeroTint(artworkUrl)
+    val cardShape = ContinuousRoundedRectangle(22.dp)
+
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(1f)
-            // Report a shorter height and draw shifted up: the image top tucks
-            // under the status bar and following content sits tight (no gap).
-            .layout { measurable, constraints ->
-                val placeable = measurable.measure(constraints)
-                val h = (placeable.height - pullUpPx).coerceAtLeast(0)
-                layout(placeable.width, h) {
-                    placeable.place(0, -pullUpPx)
-                }
-            }
-            .graphicsLayer {
-                scaleX = heroScale
-                scaleY = heroScale
-                compositingStrategy = CompositingStrategy.Offscreen
-            }
-            .drawWithContent {
-                drawContent()
-                drawRect(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(Color.Black, Color.Transparent),
-                        startY = size.height * 0.45f,
-                        endY = size.height,
-                    ),
-                    blendMode = BlendMode.DstIn,
-                )
-            },
+            .padding(top = 16.dp, bottom = 12.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        if (!artworkUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = artworkUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-        } else {
-            Image(
-                painter = painterResource(R.drawable.music_note),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .fillMaxSize(0.4f)
-                    .align(Alignment.Center)
-                    .graphicsLayer { alpha = 0.3f },
-            )
+        // Ambient soft bloom/glow behind the squircle
+        Box(
+            modifier = Modifier
+                .size(220.dp)
+                .graphicsLayer {
+                    scaleX = heroScale * 1.08f
+                    scaleY = heroScale * 1.08f
+                    alpha = 0.45f
+                }
+                .blur(32.dp)
+                .background(tint, CircleShape)
+        )
+
+        // Main Squircle Artwork Card
+        Box(
+            modifier = Modifier
+                .size(220.dp)
+                .graphicsLayer {
+                    scaleX = heroScale
+                    scaleY = heroScale
+                }
+                .shadow(16.dp, cardShape, ambientColor = tint.copy(alpha = 0.35f), spotColor = Color.Black.copy(alpha = 0.5f))
+                .clip(cardShape)
+                .background(AppleTokens.Card)
+                .border(1.dp, Color.White.copy(alpha = 0.12f), cardShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (!artworkUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = artworkUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                Image(
+                    painter = painterResource(R.drawable.music_note),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxSize(0.4f)
+                        .graphicsLayer { alpha = 0.4f },
+                )
+            }
         }
     }
 }

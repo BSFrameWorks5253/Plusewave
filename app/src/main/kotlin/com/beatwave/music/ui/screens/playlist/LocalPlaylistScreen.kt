@@ -21,6 +21,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -1389,10 +1390,11 @@ fun LocalPlaylistHeader(
                 if (editable) {
                     Box(
                         modifier = Modifier
-                            .padding(12.dp)
-                            .size(36.dp)
+                            .padding(bottom = 20.dp, end = 20.dp)
+                            .size(38.dp)
                             .clip(CircleShape)
-                            .background(Color.Black.copy(alpha = 0.45f))
+                            .background(Color.Black.copy(alpha = 0.65f))
+                            .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape)
                             .clickable { showEditNoteDialog = true },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -1400,47 +1402,60 @@ fun LocalPlaylistHeader(
                             painter = painterResource(R.drawable.edit),
                             contentDescription = stringResource(R.string.edit_playlist_cover),
                             tint = Color.White,
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(18.dp),
                         )
                     }
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(14.dp))
 
             // Playlist Name
             Text(
                 text = playlist.playlist.name,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.5).sp
+                ),
                 textAlign = TextAlign.Center,
                 color = onTint,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 32.dp)
+                modifier = Modifier.padding(horizontal = 24.dp)
             )
 
             playlist.playlist.description?.takeIf { it.isNotBlank() }?.let { desc ->
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = desc,
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
-                    color = onTint.copy(alpha = 0.7f),
+                    color = onTint.copy(alpha = 0.72f),
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = 32.dp)
+                    modifier = Modifier.padding(horizontal = 24.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Metadata - Song Count • Duration
-            Text(
-                text = playlistInfoText,
-                style = MaterialTheme.typography.bodyMedium,
-                color = onTint.copy(alpha = 0.7f)
-            )
+            // Stats / Song Count • Duration Pill Badge
+            if (playlistInfoText.isNotBlank()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(ContinuousRoundedRectangle(percent = 50))
+                        .background(Color.White.copy(alpha = 0.08f))
+                        .border(0.5.dp, Color.White.copy(alpha = 0.12f), ContinuousRoundedRectangle(percent = 50))
+                        .padding(horizontal = 14.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = playlistInfoText,
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        color = onTint.copy(alpha = 0.85f)
+                    )
+                }
+            }
             }
 
             Spacer(modifier = Modifier.height(24.dp))

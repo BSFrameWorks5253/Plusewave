@@ -605,6 +605,7 @@
     <string name="chat">Chat</string>
     <string name="send_message_hint">Type a message...</string>
     <string name="theme_presets">Theme Presets</string>
+    <string name="theme_preset_pulse_wave">Pulse Wave Obsidian</string>
     <string name="theme_preset_oled">Deep Midnight OLED</string>
     <string name="theme_preset_cyberpunk">Cyberpunk Neon</string>
     <string name="theme_preset_emerald">Emerald Frosted Glass</string>

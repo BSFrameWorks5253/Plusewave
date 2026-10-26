@@ -60,6 +60,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.beatwave.music.R
 import com.beatwave.music.ui.screens.OptionStats
+import com.beatwave.music.ui.component.shapes.ContinuousRoundedRectangle
+import androidx.compose.foundation.BorderStroke
 
 @Composable
 fun <E> ChipsRow(
@@ -97,14 +99,25 @@ fun <E> ChipsRow(
                 label = "corner_radius"
             )
 
+            val chipShape = ContinuousRoundedRectangle(percent = 50)
+            val activeBorder = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.65f))
+            val inactiveBorder = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+
             FilterChip(
-                label = { Text(label) },
+                label = {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = if (isSelected) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Medium
+                        )
+                    )
+                },
                 selected = isSelected,
                 colors = FilterChipDefaults.filterChipColors(
-                    containerColor = containerColor,
-                    selectedContainerColor = selectedContainerColor,
-                    labelColor = labelColor,
-                    selectedLabelColor = selectedLabelColor,
+                    containerColor = containerColor.copy(alpha = 0.6f),
+                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    selectedLabelColor = MaterialTheme.colorScheme.primary,
                 ),
                 onClick = { onValueUpdate(value) },
                 leadingIcon = if (isSelected) {
@@ -112,18 +125,18 @@ fun <E> ChipsRow(
                         Icon(
                             imageVector = Icons.Filled.Done,
                             contentDescription = null,
-                            tint = selectedLabelColor,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(FilterChipDefaults.IconSize),
                         )
                     }
                 } else {
                     null
                 },
-                shape = RoundedCornerShape(cornerRadius),
-                border = null,
+                shape = chipShape,
+                border = if (isSelected) activeBorder else inactiveBorder,
                 modifier = Modifier.animateContentSize(
                     animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        dampingRatio = Spring.DampingRatioNoBouncy,
                         stiffness = Spring.StiffnessMedium
                     )
                 )

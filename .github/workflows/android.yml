@@ -94,13 +94,24 @@ jobs:
           name: universal-gms-mapping
           path: app/build/outputs/mapping/universalGmsRelease/mapping.txt
           if-no-files-found: ignore
+      - name: Extract Dynamic Version
+        id: get_version
+        run: |
+          MAJOR=$(grep 'VERSION_MAJOR' version.properties | cut -d'=' -f2 | tr -d ' \r\n')
+          MINOR=$(grep 'VERSION_MINOR' version.properties | cut -d'=' -f2 | tr -d ' \r\n')
+          PATCH=$(grep 'VERSION_PATCH' version.properties | cut -d'=' -f2 | tr -d ' \r\n')
+          VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/universalGms/release/*.apk
-          tag_name: v6.1.1
-          name: Pulse Wave v6.1.1 (Universal Release)
+          files: |
+            app/build/outputs/apk/universalGms/release/*.apk
+            changelog.json
+          tag_name: v${{ steps.get_version.outputs.version }}
+          name: Pulse Wave v${{ steps.get_version.outputs.version }} (Universal Release)
           draft: false
           prerelease: false
           generate_release_notes: true

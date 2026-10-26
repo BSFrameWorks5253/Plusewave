@@ -6,6 +6,7 @@
 package com.beatwave.music.ui.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -48,10 +49,8 @@ fun NavigationTitle(
     onClick: (() -> Unit)? = null,
     onPlayAllClick: (() -> Unit)? = null,
 ) {
-    // Headings take the accent-contrast colour rather than plain content colour.
-    // Hero screens provide their own artwork tint into this local, so a section
-    // title matches the screen it is on rather than the app-wide accent.
-    val contentColor = color ?: LocalAccentTextColor.current
+    val titleColor = color ?: MaterialTheme.colorScheme.onBackground
+    val actionColor = color ?: MaterialTheme.colorScheme.primary
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -62,7 +61,7 @@ fun NavigationTitle(
             .clickable(enabled = onClick != null) {
                 onClick?.invoke()
             }
-            .padding(horizontal = AppleTokens.Gutter, vertical = 12.dp)
+            .padding(horizontal = AppleTokens.Gutter, vertical = 14.dp)
     ) {
         thumbnail?.invoke()
 
@@ -77,8 +76,10 @@ fun NavigationTitle(
                 label?.let { label ->
                     Text(
                         text = label,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = contentColor.copy(alpha = 0.6f),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Medium
+                        ),
+                        color = titleColor.copy(alpha = 0.65f),
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
@@ -88,39 +89,31 @@ fun NavigationTitle(
                     fontSize = AppleTokens.SectionHeader,
                     lineHeight = AppleTokens.SectionHeaderLineHeight,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.01).em,
-                    color = contentColor,
+                    letterSpacing = (-0.02).em,
+                    color = titleColor,
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1,
                 )
             }
         }
 
-        // "See All" / "Play all" as a plain accent text action rather than an
-        // outlined button or a chevron: the design keeps every section header to
-        // one weight of chrome, so the action reads as a link beside the title
-        // instead of as a control stacked on it.
-        //
-        // Takes the same color as the title beside it. This was hardcoded to
-        // AppleTokens.AccentRed, so it stayed red on every screen no matter what
-        // the user picked in Theme settings — and on a hero screen it clashed with
-        // the artwork tint the title next to it was already following.
         val action = onPlayAllClick ?: onClick
         if (action != null) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
                 modifier = Modifier
                     .clip(androidx.compose.foundation.shape.CircleShape)
-                    .background(contentColor.copy(alpha = 0.08f))
+                    .background(actionColor.copy(alpha = 0.12f))
+                    .border(0.5.dp, actionColor.copy(alpha = 0.28f), androidx.compose.foundation.shape.CircleShape)
                     .clickable(onClick = action)
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
             ) {
                 if (onPlayAllClick != null) {
                     androidx.compose.material3.Icon(
                         painter = androidx.compose.ui.res.painterResource(R.drawable.play),
                         contentDescription = null,
-                        tint = contentColor,
+                        tint = actionColor,
                         modifier = Modifier.size(12.dp)
                     )
                 }
@@ -128,9 +121,10 @@ fun NavigationTitle(
                     text = stringResource(
                         if (onPlayAllClick != null) R.string.play_all else R.string.see_all
                     ),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = contentColor,
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = actionColor,
                     maxLines = 1,
                 )
             }

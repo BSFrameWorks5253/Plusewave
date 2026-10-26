@@ -35,6 +35,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.beatwave.music.ui.theme.AppleTokens
+import com.beatwave.music.ui.component.shapes.ContinuousRoundedRectangle
+import androidx.compose.foundation.border
 
 /**
  * A Material 3 Expressive style settings group component
@@ -65,11 +67,17 @@ fun Material3SettingsGroup(
         // AppleTokens' fixed dark tokens — the row content below (title/
         // description/icon tint) already reads MaterialTheme.colorScheme, so a
         // fixed-dark card went black-on-black in light theme.
+        val cardShape = ContinuousRoundedRectangle(AppleTokens.CardCorner)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(AppleTokens.CardCorner))
+                .clip(cardShape)
                 .background(MaterialTheme.colorScheme.surfaceContainer)
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                    shape = cardShape,
+                )
         ) {
             items.forEachIndexed { index, item ->
                 if (index > 0) {

@@ -71,7 +71,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/universalGms/release/*.apk
+          files: |
+            app/build/outputs/apk/universalGms/release/*.apk
+            changelog.json
           tag_name: ${{ github.ref_name || inputs.tag }}
           name: Pulse Wave ${{ github.ref_name || inputs.tag }}
           draft: false

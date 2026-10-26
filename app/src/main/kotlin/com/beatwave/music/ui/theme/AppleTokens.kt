@@ -19,31 +19,28 @@ import androidx.compose.ui.unit.sp
  * adaptive contrast helpers. Every screen references these instead of hardcoding values.
  */
 object AppleTokens {
-    // Accent
+    // Pulse Wave Signatures & Accents
+    val PulseCyan = Color(0xFF00E5FF)
+    val PulseViolet = Color(0xFF8A2387)
+    val PulseMagenta = Color(0xFFE040FB)
     val AccentRed = Color(0xFFFA2D48)
 
-    // Surfaces — Apple-style soft dark greys, not pure black (pure black stays an
-    // opt-in via the PureBlack setting for OLED). Monotonic elevation ladder.
-    val Bg = Color(0xFF121212)
-    val BgElevated = Color(0xFF1A1A1A)
-    val Card = Color(0xFF1C1C1E)
-    val CardSecondary = Color(0xFF2C2C2E)
+    // Surfaces — Deep luxury obsidian OLED dark tones with refined monotonic elevation ladder
+    val Bg = Color(0xFF0A0B10)
+    val BgElevated = Color(0xFF12141D)
+    val Card = Color(0xFF161824)
+    val CardSecondary = Color(0xFF202334)
 
     /**
-     * Hairline rule on whatever surface the caller sits on. Derived from the
-     * content colour rather than fixed to white: a constant white rule is
-     * invisible on the light theme, and on an artwork-tinted screen it reads as
-     * a foreign line instead of one belonging to the surface.
+     * Hairline rule on whatever surface the caller sits on.
      */
     val divider: Color
-        @Composable get() = LocalContentColor.current.copy(alpha = 0.12f)
+        @Composable get() = LocalContentColor.current.copy(alpha = 0.08f)
 
     /**
-     * Metadata text — artist names, subtitles, durations. One step down from
-     * on-surface, never full white: the hierarchy on Home is carried by this
-     * contrast step rather than by size, since title and subtitle share a size.
+     * Metadata text — artist names, subtitles, durations. Crisp neutral contrast.
      */
-    val Metadata = Color(0xFF8E8E93)
+    val Metadata = Color(0xFF94A3B8)
 
     // Spacing — the whole scale. Screens reference these, never a dp literal.
 

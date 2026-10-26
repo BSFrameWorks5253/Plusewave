@@ -58,6 +58,7 @@ import com.beatwave.music.ui.component.Material3SettingsGroup
 import com.beatwave.music.ui.component.Material3SettingsItem
 import com.beatwave.music.ui.screens.Screens
 import com.beatwave.music.ui.theme.AppleTokens
+import com.beatwave.music.ui.component.shapes.ContinuousRoundedRectangle
 import com.beatwave.music.ui.utils.appTopBarWindowInsets
 import com.beatwave.music.ui.utils.backToMain
 import com.beatwave.music.ui.utils.safeOpenUri
@@ -424,14 +425,15 @@ fun SettingsScreen(
 @Composable
 private fun SettingsSectionHeader(title: String) {
     Text(
-        text = title,
-        style = MaterialTheme.typography.labelLarge.copy(
-            fontWeight = FontWeight.SemiBold,
+        text = title.uppercase(),
+        style = MaterialTheme.typography.labelMedium.copy(
+            fontWeight = FontWeight.Bold,
+            letterSpacing = androidx.compose.ui.unit.sp(1.1f),
         ),
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
         modifier = Modifier.padding(
-            start = 20.dp,
-            top = 8.dp,
+            start = 24.dp,
+            top = 16.dp,
             bottom = 8.dp,
         ),
     )
@@ -442,15 +444,18 @@ private fun SettingsSection(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val cardShape = ContinuousRoundedRectangle(AppleTokens.CardCorner)
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(AppleTokens.CardCorner))
-            // Row content (title/icon) already reads MaterialTheme.colorScheme —
-            // a fixed-dark AppleTokens.Card background went black-on-black in
-            // light theme (same root cause as Material3SettingsGroup).
-            .background(MaterialTheme.colorScheme.surfaceContainer),
+            .clip(cardShape)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                shape = cardShape,
+            ),
         content = content,
     )
 }
@@ -463,26 +468,32 @@ private fun SettingsNavItem(
     badge: String? = null,
     onClick: () -> Unit,
 ) {
+    val iconShape = ContinuousRoundedRectangle(10.dp)
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 13.dp),
+            .padding(horizontal = 18.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Icon in rounded square
+        // Icon in refined squircle container
         Box(
             modifier = Modifier
-                .size(32.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(iconTint.copy(alpha = 0.15f)),
+                .size(36.dp)
+                .clip(iconShape)
+                .background(iconTint.copy(alpha = 0.16f))
+                .border(
+                    width = 0.5.dp,
+                    color = iconTint.copy(alpha = 0.3f),
+                    shape = iconShape,
+                ),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 painter = icon,
                 contentDescription = null,
                 tint = iconTint,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(19.dp),
             )
         }
 
@@ -491,25 +502,35 @@ private fun SettingsNavItem(
         // Title
         Text(
             text = title,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontWeight = FontWeight.Medium,
+            ),
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
 
         // Badge or chevron
         if (badge != null) {
-            Text(
-                text = badge,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.error,
-            )
+            Box(
+                modifier = Modifier
+                    .clip(ContinuousRoundedRectangle(8.dp))
+                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.18f))
+                    .border(0.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f), ContinuousRoundedRectangle(8.dp))
+                    .padding(horizontal = 8.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = badge,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
             Spacer(Modifier.width(8.dp))
         }
 
         Icon(
             painter = painterResource(R.drawable.chevron_right_px),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
             modifier = Modifier.size(14.dp),
         )
     }

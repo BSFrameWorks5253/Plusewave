@@ -28,7 +28,7 @@ import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.rememberDynamicColorScheme
 import com.materialkolor.score.Score
 
-val DefaultThemeColor = AppleTokens.AccentRed
+val DefaultThemeColor = AppleTokens.PulseCyan
 
 /**
  * The user's chosen accent color, provided app-wide. ONLY the nav bar uses this
@@ -251,49 +251,34 @@ fun ColorScheme.appleSurfaces() = copy(
     surfaceContainerHigh = AppleTokens.Card,
     surfaceContainerHighest = AppleTokens.CardSecondary,
     surfaceVariant = AppleTokens.CardSecondary,
-    // primary/onPrimary set here are only a base — accentText runs afterwards and
-    // gives them the contrast-clamped accent, so controls and link text carry the
-    // theme colour rather than rendering flat white.
-    primary = Color.White,
-    onPrimary = Color.Black,
+    primary = AppleTokens.PulseCyan,
+    onPrimary = Color(0xFF0A0B10),
     primaryContainer = AppleTokens.CardSecondary,
     onPrimaryContainer = Color.White,
+    outline = Color.White.copy(alpha = 0.16f),
+    outlineVariant = Color.White.copy(alpha = 0.08f),
 )
 
 /**
- * Swaps Material's neutral text roles for accent-contrast ones, so every screen
- * picks it up from `MaterialTheme.colorScheme` without being edited.
- *
- * Body text keeps only a whisper of the accent — it has to stay readable over
- * long lists — while secondary text carries it plainly, which is what replaces
- * M3's washed-out grey. Tune the two lerp amounts to taste; they are the whole
- * calibration.
+ * Standardizes text roles for high readability and crisp contrast.
+ * Primary text is clear crisp white/slate, subtitles and metadata are clean
+ * neutral slate (AppleTokens.Metadata), and controls/highlights adopt the theme accent.
  */
 fun ColorScheme.accentText(accent: Color, dark: Boolean): ColorScheme {
-    val body = if (dark) {
-        androidx.compose.ui.graphics.lerp(accent, Color.White, 0.86f)
-    } else {
-        androidx.compose.ui.graphics.lerp(accent, Color.Black, 0.86f)
-    }
-    val secondary = accentTextColor(accent, dark)
+    val body = if (dark) Color(0xFFF8FAFC) else Color(0xFF0F172A)
+    val secondary = if (dark) AppleTokens.Metadata else Color(0xFF64748B)
     return copy(
         onSurface = body,
         onBackground = body,
         onSurfaceVariant = secondary,
         onSecondaryContainer = secondary,
         onTertiaryContainer = secondary,
-        onPrimaryContainer = secondary,
-        onSecondary = secondary,
-        // The subtitle role: the artist name under a song or album title reads
-        // through this everywhere in the app.
+        onPrimaryContainer = if (dark) Color(0xFF0A0B10) else Color.White,
+        onSecondary = if (dark) Color(0xFF0A0B10) else Color.White,
         secondary = secondary,
-        // `primary` is the app's second-largest text/icon role after
-        // onSurfaceVariant — links, selected states, section actions. appleSurfaces
-        // had pinned it to flat white in dark mode, which is most of what still
-        // read as untinted Material. It doubles as a fill (buttons, sliders), so
-        // onPrimary flips to the opposite extreme to keep those legible.
-        primary = secondary,
-        onPrimary = if (dark) Color.Black else Color.White,
+        primary = accent,
+        onPrimary = if (accent.luminance() > 0.45f) Color(0xFF0A0B10) else Color.White,
+        outlineVariant = if (dark) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.08f),
     )
 }
 

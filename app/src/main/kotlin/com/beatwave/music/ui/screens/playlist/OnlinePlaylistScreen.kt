@@ -37,6 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import com.beatwave.music.ui.utils.bounceClick
 import com.beatwave.music.ui.utils.combinedBounceClick
 
@@ -859,12 +860,53 @@ private fun OnlinePlaylistHeader(
                 // Title
                 Text(
                     text = playlist.title,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.5).sp
+                    ),
                     textAlign = TextAlign.Center,
                     color = onTint,
-                    modifier = Modifier.padding(horizontal = 32.dp)
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 24.dp)
                 )
+
+                // Subtitle / Author
+                playlist.author?.name?.let { author ->
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = author,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Medium
+                        ),
+                        color = onTint.copy(alpha = 0.72f),
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+                }
+
+                // Stats / Song Count Pill Badge
+                val songCount = playlist.songCountText ?: if (songs.isNotEmpty()) "${songs.size} songs" else null
+                if (!songCount.isNullOrBlank()) {
+                    Spacer(Modifier.height(10.dp))
+                    Box(
+                        modifier = Modifier
+                            .clip(ContinuousRoundedRectangle(percent = 50))
+                            .background(Color.White.copy(alpha = 0.08f))
+                            .border(0.5.dp, Color.White.copy(alpha = 0.12f), ContinuousRoundedRectangle(percent = 50))
+                            .padding(horizontal = 14.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = songCount,
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = onTint.copy(alpha = 0.85f),
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(24.dp))
