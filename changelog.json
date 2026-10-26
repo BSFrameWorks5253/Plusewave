@@ -1,7 +1,16 @@
 {
-  "description": "Pulse Wave 6.1.7 — Adobe-inspired 'Pw' official app icon, Apple Music / iOS 18 liquid glassmorphism UI, Spotify-like swipe-to-queue and song radio, complete brand refinement eliminating all leftover references, and seamless in-place updates with persistent keystore.",
+  "description": "Pulse Wave 6.1.8 — Complete loading screen overhaul with Apple Music / iOS 18 hardware-accelerated icon zoom & dissolve, elimination of double-activity startup bounce and white screen flashes, and butter-smooth 120 FPS cold boot.",
   "image": "",
   "changelog": [
+    {
+      "title": "Butter-Smooth Apple Music iOS 18 Startup",
+      "items": [
+        "Hardware-accelerated native splash exit animation: seamlessly zooms the Adobe 'Pw' squircle (1.0x to 1.15x) and softly dissolves into the Home screen in 320ms via PathInterpolator curve.",
+        "Permanently eliminated startup glitches: removed the double Activity intent jump from WelcomeActivity on returning launches, pointing Launcher directly to MainActivity.",
+        "Fixed white window background flash by setting windowBackground to luxury obsidian #08080A.",
+        "Zero dropped frames: removed heavy Compose infinite ripple loops and double-scale transformations that previously contested with database initialization."
+      ]
+    },
     {
       "title": "Adobe-Inspired 'Pw' App Icon & Branding",
       "items": [

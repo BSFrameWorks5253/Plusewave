@@ -85,7 +85,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.PulseWave"
+            android:theme="@style/Theme.PulseWave.Starting"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -242,7 +242,7 @@
             android:icon="@mipmap/ic_launcher_glass"
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_glass"
-            android:targetActivity=".WelcomeActivity">
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

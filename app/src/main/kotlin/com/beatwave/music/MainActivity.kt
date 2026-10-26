@@ -142,7 +142,13 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.view.animation.PathInterpolator
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.beatwave.music.constants.IsFirstRunKey
 import androidx.core.util.Consumer
 import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -441,7 +447,6 @@ private class TopBarChromeVisibility {
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     companion object {
-        var hasShownStartupSplash = false
         private const val ACTION_SEARCH = "com.beatwave.music.action.SEARCH"
         private const val ACTION_SEARCH_PULSEWAVE = "com.pulsewave.music.action.SEARCH"
         private const val ACTION_LIBRARY = "com.beatwave.music.action.LIBRARY"
@@ -562,8 +567,37 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
-        runCatching { installSplashScreen() }
+        val splashScreen = runCatching { installSplashScreen() }.getOrNull()
+        splashScreen?.setOnExitAnimationListener { splashScreenViewProvider ->
+            val splashView = splashScreenViewProvider.view
+            val iconView = splashScreenViewProvider.iconView
+
+            // Apple Music / iOS 18 style zoom & dissolve (smooth 1.0x -> 1.15x zoom and fade-out)
+            val scaleX = ObjectAnimator.ofFloat(iconView, View.SCALE_X, 1.0f, 1.15f)
+            val scaleY = ObjectAnimator.ofFloat(iconView, View.SCALE_Y, 1.0f, 1.15f)
+            val iconAlpha = ObjectAnimator.ofFloat(iconView, View.ALPHA, 1.0f, 0.0f)
+            val splashAlpha = ObjectAnimator.ofFloat(splashView, View.ALPHA, 1.0f, 0.0f)
+
+            val animatorSet = AnimatorSet().apply {
+                duration = 320L
+                interpolator = PathInterpolator(0.33f, 1.0f, 0.68f, 1.0f)
+                playTogether(scaleX, scaleY, iconAlpha, splashAlpha)
+                addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        splashScreenViewProvider.remove()
+                    }
+                })
+            }
+            animatorSet.start()
+        }
         super.onCreate(savedInstanceState)
+
+        val isFirstRun = runCatching { dataStore.get(IsFirstRunKey, true) }.getOrDefault(false)
+        if (isFirstRun) {
+            startActivity(Intent(this, WelcomeActivity::class.java))
+            finish()
+            return
+        }
 
         // Cached Supabase credentials, read after the splash is up.
         try {
@@ -842,18 +876,7 @@ class MainActivity : ComponentActivity() {
                         }
                     )
             ) {
-                // App Startup Animated Splash Overlay & Opening Entrance Animation
-                var showAppSplash by remember { mutableStateOf(!hasShownStartupSplash) }
-                val appEntranceScale by animateFloatAsState(
-                    targetValue = if (showAppSplash) 0.95f else 1.0f,
-                    animationSpec = tween(durationMillis = 550, easing = FastOutSlowInEasing),
-                    label = "appEntranceScale"
-                )
-                val appEntranceAlpha by animateFloatAsState(
-                    targetValue = if (showAppSplash) 0f else 1.0f,
-                    animationSpec = tween(durationMillis = 450, easing = FastOutSlowInEasing),
-                    label = "appEntranceAlpha"
-                )
+
 
                 val focusManager = LocalFocusManager.current
                 val density = LocalDensity.current
@@ -2120,11 +2143,6 @@ class MainActivity : ComponentActivity() {
                         },
                         modifier = Modifier
                             .fillMaxSize()
-                            .graphicsLayer {
-                                scaleX = appEntranceScale
-                                scaleY = appEntranceScale
-                                alpha = appEntranceAlpha
-                            }
                             .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
 
                     ) {
@@ -2728,15 +2746,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // App Startup Animated Splash Overlay
-                if (showAppSplash) {
-                    AppStartupSplashScreen(
-                        onDismiss = {
-                            hasShownStartupSplash = true
-                            showAppSplash = false
-                        }
-                    )
-                }
+
 
             }
         }
@@ -2833,204 +2843,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-    @Composable
-    private fun AppStartupSplashScreen(
-        onDismiss: () -> Unit
-    ) {
-        val currentOnDismiss by androidx.compose.runtime.rememberUpdatedState(onDismiss)
-        var dismissed by remember { mutableStateOf(false) }
-        val safeDismiss = remember {
-            {
-                if (!dismissed) {
-                    dismissed = true
-                    currentOnDismiss()
-                }
-            }
-        }
-
-        var isVisible by remember { mutableStateOf(true) }
-        var emblemEntered by remember { mutableStateOf(false) }
-
-        LaunchedEffect(Unit) {
-            emblemEntered = true
-            delay(850L)
-            isVisible = false
-            delay(450L)
-            safeDismiss()
-        }
-
-        val alphaAnim by animateFloatAsState(
-            targetValue = if (isVisible) 1f else 0f,
-            animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
-            label = "splashAlpha",
-            finishedListener = { if (!isVisible) safeDismiss() }
-        )
-
-        val scaleAnim by animateFloatAsState(
-            targetValue = if (isVisible) 1f else 1.15f,
-            animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
-            label = "splashScale"
-        )
-
-        val emblemScale by animateFloatAsState(
-            targetValue = if (emblemEntered) 1f else 0.72f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessMediumLow
-            ),
-            label = "emblemScale"
-        )
-        val emblemAlpha by animateFloatAsState(
-            targetValue = if (emblemEntered) 1f else 0f,
-            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
-            label = "emblemAlpha"
-        )
-
-        val infiniteTransition = rememberInfiniteTransition(label = "pulseRing")
-        val pulseScale1 by infiniteTransition.animateFloat(
-            initialValue = 0.95f,
-            targetValue = 1.38f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1200, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart
-            ),
-            label = "pulse1"
-        )
-        val pulseAlpha1 by infiniteTransition.animateFloat(
-            initialValue = 0.6f,
-            targetValue = 0f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1200, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart
-            ),
-            label = "pulseAlpha1"
-        )
-
-        val pulseScale2 by infiniteTransition.animateFloat(
-            initialValue = 0.95f,
-            targetValue = 1.65f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1600, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart
-            ),
-            label = "pulse2"
-        )
-        val pulseAlpha2 by infiniteTransition.animateFloat(
-            initialValue = 0.4f,
-            targetValue = 0f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1600, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart
-            ),
-            label = "pulseAlpha2"
-        )
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    alpha = alphaAnim
-                    scaleX = scaleAnim
-                    scaleY = scaleAnim
-                }
-                .background(MaterialTheme.colorScheme.background)
-                .clickable(
-                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                    indication = null
-                ) {
-                    isVisible = false
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            // Expanding Sonic Ripples
-            Box(
-                modifier = Modifier
-                    .size(150.dp)
-                    .graphicsLayer {
-                        scaleX = pulseScale2
-                        scaleY = pulseScale2
-                        alpha = pulseAlpha2 * emblemAlpha
-                    }
-                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
-            )
-            Box(
-                modifier = Modifier
-                    .size(150.dp)
-                    .graphicsLayer {
-                        scaleX = pulseScale1
-                        scaleY = pulseScale1
-                        alpha = pulseAlpha1 * emblemAlpha
-                    }
-                    .border(2.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
-            )
-
-            // Center BeatWave Emblem Card
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.graphicsLayer {
-                    scaleX = emblemScale
-                    scaleY = emblemScale
-                    alpha = emblemAlpha
-                }
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(120.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(120.dp)
-                            .background(
-                                brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                                    colors = listOf(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
-                                        androidx.compose.ui.graphics.Color.Transparent
-                                    )
-                                ),
-                                shape = CircleShape
-                            )
-                    )
-                    Surface(
-                        shape = RoundedCornerShape(26.dp),
-                        color = androidx.compose.ui.graphics.Color.Transparent,
-                        shadowElevation = 14.dp,
-                        modifier = Modifier.size(104.dp)
-                    ) {
-                        Image(
-                            painter = painterResource(com.beatwave.music.R.drawable.pulsewave_logo),
-                            contentDescription = "Pulse Wave Logo",
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(26.dp)),
-                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(24.dp))
-
-                Text(
-                    text = "PULSE WAVE",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 4.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
-
-                Spacer(Modifier.height(6.dp))
-
-                Text(
-                    text = "SOUND IN MOTION",
-                    style = MaterialTheme.typography.labelSmall,
-                    letterSpacing = 2.sp,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                )
-            }
-        }
-    }
-
 
     @SuppressLint("ObsoleteSdkInt")
     private fun setSystemBarAppearance(isDark: Boolean) {
