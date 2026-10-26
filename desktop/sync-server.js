@@ -181,6 +181,24 @@ class SyncServer {
                 timestamp: Date.now()
             });
         });
+
+        // Pulse Connect — Remote Desktop Playback Control
+        this.app.get('/api/playback/status', (req, res) => {
+            res.json({
+                success: true,
+                device: os.hostname(),
+                playbackState: this.currentPlaybackState || { isPlaying: false, currentSong: null, volume: 1.0 }
+            });
+        });
+
+        this.app.post('/api/playback/control', (req, res) => {
+            const { action, value } = req.body || {};
+            console.log(`[Pulse Connect] Remote playback command received: ${action}`, value || '');
+            if (this.onPlaybackControlCallback) {
+                this.onPlaybackControlCallback(action, value);
+            }
+            res.json({ success: true, action, message: `Command ${action} received` });
+        });
     }
 
     start() {

@@ -189,4 +189,25 @@ class DesktopSyncManager @Inject constructor(
                 )
             }
         }
+
+    suspend fun sendRemotePlaybackCommand(
+        host: String,
+        action: String,
+        value: Any? = null,
+        port: Int = 5253,
+    ): Result<Boolean> = withContext(Dispatchers.IO) {
+        runCatching {
+            val cleanHost = host.trim().removePrefix("http://").removePrefix("https://").substringBefore(":")
+            val url = "http://$cleanHost:$port/api/playback/control"
+            val json = JSONObject().apply {
+                put("action", action)
+                if (value != null) put("value", value)
+            }
+            val body = json.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+            val request = Request.Builder().url(url).post(body).build()
+            client.newCall(request).execute().use { response ->
+                response.isSuccessful
+            }
+        }
+    }
 }

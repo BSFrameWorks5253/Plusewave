@@ -75,6 +75,29 @@ async function init() {
             }
             showNotification('⚡ Playlists Synced with Android Phone!');
         });
+
+        if (window.pulseApi.onRemoteControl) {
+            window.pulseApi.onRemoteControl(({ action, value }) => {
+                console.log('[Pulse Connect Remote] Command:', action, value);
+                showNotification('📡 Remote ' + action.toUpperCase() + ' from Mobile Phone');
+                if (action === 'play') {
+                    if (currentPlaylist && currentPlaylist.songs.length > 0) {
+                        if (currentSongIndex < 0) playTrack(0);
+                        else audio.play();
+                    }
+                } else if (action === 'pause') {
+                    audio.pause();
+                } else if (action === 'next') {
+                    playNext();
+                } else if (action === 'previous') {
+                    playPrev();
+                } else if (action === 'volume' && value !== undefined) {
+                    const vol = Math.max(0, Math.min(1, parseFloat(value)));
+                    audio.volume = vol;
+                    if (volumeSlider) volumeSlider.value = vol * 100;
+                }
+            });
+        }
     }
 }
 

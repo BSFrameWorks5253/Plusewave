@@ -42,6 +42,12 @@ app.whenReady().then(async () => {
         }
     });
 
+    syncServer.onPlaybackControlCallback = (action, value) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('remote-playback-control', { action, value });
+        }
+    };
+
     try {
         await syncServer.start();
     } catch (e) {

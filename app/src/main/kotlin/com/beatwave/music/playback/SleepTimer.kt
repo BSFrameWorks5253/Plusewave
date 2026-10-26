@@ -40,8 +40,26 @@ class SleepTimer(
             triggerTime = System.currentTimeMillis() + minute.minutes.inWholeMilliseconds
             sleepTimerJob =
                 scope.launch {
-                    delay(minute.minutes)
+                    val totalDurationMs = minute.minutes.inWholeMilliseconds
+                    val fadeDurationMs = 60_000L.coerceAtMost(totalDurationMs / 2)
+                    val preFadeMs = totalDurationMs - fadeDurationMs
+
+                    if (preFadeMs > 0) {
+                        delay(preFadeMs)
+                    }
+
+                    // Smart Gentle Volume Fade-Out: smoothly dims down volume over the final 60 seconds
+                    val steps = 30
+                    val stepDelayMs = fadeDurationMs / steps
+                    val originalVolume = player.volume
+                    for (step in 1..steps) {
+                        val fraction = 1.0f - (step.toFloat() / steps.toFloat())
+                        player.volume = (originalVolume * fraction).coerceIn(0f, 1f)
+                        delay(stepDelayMs)
+                    }
+
                     player.pause()
+                    player.volume = originalVolume // Restore volume for next session
                     triggerTime = -1L
                 }
         }

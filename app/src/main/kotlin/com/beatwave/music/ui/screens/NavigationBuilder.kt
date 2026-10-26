@@ -546,6 +546,10 @@ fun NavGraphBuilder.navigationBuilder(
         WrappedScreen(navController)
     }
 
+    sharedComposable("stats") {
+        StatsScreen(navController)
+    }
+
     sharedComposable("ambient_mode") {
         AmbientModeScreen(navController)
     }

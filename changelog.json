@@ -1,30 +1,35 @@
 {
-  "description": "Pulse Wave 6.1.10 — Official Adobe CC Design 1 App Icon with uncompromised 'Pw' typography and integrated precision digital audio waveform baseline, dynamic UI sync, Apple Music Light Mode, and cute animated Day/Night switch.",
+  "description": "Pulse Wave 6.1.11 — Flagship Upgrade: DJ Crossfade Transitions, Smart Sleep Timer 60s Fade-Out, Lossless Audio Badges, Pulse Connect Remote Control, One-Tap Smart Cache, and Vinyl Turntable Widgets.",
   "image": "",
   "changelog": [
     {
-      "title": "Official Adobe CC Music App Icon (Design 1)",
+      "title": "Audiophile & Playback Polish",
       "items": [
-        "Authentic Adobe Typography: Clean, bold, uncompromised 'Pw' typography inside a flat squircle container (#14141D) with a thin pastel lavender border.",
-        "Precision Audio Wave Baseline: Integrated razor-sharp digital music frequency pulse wave directly below the letters, unmistakably identifying Pulse Wave as a professional music app.",
-        "Full Adaptive Icon Suite: Baked across all mipmap densities (mdpi to xxxhdpi) in 5 soft pastel colorways (Soft Lavender, Soft Sky, Soft Sage, Soft Rose, and Porcelain Light).",
-        "Android 13+ Themed Icons: Updated vector monochrome icon (ic_launcher_mono.xml) with the Adobe container, Pw glyphs, and audio wave baseline for native launcher theming.",
-        "In-App Dynamic Logo: Responsive Compose PulseWaveLogo component with live preview in Theme Settings and About screen."
+        "DJ Blend Crossfade: Enabled by default with smooth 4s gapless transitions between tracks for continuous Spotify and Apple Music style flow.",
+        "Smart Sleep Timer Gentle Fade-Out: Over the final 60 seconds (or half remaining time), music volume smoothly dims across 30 micro-steps from 100% to silent before pausing, ensuring peaceful sleep.",
+        "Audio Stream & Codec Badges: Lossless FLAC, 320k Opus, and AAC badges displayed cleanly alongside sleep timer countdown with instant access to full stream metadata."
       ]
     },
     {
-      "title": "Apple Music Light Mode & Fluid Transitions",
+      "title": "Pulse Connect & Listening Delights",
       "items": [
-        "Apple Light Mode Surfaces: Clean, luminous porcelain and snow-white surfaces (#F8F9FA, #FFFFFF) with crisp slate outlines and typography.",
-        "Cute Animated Theme Switch: Smiling golden sun with rotating sunbeams and floating cloud vs sleepy crescent moon with blushing cheeks and twinkling stars.",
-        "Fluid Theme Morphing: Smooth physics-based spring color interpolation across all surfaces, cards, and text when toggling between Day and Night."
+        "Pulse Connect Remote Control: Control your PulseWave Desktop PC app right from your phone over local Wi-Fi (Play/Pause, Skip Next/Prev, and live Volume slider).",
+        "Pulse Wrapped & Stats: Reconnected in-app listening statistics route to review your top artists, tracks, and listening milestones.",
+        "Apple Music Syllable Karaoke Lyrics: Kinetic word-by-word active glow and smooth gradient animations active out-of-the-box."
       ]
     },
     {
-      "title": "Butter-Smooth Apple Music iOS 18 Startup",
+      "title": "Smart Offline & Data Saving",
       "items": [
-        "Hardware-accelerated native splash exit animation: seamlessly zooms the Adobe 'Pw' squircle (1.0x to 1.15x) and softly dissolves into the Home screen in 320ms via PathInterpolator curve.",
-        "Zero dropped frames: removed heavy Compose infinite ripple loops and double-scale transformations that previously contested with database initialization."
+        "One-Tap Smart Cache: Instant one-tap button in Storage Settings to pre-cache all your liked songs in the background for offline listening.",
+        "Visual Storage Breakdown: Monitor exact space occupied by downloaded songs, streaming audio cache, and album art."
+      ]
+    },
+    {
+      "title": "Android Home Screen Widgets",
+      "items": [
+        "Vinyl Record Turntable Widget: Authentic high-fidelity turntable with album art label, vinyl rim, concentric audio grooves, and center spindle hole.",
+        "Status Bar Waveform Visualizer: Razor-sharp audio frequency pulse wave in notifications."
       ]
     }
   ]

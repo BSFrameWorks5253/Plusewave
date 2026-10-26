@@ -37,6 +37,8 @@ class DesktopSyncViewModel @Inject constructor(
         val message: String? = null,
         val error: String? = null,
         val syncedPlaylistsCount: Int = 0,
+        val remotePlaying: Boolean = false,
+        val remoteVolume: Float = 0.8f,
     )
 
     private val _uiState = MutableStateFlow(UiState())
@@ -110,6 +112,21 @@ class DesktopSyncViewModel @Inject constructor(
                         isSyncing = false,
                         error = "Sync Failed: ${err.localizedMessage ?: "Unknown error"}. Ensure both devices are on the same Wi-Fi network.",
                     )
+                }
+            }
+        }
+    }
+
+    fun sendRemoteCommand(action: String, value: Any? = null) {
+        viewModelScope.launch {
+            val res = syncManager.sendRemotePlaybackCommand(_uiState.value.host, action, value, _uiState.value.port)
+            res.onSuccess {
+                when (action) {
+                    "play" -> _uiState.update { it.copy(remotePlaying = true) }
+                    "pause" -> _uiState.update { it.copy(remotePlaying = false) }
+                    "volume" -> if (value is Number) {
+                        _uiState.update { it.copy(remoteVolume = value.toFloat()) }
+                    }
                 }
             }
         }

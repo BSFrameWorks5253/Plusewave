@@ -236,6 +236,120 @@ fun DesktopSyncScreen(
             }
         }
 
+        // Pulse Connect Remote Playback Card
+        AnimatedVisibility(visible = state.isConnected) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(ContinuousRoundedRectangle(20.dp))
+                    .background(Color(0xFF141418))
+                    .border(0.5.dp, Color(0xFF8B5CF6).copy(alpha = 0.35f), ContinuousRoundedRectangle(20.dp))
+                    .padding(20.dp),
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column {
+                            Text(
+                                text = "PULSE CONNECT REMOTE",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.8.sp,
+                                color = Color(0xFF8B5CF6),
+                            )
+                            Text(
+                                text = "Control PC Playback Live",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White,
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(ContinuousRoundedRectangle(8.dp))
+                                .background(Color(0x208B5CF6))
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                        ) {
+                            Text("WI-FI ACTIVE", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF8B5CF6))
+                        }
+                    }
+
+                    // Transport Buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        androidx.compose.material3.FilledIconButton(
+                            onClick = { viewModel.sendRemoteCommand("previous") },
+                            colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(
+                                containerColor = Color(0xFF222228),
+                                contentColor = Color.White,
+                            ),
+                            modifier = Modifier.size(48.dp),
+                        ) {
+                            Icon(painterResource(R.drawable.skip_previous), contentDescription = "Previous")
+                        }
+
+                        androidx.compose.material3.FilledIconButton(
+                            onClick = {
+                                viewModel.sendRemoteCommand(if (state.remotePlaying) "pause" else "play")
+                            },
+                            colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(
+                                containerColor = Color(0xFF8B5CF6),
+                                contentColor = Color.White,
+                            ),
+                            modifier = Modifier.size(56.dp),
+                        ) {
+                            Icon(
+                                painterResource(if (state.remotePlaying) R.drawable.pause else R.drawable.play),
+                                contentDescription = if (state.remotePlaying) "Pause" else "Play",
+                                modifier = Modifier.size(28.dp),
+                            )
+                        }
+
+                        androidx.compose.material3.FilledIconButton(
+                            onClick = { viewModel.sendRemoteCommand("next") },
+                            colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(
+                                containerColor = Color(0xFF222228),
+                                contentColor = Color.White,
+                            ),
+                            modifier = Modifier.size(48.dp),
+                        ) {
+                            Icon(painterResource(R.drawable.skip_next), contentDescription = "Next")
+                        }
+                    }
+
+                    // Volume Control
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("Desktop Volume", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
+                            Text("${(state.remoteVolume * 100).toInt()}%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF8B5CF6))
+                        }
+                        androidx.compose.material3.Slider(
+                            value = state.remoteVolume,
+                            onValueChange = { newVol ->
+                                viewModel.sendRemoteCommand("volume", newVol)
+                            },
+                            valueRange = 0f..1f,
+                            colors = androidx.compose.material3.SliderDefaults.colors(
+                                thumbColor = Color(0xFF8B5CF6),
+                                activeTrackColor = Color(0xFF8B5CF6),
+                                inactiveTrackColor = Color.White.copy(alpha = 0.15f),
+                            ),
+                        )
+                    }
+                }
+            }
+        }
+
         // Instructions Card
         Box(
             modifier = Modifier

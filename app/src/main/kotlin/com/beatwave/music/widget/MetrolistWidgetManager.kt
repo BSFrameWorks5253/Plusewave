@@ -481,6 +481,72 @@ class vivimusicWidgetManager @Inject constructor(
         return views
     }
 
+    private fun createTurntableVinylRecord(source: Bitmap): Bitmap {
+        val size = minOf(source.width, source.height).coerceAtLeast(360)
+        val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+        val radius = size / 2f
+
+        // 1. Sleek vinyl black base
+        val vinylPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#121215")
+        }
+        canvas.drawCircle(radius, radius, radius, vinylPaint)
+
+        // 2. Concentric audio grooves
+        val groovePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = Color.argb(25, 255, 255, 255)
+            strokeWidth = 1.2f
+        }
+        val labelRadius = radius * 0.62f
+        var r = labelRadius + 4f
+        while (r < radius - 6f) {
+            canvas.drawCircle(radius, radius, r, groovePaint)
+            r += 10f
+        }
+
+        // 3. Center album art label
+        val squareSource = if (source.width != source.height) {
+            val minDim = minOf(source.width, source.height)
+            Bitmap.createBitmap(source, (source.width - minDim) / 2, (source.height - minDim) / 2, minDim, minDim)
+        } else source
+
+        val artPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            isFilterBitmap = true
+            shader = BitmapShader(squareSource, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        }
+        val matrix = android.graphics.Matrix().apply {
+            val s = (labelRadius * 2f) / squareSource.width
+            setScale(s, s)
+            postTranslate(radius - labelRadius, radius - labelRadius)
+        }
+        artPaint.shader.setLocalMatrix(matrix)
+        canvas.drawCircle(radius, radius, labelRadius, artPaint)
+
+        // 4. Outer rim highlight on label
+        val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = Color.argb(40, 255, 255, 255)
+            strokeWidth = 2f
+        }
+        canvas.drawCircle(radius, radius, labelRadius, rimPaint)
+
+        // 5. Center spindle hole
+        val spindleHolePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#08080A")
+        }
+        canvas.drawCircle(radius, radius, radius * 0.10f, spindleHolePaint)
+        val spindleRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = Color.argb(180, 220, 220, 230)
+            strokeWidth = 2.5f
+        }
+        canvas.drawCircle(radius, radius, radius * 0.10f, spindleRingPaint)
+
+        return output
+    }
+
     private fun createTurntableRemoteViews(
         circularAlbumArt: Bitmap?,
         isPlaying: Boolean,
@@ -488,13 +554,13 @@ class vivimusicWidgetManager @Inject constructor(
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_turntable)
 
-        // Set circular album art - create circular default icon if no album art
-        if (circularAlbumArt != null) {
-            views.setImageViewBitmap(R.id.widget_turntable_album_art, circularAlbumArt)
+        // Render authentic vinyl record turntable with grooves and center art label
+        val vinylRecord = if (circularAlbumArt != null) {
+            createTurntableVinylRecord(circularAlbumArt)
         } else {
-            // Load and make the default icon circular
-            views.setImageViewBitmap(R.id.widget_turntable_album_art, getCircularDefaultIcon())
+            createTurntableVinylRecord(getCircularDefaultIcon())
         }
+        views.setImageViewBitmap(R.id.widget_turntable_album_art, vinylRecord)
 
         val playPauseIcon = if (isPlaying) R.drawable.ic_widget_pause else R.drawable.ic_widget_play
         views.setImageViewResource(R.id.widget_turntable_play_pause, playPauseIcon)

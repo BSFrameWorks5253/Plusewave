@@ -9,6 +9,9 @@ contextBridge.exposeInMainWorld('pulseApi', {
     onPlaylistsUpdated: (callback) => {
         ipcRenderer.on('playlists-updated', (event, playlists) => callback(playlists));
     },
+    onRemoteControl: (callback) => {
+        ipcRenderer.on('remote-playback-control', (event, data) => callback(data));
+    },
     minimizeWindow: () => ipcRenderer.send('minimize-window'),
     maximizeWindow: () => ipcRenderer.send('maximize-window'),
     closeWindow: () => ipcRenderer.send('close-window')

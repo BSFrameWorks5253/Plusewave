@@ -928,7 +928,7 @@ class MusicService :
 
         combine(
             dataStore.data.map { it[AudioOffload] ?: false },
-            dataStore.data.map { it[CrossfadeEnabledKey] ?: false }
+            dataStore.data.map { it[CrossfadeEnabledKey] ?: true }
         ) { offloadPref, crossfadeEnabled ->
              // Force disable offload if crossfade is enabled to prevent volume ramp issues
              if (crossfadeEnabled) false else offloadPref
@@ -1046,8 +1046,8 @@ class MusicService :
         combine(
             dataStore.data.map { prefs ->
                 Triple(
-                    prefs[CrossfadeEnabledKey] ?: false,
-                    prefs[CrossfadeDurationKey] ?: 5f,
+                    prefs[CrossfadeEnabledKey] ?: true,
+                    prefs[CrossfadeDurationKey] ?: 4f,
                     prefs[CrossfadeGaplessKey] ?: true
                 )
             },

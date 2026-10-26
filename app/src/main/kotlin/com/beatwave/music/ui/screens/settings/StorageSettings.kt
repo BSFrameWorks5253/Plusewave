@@ -5,6 +5,14 @@
 
 package com.beatwave.music.ui.screens.settings
 
+import android.widget.Toast
+import com.beatwave.music.LocalDownloadUtil
+import com.beatwave.music.playback.DownloadTarget
+import com.beatwave.music.playback.downloadSongs
+import com.beatwave.music.playback.shouldQueueDownload
+import androidx.compose.runtime.collectAsState
+import androidx.media3.common.util.UnstableApi
+
 import com.beatwave.music.ui.utils.appTopBarWindowInsets
 import com.beatwave.music.ui.utils.appTopBarWindowInsets
 import androidx.compose.animation.core.animateFloatAsState
@@ -130,7 +138,7 @@ import okio.ByteString.Companion.encodeUtf8
 import com.beatwave.music.ui.utils.appTopBarWindowInsets
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalCoilApi::class, ExperimentalMaterial3Api::class, DelicateCoilApi::class)
+@OptIn(ExperimentalCoilApi::class, ExperimentalMaterial3Api::class, DelicateCoilApi::class, UnstableApi::class)
 @Composable
 fun StorageSettings(
     navController: NavController,
@@ -141,6 +149,9 @@ fun StorageSettings(
     val imageDiskCache = context.imageLoader.diskCache ?: return
     val playerCache = LocalPlayerConnection.current?.service?.playerCache ?: return
     val downloadCache = LocalPlayerConnection.current?.service?.downloadCache ?: return
+    val downloadUtil = LocalDownloadUtil.current
+    val allDownloads by downloadUtil.downloads.collectAsState()
+    val likedSongs by database.likedSongsByCreateDateAsc().collectAsState(initial = emptyList())
 
     val coroutineScope = rememberCoroutineScope()
     val songCacheString = stringResource(R.string.song_cache).lowercase()
@@ -355,6 +366,30 @@ fun StorageSettings(
                 )
             )
         )
+        Material3SettingsGroup(
+            title = "Smart Cache & Offline",
+            items = listOf(
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.favorite),
+                    title = { Text("Smart Cache Liked Songs") },
+                    description = {
+                        val completedCount = likedSongs.count { allDownloads[it.id]?.state == androidx.media3.exoplayer.offline.Download.STATE_COMPLETED }
+                        Text("$completedCount of ${likedSongs.size} favorites cached offline • Tap to cache all")
+                    },
+                    onClick = {
+                        val uncached = likedSongs.filter { shouldQueueDownload(allDownloads[it.id]?.state) }
+                        if (uncached.isNotEmpty()) {
+                            val targets = uncached.map { DownloadTarget(it.id, it.song.title) }
+                            downloadSongs(context, targets, allDownloads)
+                            Toast.makeText(context, "Caching ${targets.size} liked songs in background...", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "All liked songs are already cached offline!", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
+            )
+        )
+
         Material3SettingsGroup(
             title = stringResource(R.string.storage),
             items = listOf(

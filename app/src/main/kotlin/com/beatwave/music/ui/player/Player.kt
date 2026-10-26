@@ -2569,157 +2569,73 @@ fun BottomSheetPlayer(
                     overflow = TextOverflow.Ellipsis,
                 )
 
-                if (showAudioQualityBadge || sleepTimerEnabled) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(TextBackgroundColor.copy(alpha = 0.08f))
-                            .border(
-                                width = 0.5.dp,
-                                color = TextBackgroundColor.copy(alpha = 0.12f),
-                                shape = RoundedCornerShape(4.dp)
-                            )
-                            .clickable {
-                                if (sleepTimerEnabled) {
-                                    showSleepTimerDialog = true
-                                } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    if (sleepTimerEnabled) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(TextBackgroundColor.copy(alpha = 0.12f))
+                                .border(
+                                    width = 0.5.dp,
+                                    color = TextBackgroundColor.copy(alpha = 0.20f),
+                                    shape = RoundedCornerShape(4.dp)
+                                )
+                                .clickable { showSleepTimerDialog = true }
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.timer),
+                                    contentDescription = null,
+                                    tint = TextBackgroundColor.copy(alpha = 0.85f),
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Text(
+                                    text = makeTimeString(sleepTimerTimeLeft.coerceAtLeast(0)),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.0.sp
+                                    ),
+                                    color = TextBackgroundColor.copy(alpha = 0.85f),
+                                    maxLines = 1,
+                                )
+                            }
+                        }
+                    }
+
+                    if (showAudioQualityBadge) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(TextBackgroundColor.copy(alpha = 0.08f))
+                                .border(
+                                    width = 0.5.dp,
+                                    color = TextBackgroundColor.copy(alpha = 0.12f),
+                                    shape = RoundedCornerShape(4.dp)
+                                )
+                                .clickable {
                                     mediaMetadata.id.let {
                                         bottomSheetPageState.show {
                                             ShowMediaInfo(it)
                                         }
                                     }
                                 }
-                            }
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    ) {
-                        AnimatedContent(
-                            targetState = sleepTimerEnabled,
-                            transitionSpec = {
-                                fadeIn(animationSpec = tween(300)) togetherWith
-                                        fadeOut(animationSpec = tween(300))
-                            },
-                            label = "QualityTimerSwitcher"
-                        ) { isTimerActive ->
-                            if (isTimerActive) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.timer),
-                                        contentDescription = null,
-                                        tint = TextBackgroundColor.copy(alpha = 0.8f),
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                    Text(
-                                        text = makeTimeString(sleepTimerTimeLeft.coerceAtLeast(0)),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            letterSpacing = 1.5.sp
-                                        ),
-                                        color = TextBackgroundColor.copy(alpha = 0.8f),
-                                        maxLines = 1,
-                                    )
-                                }
-                            } else {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    // An infiniteRepeatable never finishes, so this decorative
-                                    // sweep kept awaiting a frame for as long as the player was
-                                    // on screen — the whole app redrew every vsync, paused
-                                    // included. Spin it only while something is actually playing.
-                                    val animatedRotation = if (isPlaying) {
-                                        val infiniteTransition =
-                                            rememberInfiniteTransition(label = "QualityIconTransition")
-                                        infiniteTransition.animateFloat(
-                                            initialValue = 0f,
-                                            targetValue = 360f,
-                                            animationSpec = infiniteRepeatable(
-                                                animation = tween(2000, easing = LinearEasing),
-                                                repeatMode = RepeatMode.Restart
-                                            ),
-                                            label = "QualityIconRotation"
-                                        )
-                                    } else {
-                                        remember { mutableFloatStateOf(0f) }
-                                    }
-
-                                    val iconBrush = Brush.sweepGradient(
-                                        colors = listOf(
-                                            Color.Transparent,
-                                            TextBackgroundColor.copy(alpha = 1.0f),
-                                            Color.Transparent
-                                        )
-                                    )
-
-                                    Icon(
-                                        painter = painterResource(R.drawable.stream_old_player),
-                                        contentDescription = null,
-                                        tint = Color.Unspecified,
-                                        modifier = Modifier
-                                            .size(12.dp)
-                                            .graphicsLayer(alpha = 0.99f)
-                                            .drawWithCache {
-                                                onDrawWithContent {
-                                                    drawContent()
-                                                    rotate(animatedRotation.value) {
-                                                        drawRect(iconBrush, blendMode = BlendMode.SrcIn)
-                                                    }
-                                                }
-                                            }
-                                    )
-                                    Text(
-                                        text = run {
-                                            val format = playerFormat ?: currentFormat?.let {
-                                                // Fallback to DB info if live format not yet available
-                                                androidx.media3.common.Format.Builder()
-                                                    .setSampleMimeType(it.mimeType)
-                                                    .setCodecs(it.codecs)
-                                                    .setAverageBitrate(it.bitrate ?: 0)
-                                                    .setSampleRate(it.sampleRate ?: 0)
-                                                    .build()
-                                            }
-                                            
-                                            val codecLabel = format?.let { f ->
-                                                val mime = f.sampleMimeType?.lowercase() ?: ""
-                                                val codecs = f.codecs?.lowercase() ?: ""
-                                                when {
-                                                    mime.contains("flac") || codecs.contains("flac") -> "FLAC"
-                                                    mime.contains("opus") || codecs.contains("opus") -> "OPUS"
-                                                    mime.contains("mp4a") || mime.contains("aac") || codecs.contains("mp4a") || codecs.contains("aac") -> "AAC"
-                                                    mime.contains("mp3") || mime.contains("mpeg") || codecs.contains("mp3") || codecs.contains("mpeg") -> "MP3"
-                                                    mime.contains("vorbis") || codecs.contains("vorbis") -> "OGG"
-                                                    mime.contains("webm") || codecs.contains("webm") -> "WEBM"
-                                                    else -> null
-                                                }
-                                            }
-                                            
-                                            val bitrate = format?.bitrate?.takeIf { it > 0 } ?: format?.averageBitrate?.takeIf { it > 0 }
-                                            val bitrateLabel = bitrate?.let { "${it / 1000}kbps" }
-                                            
-                                            val sampleRate = format?.sampleRate?.takeIf { it > 0 }
-                                            val sampleRateLabel = sampleRate?.let { "${it / 1000}.${(it % 1000) / 100}kHz" }
-
-                                            buildString {
-                                                append(codecLabel ?: if (isLosslessStream) "LOSSLESS" else "AUTO")
-                                                if (bitrateLabel != null) append(" • $bitrateLabel")
-                                                if (sampleRateLabel != null) append(" • $sampleRateLabel")
-                                            }
-                                        },
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            letterSpacing = 1.0.sp
-                                        ),
-                                        color = TextBackgroundColor.copy(alpha = 0.8f),
-                                        maxLines = 1,
-                                    )
-                                }
-                            }
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            AudioQualityBadge(
+                                playerConnection = playerConnection,
+                                tint = TextBackgroundColor,
+                                isPlaying = isPlaying,
+                            )
                         }
                     }
                 }
