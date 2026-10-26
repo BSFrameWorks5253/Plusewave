@@ -110,6 +110,9 @@ import com.beatwave.music.ui.utils.appTopBarWindowInsets
 import com.beatwave.music.constants.AppIconChoiceKey
 import com.beatwave.music.constants.SelectedThemeColorKey
 import com.beatwave.music.ui.theme.DefaultThemeColor
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.isSystemInDarkTheme
 import com.beatwave.music.utils.AppIconManager
 import com.beatwave.music.constants.DarkModeKey
 import com.beatwave.music.constants.PureBlackKey
