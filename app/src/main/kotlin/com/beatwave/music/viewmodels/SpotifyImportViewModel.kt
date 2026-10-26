@@ -183,13 +183,26 @@ class SpotifyImportViewModel @Inject constructor(
                     runCatching { refreshWithCookies(session.spDc, session.spKey.orEmpty()) }
                         .onSuccess { loadSources() }
                         .onFailure { error ->
-                            logout()
-                            _uiState.update {
-                                it.copy(
-                                    isAuthenticated = false,
-                                    isLoading = false,
-                                    errorMessage = "Session expired. Please log in again."
-                                )
+                            val isAuthFailure = error.message?.contains("401") == true || error.message?.contains("Unauthorized", ignoreCase = true) == true
+                            if (isAuthFailure) {
+                                logout()
+                                _uiState.update {
+                                    it.copy(
+                                        isAuthenticated = false,
+                                        isLoading = false,
+                                        errorMessage = "Session expired. Please log in again."
+                                    )
+                                }
+                            } else {
+                                // Network / transient failure: keep session active so user is never logged out unexpectedly
+                                _uiState.update {
+                                    it.copy(
+                                        isAuthenticated = true,
+                                        accountName = session.accountName.orEmpty(),
+                                        accountAvatarUrl = session.accountAvatarUrl,
+                                        isLoading = false
+                                    )
+                                }
                             }
                         }
                 }

@@ -52,12 +52,10 @@ captures/
 .idea/navEditor.xml
 
 # Keystore files
-# Uncomment the following lines if you do not want to check your keystore files in.
+# Whitelist persistent-debug.keystore so GitHub Actions and all builds share the same signature for seamless updates
 *.jks
 *.keystore
-app/persistent-debug.keystore
-# ^^^ think twice before removing this gitignore, it became so FUCKING
-# annoying to unstage this file every time i want to commit stuff
+!app/persistent-debug.keystore
 
 # External native build folder generated in Android Studio 2.2 and later
 .externalNativeBuild
@@ -111,6 +109,7 @@ keystore/
 app/keystore/
 *.jks
 *.keystore
+!app/persistent-debug.keystore
 
 # Local-only notes and design references
 *.md

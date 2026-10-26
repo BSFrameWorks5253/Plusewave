@@ -272,8 +272,7 @@ class App : Application(), SingletonImageLoader.Factory {
                     try {
                         YouTube.cookie = cookie?.takeIf { it.isNotBlank() && it != "null" }
                     } catch (e: Exception) {
-                        Timber.e(e, "Could not parse cookie. Clearing existing cookie.")
-                        forgetAccount(this@App)
+                        Timber.e(e, "Could not parse cookie: ${e.message}")
                     }
                 }
         }

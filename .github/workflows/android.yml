@@ -29,10 +29,10 @@ jobs:
         with:
           cache-disabled: true
 
-      - name: Create Default Debug Keystore
+      - name: Ensure Persistent Keystore
         run: |
           mkdir -p ~/.android
-          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          cp app/persistent-debug.keystore ~/.android/debug.keystore
 
       - name: Grant Execute Permission for Gradlew
         run: chmod +x gradlew
