@@ -87,8 +87,8 @@ android {
         // Admin panel password from .env, local.properties, or environment variables
         val adminPassword = envProperties.getProperty("ADMIN_PASSWORD")
             ?: localProperties.getProperty("ADMIN_PASSWORD")
-            ?: System.getenv("ADMIN_PASSWORD")
-            ?: ""
+            ?: System.getenv("ADMIN_PASSWORD")?.takeIf { it.isNotBlank() }
+            ?: "pulsewave5253"
         buildConfigField("String", "ADMIN_PASSWORD", "\"$adminPassword\"")
 
 //add nightly build label support

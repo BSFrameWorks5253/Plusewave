@@ -651,9 +651,10 @@ class MainActivity : ComponentActivity() {
         if (dataStore.get(modernPlayerMigratedKey, false) != true) {
             lifecycleScope.launch(Dispatchers.IO) {
                 dataStore.edit { prefs ->
-                    prefs[UseAppleMusicPlayerKey] = true
-                    prefs[ShowPlayerThumbnailShadowKey] = true
-                    prefs[PlayerThumbnailShadowElevationKey] = 20f
+                    // Preserve existing user choices — only set default if not already configured
+                    if (!prefs.contains(UseAppleMusicPlayerKey)) prefs[UseAppleMusicPlayerKey] = true
+                    if (!prefs.contains(ShowPlayerThumbnailShadowKey)) prefs[ShowPlayerThumbnailShadowKey] = true
+                    if (!prefs.contains(PlayerThumbnailShadowElevationKey)) prefs[PlayerThumbnailShadowElevationKey] = 20f
                     prefs[modernPlayerMigratedKey] = true
                 }
             }
