@@ -1,7 +1,6 @@
 package com.beatwave.music.sync
 
 import android.content.Context
-import androidx.room.withTransaction
 import com.beatwave.music.db.MusicDatabase
 import com.beatwave.music.db.entities.PlaylistEntity
 import com.beatwave.music.db.entities.PlaylistSongMap
@@ -80,7 +79,7 @@ class DesktopSyncManager @Inject constructor(
                 val syncUrl = "http://$cleanHost:$port/api/sync"
 
                 // 1. Collect all local playlists from Room Database
-                val localPlaylists = database.dao.playlistsByNameAsc().first()
+                val localPlaylists = database.playlistsByNameAsc().first()
                 val payloadJson = JSONObject()
                 payloadJson.put("sourceDevice", "Android ${android.os.Build.MODEL}")
 
@@ -93,15 +92,16 @@ class DesktopSyncManager @Inject constructor(
                     plObj.put("author", "Phone")
 
                     // Get songs for this playlist
-                    val songsList = database.dao.playlistSongs(pl.id).first()
+                    val songsList = database.playlistSongs(pl.id).first()
                     val songsArray = JSONArray()
-                    for (song in songsList) {
+                    for (playlistSong in songsList) {
+                        val songItem = playlistSong.song
                         val sObj = JSONObject()
-                        sObj.put("id", song.song.id)
-                        sObj.put("title", song.song.title)
-                        sObj.put("artistsText", song.artists.joinToString { it.name })
-                        sObj.put("duration", song.song.duration)
-                        sObj.put("thumbnailUrl", song.song.thumbnailUrl ?: "")
+                        sObj.put("id", songItem.song.id)
+                        sObj.put("title", songItem.song.title)
+                        sObj.put("artistsText", songItem.artists.joinToString { it.name })
+                        sObj.put("duration", songItem.song.duration)
+                        sObj.put("thumbnailUrl", songItem.song.thumbnailUrl ?: "")
                         songsArray.put(sObj)
                     }
                     plObj.put("songs", songsArray)
@@ -144,7 +144,7 @@ class DesktopSyncManager @Inject constructor(
                             thumbnailUrl = pThumb,
                             isEditable = true,
                         )
-                        database.dao.insert(entity)
+                        insert(entity)
                         importedPlaylists++
 
                         val dpSongs = dp.optJSONArray("songs") ?: JSONArray()
@@ -164,10 +164,10 @@ class DesktopSyncManager @Inject constructor(
                                 duration = sDuration,
                                 thumbnailUrl = sThumb,
                             )
-                            database.dao.insert(metadata)
+                            insert(metadata)
 
                             // Map to playlist
-                            database.dao.insert(
+                            insert(
                                 PlaylistSongMap(
                                     playlistId = pId,
                                     songId = sId,

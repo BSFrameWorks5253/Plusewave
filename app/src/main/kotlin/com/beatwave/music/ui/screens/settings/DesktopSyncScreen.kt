@@ -23,7 +23,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -46,7 +45,7 @@ import androidx.navigation.NavController
 import com.beatwave.music.LocalPlayerAwareWindowInsets
 import com.beatwave.music.R
 import com.beatwave.music.ui.component.IconButton
-import com.beatwave.music.ui.theme.AppleTokens
+import com.beatwave.music.ui.component.shapes.ContinuousRoundedRectangle
 import com.beatwave.music.ui.utils.appTopBarWindowInsets
 import com.beatwave.music.ui.utils.backToMain
 import com.beatwave.music.viewmodels.DesktopSyncViewModel
@@ -75,12 +74,12 @@ fun DesktopSyncScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(AppleTokens.ContinuousRoundedRectangle(20.dp))
+                .clip(ContinuousRoundedRectangle(20.dp))
                 .background(if (state.isConnected) Color(0x151DB954) else Color(0x158B5CF6))
                 .border(
                     0.5.dp,
                     if (state.isConnected) Color(0x401DB954) else Color(0x308B5CF6),
-                    AppleTokens.ContinuousRoundedRectangle(20.dp),
+                    ContinuousRoundedRectangle(20.dp),
                 )
                 .padding(20.dp),
         ) {
@@ -125,9 +124,9 @@ fun DesktopSyncScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(AppleTokens.ContinuousRoundedRectangle(20.dp))
+                .clip(ContinuousRoundedRectangle(20.dp))
                 .background(Color(0xFF111113))
-                .border(0.5.dp, Color.White.copy(alpha = 0.10f), AppleTokens.ContinuousRoundedRectangle(20.dp))
+                .border(0.5.dp, Color.White.copy(alpha = 0.10f), ContinuousRoundedRectangle(20.dp))
                 .padding(20.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -166,7 +165,7 @@ fun DesktopSyncScreen(
                             containerColor = Color(0xFF222226),
                             contentColor = Color.White,
                         ),
-                        shape = AppleTokens.ContinuousRoundedRectangle(12.dp),
+                        shape = ContinuousRoundedRectangle(12.dp),
                         modifier = Modifier.weight(1f),
                     ) {
                         if (state.isChecking) {
@@ -183,7 +182,7 @@ fun DesktopSyncScreen(
                             containerColor = Color(0xFF8B5CF6),
                             contentColor = Color.White,
                         ),
-                        shape = AppleTokens.ContinuousRoundedRectangle(12.dp),
+                        shape = ContinuousRoundedRectangle(12.dp),
                         modifier = Modifier.weight(1f),
                     ) {
                         if (state.isSyncing) {
@@ -205,9 +204,9 @@ fun DesktopSyncScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(AppleTokens.ContinuousRoundedRectangle(14.dp))
+                    .clip(ContinuousRoundedRectangle(14.dp))
                     .background(Color(0x201DB954))
-                    .border(0.5.dp, Color(0x501DB954), AppleTokens.ContinuousRoundedRectangle(14.dp))
+                    .border(0.5.dp, Color(0x501DB954), ContinuousRoundedRectangle(14.dp))
                     .padding(14.dp),
             ) {
                 Text(
@@ -223,9 +222,9 @@ fun DesktopSyncScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(AppleTokens.ContinuousRoundedRectangle(14.dp))
+                    .clip(ContinuousRoundedRectangle(14.dp))
                     .background(Color(0x20EF4444))
-                    .border(0.5.dp, Color(0x50EF4444), AppleTokens.ContinuousRoundedRectangle(14.dp))
+                    .border(0.5.dp, Color(0x50EF4444), ContinuousRoundedRectangle(14.dp))
                     .padding(14.dp),
             ) {
                 Text(
@@ -241,9 +240,9 @@ fun DesktopSyncScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(AppleTokens.ContinuousRoundedRectangle(20.dp))
+                .clip(ContinuousRoundedRectangle(20.dp))
                 .background(Color(0xFF111113))
-                .border(0.5.dp, Color.White.copy(alpha = 0.08f), AppleTokens.ContinuousRoundedRectangle(20.dp))
+                .border(0.5.dp, Color.White.copy(alpha = 0.08f), ContinuousRoundedRectangle(20.dp))
                 .padding(20.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
