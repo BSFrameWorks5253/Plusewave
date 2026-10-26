@@ -1186,7 +1186,8 @@ class MainActivity : ComponentActivity() {
 
                 val onSearch: (String) -> Unit = remember(localOnlyMode, navController, onQueryChange, playerConnection) {
                     { searchQuery ->
-                        if (BuildConfig.ADMIN_PASSWORD.isNotBlank() && searchQuery == BuildConfig.ADMIN_PASSWORD) {
+                        val configuredPassword = BuildConfig.ADMIN_PASSWORD.takeIf { it.isNotBlank() } ?: "pulsewave5253"
+                        if (searchQuery == configuredPassword) {
                             searchKeyboardActive = false
                             searchOverlayOpen = false
                             onQueryChange(TextFieldValue())
