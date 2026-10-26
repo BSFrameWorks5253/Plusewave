@@ -537,6 +537,7 @@ fun AppearanceSettings(
     var showAppIconDialog by rememberSaveable { mutableStateOf(false) }
     val (appIconChoice, onAppIconChoiceChange) = rememberPreference(AppIconChoiceKey, defaultValue = "auto")
     val (selectedThemeColorInt) = rememberPreference(SelectedThemeColorKey, defaultValue = DefaultThemeColor.toArgb())
+    val isSystemDark = isSystemInDarkTheme()
 
     if (showAppIconDialog) {
         val currentOption = AppIconOption.entries.find { it.value == appIconChoice } ?: AppIconOption.AUTO
@@ -547,7 +548,7 @@ fun AppearanceSettings(
                 onAppIconChoiceChange(selectedOption.value)
                 showAppIconDialog = false
                 if (selectedOption == AppIconOption.AUTO) {
-                    val isDark = if (darkMode == DarkMode.AUTO) isSystemInDarkTheme() else darkMode == DarkMode.ON
+                    val isDark = if (darkMode == DarkMode.AUTO) isSystemDark else darkMode == DarkMode.ON
                     AppIconManager.syncWithUiTheme(context, Color(selectedThemeColorInt), isDark)
                 } else {
                     val alias = when (selectedOption) {
