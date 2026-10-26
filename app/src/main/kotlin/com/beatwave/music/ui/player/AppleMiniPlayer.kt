@@ -332,7 +332,7 @@ fun AppleMiniPlayer(
                 }
 
                 // Spotify-like Quick Heart / Like Button
-                val currentSongState by playerConnection.currentSong.collectAsState()
+                val currentSongState by playerConnection.currentSong.collectAsState(initial = null)
                 val isSongLiked = currentSongState?.song?.liked == true
                 Box(
                     contentAlignment = Alignment.Center,
