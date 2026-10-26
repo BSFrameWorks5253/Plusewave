@@ -174,10 +174,10 @@ class ListenTogetherClient @Inject constructor(
 
         // Notification constants
         private const val NOTIFICATION_CHANNEL_ID = "listen_together_channel"
-        const val ACTION_APPROVE_JOIN = "com.beatwave.music.LISTEN_TOGETHER_APPROVE_JOIN"
-        const val ACTION_REJECT_JOIN = "com.beatwave.music.LISTEN_TOGETHER_REJECT_JOIN"
-        const val ACTION_APPROVE_SUGGESTION = "com.beatwave.music.LISTEN_TOGETHER_APPROVE_SUGGESTION"
-        const val ACTION_REJECT_SUGGESTION = "com.beatwave.music.LISTEN_TOGETHER_REJECT_SUGGESTION"
+        const val ACTION_APPROVE_JOIN = "com.pulsewave.music.LISTEN_TOGETHER_APPROVE_JOIN"
+        const val ACTION_REJECT_JOIN = "com.pulsewave.music.LISTEN_TOGETHER_REJECT_JOIN"
+        const val ACTION_APPROVE_SUGGESTION = "com.pulsewave.music.LISTEN_TOGETHER_APPROVE_SUGGESTION"
+        const val ACTION_REJECT_SUGGESTION = "com.pulsewave.music.LISTEN_TOGETHER_REJECT_SUGGESTION"
         const val EXTRA_USER_ID = "extra_user_id"
         const val EXTRA_SUGGESTION_ID = "extra_suggestion_id"
         const val EXTRA_NOTIFICATION_ID = "extra_notification_id"

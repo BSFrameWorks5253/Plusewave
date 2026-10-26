@@ -6,9 +6,9 @@
         android:shortcutId="search"
         android:shortcutShortLabel="@string/search">
         <intent
-            android:action="com.beatwave.music.action.SEARCH"
+            android:action="com.pulsewave.music.action.SEARCH"
             android:targetClass="com.beatwave.music.MainActivity"
-            android:targetPackage="com.beatwave.music" />
+            android:targetPackage="com.pulsewave.music" />
     </shortcut>
     <shortcut
         android:enabled="true"
@@ -16,8 +16,8 @@
         android:shortcutId="library"
         android:shortcutShortLabel="@string/filter_library">
         <intent
-            android:action="com.beatwave.music.action.LIBRARY"
+            android:action="com.pulsewave.music.action.LIBRARY"
             android:targetClass="com.beatwave.music.MainActivity"
-            android:targetPackage="com.beatwave.music" />
+            android:targetPackage="com.pulsewave.music" />
     </shortcut>
 </shortcuts>

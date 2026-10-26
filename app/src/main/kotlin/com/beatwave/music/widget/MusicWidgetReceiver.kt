@@ -78,10 +78,10 @@ open class MusicWidgetReceiver : AppWidgetProvider() {
     }
 
     companion object {
-        const val ACTION_PLAY_PAUSE = "com.beatwave.music.widget.PLAY_PAUSE"
-        const val ACTION_LIKE = "com.beatwave.music.widget.LIKE"
-        const val ACTION_NEXT = "com.beatwave.music.widget.NEXT"
-        const val ACTION_PREVIOUS = "com.beatwave.music.widget.PREVIOUS"
-        const val ACTION_UPDATE_WIDGET = "com.beatwave.music.widget.UPDATE_WIDGET"
+        const val ACTION_PLAY_PAUSE = "com.pulsewave.music.widget.PLAY_PAUSE"
+        const val ACTION_LIKE = "com.pulsewave.music.widget.LIKE"
+        const val ACTION_NEXT = "com.pulsewave.music.widget.NEXT"
+        const val ACTION_PREVIOUS = "com.pulsewave.music.widget.PREVIOUS"
+        const val ACTION_UPDATE_WIDGET = "com.pulsewave.music.widget.UPDATE_WIDGET"
     }
 }

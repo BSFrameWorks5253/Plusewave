@@ -147,6 +147,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
+                <data android:scheme="pulsewave" />
                 <data android:scheme="beatwave" />
                 <data android:host="sync" />
             </intent-filter>
@@ -323,9 +324,9 @@
             android:label="@string/widget_music_player">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.beatwave.music.widget.PLAY_PAUSE" />
-                <action android:name="com.beatwave.music.widget.LIKE" />
-                <action android:name="com.beatwave.music.widget.UPDATE_WIDGET" />
+                <action android:name="${applicationId}.widget.PLAY_PAUSE" />
+                <action android:name="${applicationId}.widget.LIKE" />
+                <action android:name="${applicationId}.widget.UPDATE_WIDGET" />
             </intent-filter>
 
             <meta-data
@@ -351,7 +352,7 @@
             android:label="@string/widget_now_playing">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.beatwave.music.widget.UPDATE_WIDGET" />
+                <action android:name="${applicationId}.widget.UPDATE_WIDGET" />
             </intent-filter>
 
             <meta-data
@@ -366,7 +367,7 @@
             android:label="@string/widget_lyrics">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.beatwave.music.widget.UPDATE_WIDGET" />
+                <action android:name="${applicationId}.widget.UPDATE_WIDGET" />
             </intent-filter>
 
             <meta-data
@@ -381,9 +382,9 @@
             android:label="@string/widget_turntable">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.beatwave.music.widget.TURNTABLE_PLAY_PAUSE" />
-                <action android:name="com.beatwave.music.widget.TURNTABLE_LIKE" />
-                <action android:name="com.beatwave.music.widget.UPDATE_TURNTABLE_WIDGET" />
+                <action android:name="${applicationId}.widget.TURNTABLE_PLAY_PAUSE" />
+                <action android:name="${applicationId}.widget.TURNTABLE_LIKE" />
+                <action android:name="${applicationId}.widget.UPDATE_TURNTABLE_WIDGET" />
             </intent-filter>
 
             <meta-data

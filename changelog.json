@@ -1,5 +1,5 @@
 {
-  "description": "Pulse Wave 6.1.2 — Unified luxury dark UI overhaul: proper color contrast, obsidian surfaces, electric pulse cyan default accent, continuous squircle cards, elegant centered playlist detail headers with ambient bloom, and refined settings & library typography.",
+  "description": "Pulse Wave 6.1.3 — Complete package isolation (com.pulsewave.music): eliminated install and signature conflicts with previous BeatWave apps, enabling seamless side-by-side installation.",
   "image": "",
   "changelog": [
     {

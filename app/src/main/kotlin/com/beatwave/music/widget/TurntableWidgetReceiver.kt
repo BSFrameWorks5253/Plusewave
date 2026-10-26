@@ -60,9 +60,9 @@ class TurntableWidgetReceiver : AppWidgetProvider() {
     }
 
     companion object {
-        const val ACTION_TURNTABLE_PLAY_PAUSE = "com.beatwave.music.widget.TURNTABLE_PLAY_PAUSE"
-        const val ACTION_TURNTABLE_NEXT = "com.beatwave.music.widget.TURNTABLE_NEXT"
-        const val ACTION_TURNTABLE_PREVIOUS = "com.beatwave.music.widget.TURNTABLE_PREVIOUS"
-        const val ACTION_UPDATE_TURNTABLE_WIDGET = "com.beatwave.music.widget.UPDATE_TURNTABLE_WIDGET"
+        const val ACTION_TURNTABLE_PLAY_PAUSE = "com.pulsewave.music.widget.TURNTABLE_PLAY_PAUSE"
+        const val ACTION_TURNTABLE_NEXT = "com.pulsewave.music.widget.TURNTABLE_NEXT"
+        const val ACTION_TURNTABLE_PREVIOUS = "com.pulsewave.music.widget.TURNTABLE_PREVIOUS"
+        const val ACTION_UPDATE_TURNTABLE_WIDGET = "com.pulsewave.music.widget.UPDATE_TURNTABLE_WIDGET"
     }
 }
