@@ -1741,7 +1741,12 @@ class MusicService :
         // Reset original queue size when starting a new queue
         originalQueueSize = 0
         if (queue.preloadItem != null) {
-            player.setMediaItem(queue.preloadItem!!.toMediaItem())
+            val startPos = (queue as? com.beatwave.music.playback.queues.ListQueue)?.position ?: 0L
+            if (startPos > 0L) {
+                player.setMediaItem(queue.preloadItem!!.toMediaItem(), startPos)
+            } else {
+                player.setMediaItem(queue.preloadItem!!.toMediaItem())
+            }
             player.prepare()
             player.playWhenReady = playWhenReady
         }
@@ -1770,6 +1775,9 @@ class MusicService :
                         initialStatus.items.size
                     )
                 )
+                if (initialStatus.position > 0L) {
+                    player.seekTo(initialStatus.mediaItemIndex, initialStatus.position)
+                }
             } else {
                 player.setMediaItems(
                     initialStatus.items,
@@ -2363,18 +2371,30 @@ class MusicService :
             }
         }
 
-        // Track playlist progress so resuming later starts from this song
-        val activePid = (currentQueue as? com.beatwave.music.playback.queues.ListQueue)?.playlistId
-            ?: PlaylistPlaybackTracker.getActivePlaylist(this)
-        if (activePid != null && mediaItem != null) {
-            PlaylistPlaybackTracker.savePlaylistProgress(this, activePid, mediaItem.mediaId, player.currentMediaItemIndex)
-        }
+        // Track playlist progress so resuming later starts from this song & position
+        updateActivePlaylistProgress(mediaItem)
 
         // Save state when media item changes
         if (dataStore.get(PersistentQueueKey, true)) {
             saveQueueToDisk()
         }
         prefetchUpcomingTracks()
+    }
+
+    fun updateActivePlaylistProgress(specifiedMediaItem: androidx.media3.common.MediaItem? = null) {
+        val activePid = (currentQueue as? com.beatwave.music.playback.queues.ListQueue)?.playlistId
+            ?: PlaylistPlaybackTracker.getActivePlaylist(this)
+        val curItem = specifiedMediaItem ?: player.currentMediaItem
+        if (activePid != null && curItem != null) {
+            val curPos = player.currentPosition
+            PlaylistPlaybackTracker.savePlaylistProgress(
+                context = this,
+                playlistId = activePid,
+                songId = curItem.mediaId,
+                songIndex = player.currentMediaItemIndex,
+                positionMs = curPos,
+            )
+        }
     }
 
     override fun onPlaybackStateChanged(
@@ -3747,6 +3767,7 @@ class MusicService :
     // file IO goes to the worker; the single worker serializes saves so a newer
     // snapshot can't be overwritten by an older one.
     private fun saveQueueToDisk() {
+        updateActivePlaylistProgress()
         val queue = currentQueue
         val title = queueTitle
         val items = player.mediaItems.mapNotNull { it.metadata }
@@ -3908,6 +3929,7 @@ class MusicService :
      * is the thing still holding playback, so it is also the thing that can stop it.
      */
     override fun onTaskRemoved(rootIntent: Intent?) {
+        updateActivePlaylistProgress()
         if (dataStore.get(StopMusicOnTaskClearKey, false)) {
             Timber.tag(TAG).d("Task removed with stop-on-task-clear enabled, stopping playback")
             player.stop()
@@ -4083,13 +4105,14 @@ class MusicService :
 
                 if (mediaItems.isNotEmpty()) {
                     val songIds = mediaItems.map { it.mediaId }
-                    val startIndex = PlaylistPlaybackTracker.resolveStartIndex(this@MusicService, playlistId, songIds)
+                    val (startIndex, positionMs) = PlaylistPlaybackTracker.resolveStartProgress(this@MusicService, playlistId, songIds)
                     withContext(Dispatchers.Main) {
                         playQueue(
                             com.beatwave.music.playback.queues.ListQueue(
                                 title = if (playlistId == "favorites" || playlistId == "liked") getString(R.string.liked_songs) else null,
                                 items = mediaItems,
                                 startIndex = startIndex,
+                                position = positionMs,
                                 playlistId = playlistId,
                             )
                         )

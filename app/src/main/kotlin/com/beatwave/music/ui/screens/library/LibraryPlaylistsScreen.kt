@@ -22,6 +22,8 @@ import com.beatwave.music.constants.SongSortType
 import com.beatwave.music.ui.utils.bounceClick
 import com.beatwave.music.ui.utils.combinedBounceClick
 import kotlinx.coroutines.flow.first
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -263,6 +265,7 @@ fun LibraryPlaylistsScreen(
                 onSortDescendingChange = onSortDescendingChange,
                 sortTypeText = { sortType ->
                     when (sortType) {
+                        PlaylistSortType.CUSTOM -> R.string.sort_by_custom
                         PlaylistSortType.CREATE_DATE -> R.string.sort_by_create_date
                         PlaylistSortType.NAME -> R.string.sort_by_name
                         PlaylistSortType.SONG_COUNT -> R.string.sort_by_song_count
@@ -317,6 +320,19 @@ fun LibraryPlaylistsScreen(
     // Hoisted: both view types de-duped the same list separately, and the scroll rail
     // needs the resulting count too.
     val visiblePlaylists = remember(playlists) { playlists.distinctBy { it.id } }
+
+    val reorderableListState = rememberReorderableLazyListState(
+        lazyListState = lazyListState,
+        scrollThresholdPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
+    ) { from, to ->
+        val headerCount = 3 + (if (showLiked) 1 else 0) + (if (showDownloaded) 1 else 0) +
+            (if (showTop) 1 else 0) + (if (showCached) 1 else 0) + (if (showUploaded) 1 else 0)
+        if (from.index >= headerCount && to.index >= headerCount) {
+            val fromIdx = from.index - headerCount
+            val toIdx = to.index - headerCount
+            viewModel.reorderPlaylists(fromIdx, toIdx)
+        }
+    }
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -436,14 +452,33 @@ fun LibraryPlaylistsScreen(
                             key = { it.id },
                             contentType = { CONTENT_TYPE_PLAYLIST },
                         ) { playlist ->
-                            LibraryPlaylistListItem(
-                                navController = navController,
-                                menuState = menuState,
-                                coroutineScope = coroutineScope,
-                                playlist = playlist,
-                                showIconOnly = libraryIconsOnly,
-                                modifier = Modifier.animateItem()
-                            )
+                            if (sortType == PlaylistSortType.CUSTOM) {
+                                ReorderableItem(
+                                    state = reorderableListState,
+                                    key = playlist.id
+                                ) { isDragging ->
+                                    LibraryPlaylistListItem(
+                                        navController = navController,
+                                        menuState = menuState,
+                                        coroutineScope = coroutineScope,
+                                        playlist = playlist,
+                                        showIconOnly = libraryIconsOnly,
+                                        isCustomSort = true,
+                                        dragHandleModifier = Modifier.draggableHandle(),
+                                        modifier = Modifier.animateItem()
+                                    )
+                                }
+                            } else {
+                                LibraryPlaylistListItem(
+                                    navController = navController,
+                                    menuState = menuState,
+                                    coroutineScope = coroutineScope,
+                                    playlist = playlist,
+                                    showIconOnly = libraryIconsOnly,
+                                    isCustomSort = false,
+                                    modifier = Modifier.animateItem()
+                                )
+                            }
                         }
                     }
                 }

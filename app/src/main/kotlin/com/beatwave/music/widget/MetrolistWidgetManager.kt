@@ -1376,33 +1376,104 @@ class vivimusicWidgetManager @Inject constructor(
             return bitmap
         }
 
-        val (top, bottom) = gradientColorsFor(config, albumArt)
-        val alphaInt = (config.opacity.coerceIn(0f, 1f) * 255).toInt()
-        val topWithAlpha = ColorUtils.setAlphaComponent(top, alphaInt)
-        val bottomWithAlpha = ColorUtils.setAlphaComponent(bottom, alphaInt)
-
         val canvas = Canvas(bitmap)
+        val cornerPx = card.cornerPx
 
-        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        // 1. Palette Extraction for Dynamic Bloom
+        val palette = albumArt?.let { art ->
+            try {
+                androidx.palette.graphics.Palette.from(art).maximumColorCount(16).generate()
+            } catch (e: Exception) {
+                null
+            }
+        }
+        val vibrant = palette?.vibrantSwatch?.rgb
+            ?: palette?.dominantSwatch?.rgb
+            ?: palette?.lightVibrantSwatch?.rgb
+            ?: Color.parseColor("#00E5FF")
+        val secondary = palette?.darkVibrantSwatch?.rgb
+            ?: palette?.mutedSwatch?.rgb
+            ?: Color.parseColor("#7C4DFF")
+
+        val alphaMultiplier = config.opacity.coerceIn(0f, 1f)
+
+        // Clip to Continuous Rounded Rect (Squircle)
+        val outline = ContinuousRoundedRectangle(cornerPx).createOutline(
+            size = Size(width.toFloat(), height.toFloat()),
+            layoutDirection = LayoutDirection.Ltr,
+            density = Density(1f)
+        )
+        val squirclePath = (outline as? Outline.Generic)?.path?.asAndroidPath()
+            ?: android.graphics.Path().apply {
+                addRoundRect(RectF(0f, 0f, width.toFloat(), height.toFloat()), cornerPx, cornerPx, android.graphics.Path.Direction.CW)
+            }
+
+        canvas.save()
+        canvas.clipPath(squirclePath)
+
+        // 2a. Deep Frosted Ultra Liquid Glass Base
+        val (topBase, bottomBase) = gradientColorsFor(config, albumArt)
+        val basePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             shader = LinearGradient(
-                0f, 0f, width * 0.35f, height.toFloat(),
-                topWithAlpha, bottomWithAlpha, Shader.TileMode.CLAMP,
+                0f, 0f, width * 0.4f, height.toFloat(),
+                ColorUtils.setAlphaComponent(topBase, (alphaMultiplier * 240).toInt()),
+                ColorUtils.setAlphaComponent(bottomBase, (alphaMultiplier * 245).toInt()),
+                Shader.TileMode.CLAMP
             )
         }
-        drawContinuousRoundedRect(canvas, width.toFloat(), height.toFloat(), card.cornerPx, fill)
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), basePaint)
 
-        val rimAlpha = (config.opacity.coerceIn(0f, 1f) * 120).toInt()
+        // 2b. Dynamic Ambient Bloom (Vibrant Palette Radial Glow)
+        val bloomPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            val bloomCenterX = if (width > height) height * 0.5f else width * 0.5f
+            val bloomCenterY = height * 0.5f
+            val bloomRadius = maxOf(width, height) * 0.75f
+            shader = RadialGradient(
+                bloomCenterX, bloomCenterY, bloomRadius,
+                intArrayOf(
+                    ColorUtils.setAlphaComponent(vibrant, (alphaMultiplier * 140).toInt()),
+                    ColorUtils.setAlphaComponent(secondary, (alphaMultiplier * 60).toInt()),
+                    Color.TRANSPARENT
+                ),
+                floatArrayOf(0f, 0.48f, 1f),
+                Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bloomPaint)
+
+        // 2c. 3D Specular Sheen (Diagonal liquid light beam from top-left)
+        val sheenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = LinearGradient(
+                0f, 0f, width * 0.65f, height * 0.75f,
+                intArrayOf(
+                    Color.argb((alphaMultiplier * 55).toInt(), 255, 255, 255),
+                    Color.argb((alphaMultiplier * 10).toInt(), 255, 255, 255),
+                    Color.TRANSPARENT
+                ),
+                floatArrayOf(0f, 0.35f, 0.85f),
+                Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), sheenPaint)
+
+        canvas.restore()
+
+        // 2d. Dual-layer Liquid Glass Rim & Specular Bevel Border
+        val rimAlpha = (alphaMultiplier * 130).toInt()
         if (rimAlpha > 0) {
-            val rim = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            val outerRim = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE
-                strokeWidth = (height * 0.012f).coerceAtLeast(1f)
+                strokeWidth = (height * 0.014f).coerceIn(1.2f, 3.5f)
                 shader = LinearGradient(
-                    0f, 0f, 0f, height * 0.34f,
-                    Color.argb(rimAlpha, 255, 255, 255), Color.TRANSPARENT, Shader.TileMode.CLAMP,
+                    0f, 0f, 0f, height * 0.5f,
+                    Color.argb(rimAlpha, 255, 255, 255),
+                    Color.argb((rimAlpha * 0.2f).toInt(), 255, 255, 255),
+                    Shader.TileMode.CLAMP
                 )
             }
-            drawContinuousRoundedRect(canvas, width.toFloat(), height.toFloat(), card.cornerPx, rim)
+            drawContinuousRoundedRect(canvas, width.toFloat(), height.toFloat(), cornerPx, outerRim)
         }
+
         return bitmap
     }
 
@@ -1969,15 +2040,24 @@ class vivimusicWidgetManager @Inject constructor(
     }
 
     private fun getPlayPauseIntent(): PendingIntent {
-        val intent = Intent(context, MusicWidgetReceiver::class.java).apply {
+        val intent = Intent(context, MusicService::class.java).apply {
             action = MusicWidgetReceiver.ACTION_PLAY_PAUSE
         }
-        return PendingIntent.getBroadcast(
-            context,
-            101,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            PendingIntent.getForegroundService(
+                context,
+                101,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } else {
+            PendingIntent.getService(
+                context,
+                101,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
     }
 
     private fun getLikeIntent(): PendingIntent {
@@ -2013,16 +2093,25 @@ class vivimusicWidgetManager @Inject constructor(
     )
 
     private fun getPlayPlaylistIntent(playlistId: String): PendingIntent {
-        val intent = Intent(context, PlaylistWidgetReceiver::class.java).apply {
+        val intent = Intent(context, MusicService::class.java).apply {
             action = MusicWidgetReceiver.ACTION_PLAY_PLAYLIST
             putExtra(MusicWidgetReceiver.EXTRA_PLAYLIST_ID, playlistId)
         }
-        return PendingIntent.getBroadcast(
-            context,
-            114 + (playlistId.hashCode() and 0xFFFF),
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            PendingIntent.getForegroundService(
+                context,
+                114 + (playlistId.hashCode() and 0xFFFF),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        } else {
+            PendingIntent.getService(
+                context,
+                114 + (playlistId.hashCode() and 0xFFFF),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        }
     }
 
     private fun getSkipToQueueIntent(index: Int): PendingIntent {

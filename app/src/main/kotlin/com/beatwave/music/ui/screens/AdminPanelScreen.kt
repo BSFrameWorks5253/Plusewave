@@ -720,27 +720,46 @@ fun BugReportsTab(bottomPadding: androidx.compose.ui.unit.Dp = 0.dp) {
     if (showClearAllDialog) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showClearAllDialog = false },
-            title = { Text("Clear All Bug Reports?") },
-            text = { Text("This will permanently delete all bug reports from the server. This action cannot be undone.") },
+            title = { Text("Purge Bug Reports & Logs?") },
+            text = { Text("This will permanently delete all bug reports from the server and purge all local crash logs, dumps, and debug trace files. This action cannot be undone.") },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showClearAllDialog = false
                         isFetching = true
-                        coroutineScope.launch {
+                        coroutineScope.launch(Dispatchers.IO) {
                             val res = SupabaseService.clearAllBugReports()
-                            isFetching = false
-                            if (res.isSuccess) {
-                                Toast.makeText(context, "All bug reports cleared", Toast.LENGTH_SHORT).show()
-                                refreshBugReports()
-                            } else {
-                                Toast.makeText(context, "Failed to clear: ${res.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+                            runCatching {
+                                java.io.File(context.filesDir, "latest_crash.txt").delete()
+                                context.cacheDir.listFiles { _, name ->
+                                    name.startsWith("pulsewave_crash_") ||
+                                    name.startsWith("beatwave_crash_") ||
+                                    name.startsWith("crash_") ||
+                                    name.endsWith(".log") ||
+                                    name.endsWith(".trace")
+                                }?.forEach { it.delete() }
+                                context.filesDir.listFiles { _, name ->
+                                    name.startsWith("pulsewave_crash_") ||
+                                    name.startsWith("beatwave_crash_") ||
+                                    name.startsWith("crash_") ||
+                                    name.endsWith(".log") ||
+                                    name.endsWith(".trace")
+                                }?.forEach { it.delete() }
+                            }
+                            withContext(Dispatchers.Main) {
+                                isFetching = false
+                                if (res.isSuccess) {
+                                    Toast.makeText(context, "Bug reports & crash logs purged", Toast.LENGTH_SHORT).show()
+                                    refreshBugReports()
+                                } else {
+                                    Toast.makeText(context, "Purged local logs. Server: ${res.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+                                }
                             }
                         }
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Clear All")
+                    Text("Purge All")
                 }
             },
             dismissButton = {
@@ -754,10 +773,6 @@ fun BugReportsTab(bottomPadding: androidx.compose.ui.unit.Dp = 0.dp) {
     if (isFetching) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
-        }
-    } else if (bugReports.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No bug reports submitted yet.", style = MaterialTheme.typography.bodyMedium)
         }
     } else {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -829,14 +844,17 @@ fun BugReportsTab(bottomPadding: androidx.compose.ui.unit.Dp = 0.dp) {
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text("Clear All Reports")
+                        Text("Purge Reports & Logs")
                     }
                 }
             }
 
             if (filteredBugReports.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No bug reports match current filter.", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        if (bugReports.isEmpty()) "No bug reports submitted yet." else "No bug reports match current filter.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
             } else {
                 LazyColumn(

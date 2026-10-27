@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Pulse Wave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
@@ -13,6 +13,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.datastore.preferences.core.edit
+import com.beatwave.music.constants.CustomPlaylistOrderKey
 import com.music.innertube.YouTube
 import com.beatwave.music.constants.AlbumFilter
 import com.beatwave.music.constants.AlbumFilterKey
@@ -263,36 +265,84 @@ constructor(
     }
 }
 
+private data class PlaylistSortPrefs(
+    val sortType: PlaylistSortType,
+    val descending: Boolean,
+    val hideYoutubeShorts: Boolean,
+    val customOrder: String
+)
+
 @HiltViewModel
 class LibraryPlaylistsViewModel
 @Inject
 constructor(
-    @ApplicationContext context: Context,
+    @ApplicationContext private val context: Context,
     database: MusicDatabase,
     private val syncUtils: SyncUtils,
 ) : ViewModel() {
     val allPlaylists =
         context.dataStore.data
             .map {
-                Pair(
-                    Triple(
-                        it[PlaylistSortTypeKey].toEnum(PlaylistSortType.CREATE_DATE),
-                        it[PlaylistSortDescendingKey] ?: true,
-                        it[HideYoutubeShortsKey] ?: false
-                    ),
-                    it[LocalOnlyModeKey] == true,
-                )
+                PlaylistSortPrefs(
+                    sortType = it[PlaylistSortTypeKey].toEnum(PlaylistSortType.CREATE_DATE),
+                    descending = it[PlaylistSortDescendingKey] ?: true,
+                    hideYoutubeShorts = it[HideYoutubeShortsKey] ?: false,
+                    customOrder = it[CustomPlaylistOrderKey].orEmpty()
+                ) to (it[LocalOnlyModeKey] == true)
             }.distinctUntilChanged()
-            .flatMapLatest { (sortAndHide, localOnly) ->
-                val (sortType, descending, hideYoutubeShorts) = sortAndHide
-                database.playlists(sortType, descending).map { playlists ->
-                    // A synced YouTube playlist carries a browseId; the ones the user
-                    // made here don't, and those are the only ones local-only shows.
-                    playlists
+            .flatMapLatest { (prefs, localOnly) ->
+                database.playlists(prefs.sortType, prefs.descending).map { playlists ->
+                    val filtered = playlists
                         .filter { !localOnly || it.playlist.browseId == null }
-                        .filterYoutubeShorts(hideYoutubeShorts)
+                        .filterYoutubeShorts(prefs.hideYoutubeShorts)
+                    if (prefs.sortType == PlaylistSortType.CUSTOM) {
+                        val orderList = prefs.customOrder.split(",").filter { it.isNotBlank() }
+                        val orderMap = orderList.mapIndexed { idx, id -> id to idx }.toMap()
+                        val sorted = filtered.sortedWith(
+                            compareBy<Playlist> { orderMap[it.id] ?: Int.MAX_VALUE }
+                        )
+                        if (prefs.descending) sorted.reversed() else sorted
+                    } else {
+                        filtered
+                    }
                 }
             }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    fun movePlaylistToFirst(playlistId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            context.dataStore.edit { preferences ->
+                val currentOrder = (preferences[CustomPlaylistOrderKey] ?: "")
+                    .split(",")
+                    .filter { it.isNotBlank() }
+                    .toMutableList()
+                currentOrder.remove(playlistId)
+                currentOrder.add(0, playlistId)
+                allPlaylists.value.forEach { p ->
+                    if (!currentOrder.contains(p.id)) {
+                        currentOrder.add(p.id)
+                    }
+                }
+                preferences[CustomPlaylistOrderKey] = currentOrder.joinToString(",")
+                preferences[PlaylistSortTypeKey] = PlaylistSortType.CUSTOM.name
+                preferences[PlaylistSortDescendingKey] = false
+            }
+        }
+    }
+
+    fun reorderPlaylists(fromIndex: Int, toIndex: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val list = allPlaylists.value.map { it.id }.toMutableList()
+            if (fromIndex in list.indices && toIndex in list.indices) {
+                val item = list.removeAt(fromIndex)
+                list.add(toIndex, item)
+                context.dataStore.edit { preferences ->
+                    preferences[CustomPlaylistOrderKey] = list.joinToString(",")
+                    preferences[PlaylistSortTypeKey] = PlaylistSortType.CUSTOM.name
+                    preferences[PlaylistSortDescendingKey] = false
+                }
+            }
+        }
+    }
 
     fun sync() {
         viewModelScope.launch(Dispatchers.IO) { syncUtils.syncSavedPlaylists() }

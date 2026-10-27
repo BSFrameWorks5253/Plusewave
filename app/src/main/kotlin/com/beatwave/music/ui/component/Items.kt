@@ -48,7 +48,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
@@ -1111,6 +1113,7 @@ fun PlaylistGridItem(
     },
     fillMaxWidth: Boolean = false,
     showIconOnly: Boolean = false,
+    onQuickPlay: (() -> Unit)? = null,
 ) = GridItem(
     title = {
         Text(
@@ -1185,7 +1188,8 @@ fun PlaylistGridItem(
                                     Brush.linearGradient(
                                         listOf(Color(0xFF282828), Color(0xFF181818))
                                     )
-                                ),
+                                )
+                                .blur(2.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -1200,20 +1204,64 @@ fun PlaylistGridItem(
                 )
             }
 
+            // Track count chip on top-start
+            val count = if (playlist.songCount == 0 && playlist.playlist.remoteSongCount != null) {
+                playlist.playlist.remoteSongCount
+            } else {
+                playlist.songCount
+            }
+            if (count != null && count > 0) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color.Black.copy(alpha = 0.65f),
+                    contentColor = Color.White
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.queue_music),
+                            contentDescription = null,
+                            modifier = Modifier.size(11.dp),
+                            tint = Color.White.copy(alpha = 0.85f)
+                        )
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text(
+                            text = "$count",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
             // Spotify floating play button badge at bottom right
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(8.dp)
-                    .size(34.dp)
+                    .size(36.dp)
                     .shadow(elevation = 6.dp, shape = CircleShape)
-                    .background(Color(0xFF1DB954), shape = CircleShape),
+                    .background(Color(0xFF1DB954), shape = CircleShape)
+                    .then(
+                        if (onQuickPlay != null) {
+                            Modifier.clickable(
+                                onClick = onQuickPlay,
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = ripple(bounded = false, radius = 24.dp)
+                            )
+                        } else Modifier
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     painter = painterResource(R.drawable.play),
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
+                    contentDescription = "Quick Play",
+                    modifier = Modifier.size(17.dp),
                     tint = Color(0xFF000000)
                 )
             }

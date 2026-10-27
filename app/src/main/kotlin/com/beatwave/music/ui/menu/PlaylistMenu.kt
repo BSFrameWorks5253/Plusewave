@@ -69,11 +69,16 @@ import com.beatwave.music.db.entities.SpeedDialItem
 import com.beatwave.music.extensions.toMediaItem
 import com.beatwave.music.playback.DownloadTarget
 import com.beatwave.music.playback.ExoDownloadService
+import com.beatwave.music.playback.PlaylistPlaybackTracker
 import com.beatwave.music.playback.cancelDownloads
 import com.beatwave.music.playback.downloadSongs
 import com.beatwave.music.playback.queues.ListQueue
 import com.beatwave.music.playback.queues.YouTubeQueue
 import com.beatwave.music.playback.removeDownloads
+import com.beatwave.music.constants.CustomPlaylistOrderKey
+import com.beatwave.music.constants.PlaylistSortTypeKey
+import com.beatwave.music.constants.PlaylistSortDescendingKey
+import com.beatwave.music.constants.PlaylistSortType
 import com.beatwave.music.ui.component.DefaultDialog
 import com.beatwave.music.ui.component.Material3MenuGroup
 import com.beatwave.music.ui.component.Material3MenuItemData
@@ -346,10 +351,18 @@ fun PlaylistMenu(
                             onClick = {
                                 onDismiss()
                                 if (songs.isNotEmpty()) {
+                                    val (startIndex, positionMs) = PlaylistPlaybackTracker.resolveStartProgress(
+                                        context,
+                                        playlist.id,
+                                        songs.map { it.id }
+                                    )
                                     playerConnection.playQueue(
                                         ListQueue(
                                             title = playlist.playlist.name,
-                                            items = songs.map(Song::toMediaItem)
+                                            items = songs.map(Song::toMediaItem),
+                                            startIndex = startIndex,
+                                            position = positionMs,
+                                            playlistId = playlist.id
                                         )
                                     )
                                 }
@@ -469,6 +482,37 @@ fun PlaylistMenu(
                                 onClick = {
                                     onDismiss()
                                     playerConnection.addToQueue(songs.map { it.toMediaItem() })
+                                }
+                            )
+                        )
+                        add(
+                            Material3MenuItemData(
+                                title = { Text(text = "Move to Top") },
+                                description = { Text(text = "Place this playlist first in your Library") },
+                                icon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.vertical_align_top),
+                                        contentDescription = null,
+                                    )
+                                },
+                                onClick = {
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        context.dataStore.edit { preferences ->
+                                            val currentOrder = (preferences[CustomPlaylistOrderKey] ?: "")
+                                                .split(",")
+                                                .filter { it.isNotBlank() }
+                                                .toMutableList()
+                                            currentOrder.remove(playlist.id)
+                                            currentOrder.add(0, playlist.id)
+                                            preferences[CustomPlaylistOrderKey] = currentOrder.joinToString(",")
+                                            preferences[PlaylistSortTypeKey] = PlaylistSortType.CUSTOM.name
+                                            preferences[PlaylistSortDescendingKey] = false
+                                        }
+                                        withContext(Dispatchers.Main) {
+                                            Toast.makeText(context, "Moved to top of Library", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                    onDismiss()
                                 }
                             )
                         )

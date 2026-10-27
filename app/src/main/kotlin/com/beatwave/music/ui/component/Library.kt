@@ -25,6 +25,17 @@ import com.beatwave.music.ui.menu.ArtistMenu
 import com.beatwave.music.ui.menu.PlaylistMenu
 import com.beatwave.music.ui.menu.YouTubePlaylistMenu
 import kotlinx.coroutines.CoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import com.beatwave.music.LocalDatabase
+import com.beatwave.music.LocalPlayerConnection
+import com.beatwave.music.playback.PlaylistPlaybackTracker
+import com.beatwave.music.playback.queues.ListQueue
+import com.beatwave.music.playback.queues.YouTubeQueue
+import com.beatwave.music.extensions.toMediaItem
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun LibraryArtistListItem(
@@ -176,10 +187,24 @@ fun LibraryPlaylistListItem(
     playlist: Playlist,
     modifier: Modifier = Modifier,
     showIconOnly: Boolean = false,
+    isCustomSort: Boolean = false,
+    dragHandleModifier: Modifier = Modifier,
 ) = PlaylistListItem(
     playlist = playlist,
     showIconOnly = showIconOnly,
     trailingContent = {
+        if (isCustomSort) {
+            androidx.compose.material3.IconButton(
+                onClick = { },
+                modifier = dragHandleModifier
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.drag_handle),
+                    contentDescription = "Reorder",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
         androidx.compose.material3.IconButton(
             onClick = {
                 menuState.show {
@@ -245,56 +270,96 @@ fun LibraryPlaylistGridItem(
     playlist: Playlist,
     modifier: Modifier = Modifier,
     showIconOnly: Boolean = false,
-) = PlaylistGridItem(
-    playlist = playlist,
-    fillMaxWidth = true,
-    showIconOnly = showIconOnly,
-    modifier = modifier
-        .fillMaxWidth()
-        .combinedClickable(
-            onClick = {
-                if (!playlist.playlist.isEditable && playlist.songCount == 0 && playlist.playlist.remoteSongCount != 0)
-                    navController.navigate("online_playlist/${playlist.playlist.browseId}")
-                else
-                    navController.navigate("local_playlist/${playlist.id}")
-            },
-            onLongClick = {
-                menuState.show {
-                    if (playlist.playlist.isEditable || playlist.songCount != 0) {
-                        PlaylistMenu(
-                            playlist = playlist,
-                            coroutineScope = coroutineScope,
-                            onDismiss = menuState::dismiss
+) {
+    val context = LocalContext.current
+    val database = LocalDatabase.current
+    val playerConnection = LocalPlayerConnection.current
+
+    PlaylistGridItem(
+        playlist = playlist,
+        fillMaxWidth = true,
+        showIconOnly = showIconOnly,
+        onQuickPlay = {
+            if (!playlist.playlist.isEditable && playlist.songCount == 0 && playlist.playlist.browseId != null) {
+                playerConnection?.playQueue(
+                    YouTubeQueue(
+                        WatchEndpoint(
+                            playlistId = playlist.playlist.browseId,
+                            params = playlist.playlist.playEndpointParams
                         )
-                    } else {
-                        playlist.playlist.browseId?.let { browseId ->
-                            YouTubePlaylistMenu(
-                                playlist = PlaylistItem(
-                                    id = browseId,
+                    )
+                )
+            } else {
+                coroutineScope.launch(Dispatchers.IO) {
+                    val songs = database.playlistSongs(playlist.id).first().map { it.song }
+                    if (songs.isNotEmpty()) {
+                        val (startIndex, positionMs) = PlaylistPlaybackTracker.resolveStartProgress(
+                            context,
+                            playlist.id,
+                            songs.map { it.id }
+                        )
+                        withContext(Dispatchers.Main) {
+                            playerConnection?.playQueue(
+                                ListQueue(
                                     title = playlist.playlist.name,
-                                    author = null,
-                                    songCountText = null,
-                                    thumbnail = playlist.thumbnails.getOrNull(0) ?: "",
-                                    playEndpoint = WatchEndpoint(
-                                        playlistId = browseId,
-                                        params = playlist.playlist.playEndpointParams
-                                    ),
-                                    shuffleEndpoint = WatchEndpoint(
-                                        playlistId = browseId,
-                                        params = playlist.playlist.shuffleEndpointParams
-                                    ),
-                                    radioEndpoint = WatchEndpoint(
-                                        playlistId = "RDAMPL$browseId",
-                                        params = playlist.playlist.radioEndpointParams
-                                    ),
-                                    isEditable = false
-                                ),
-                                coroutineScope = coroutineScope,
-                                onDismiss = menuState::dismiss
+                                    items = songs.map { it.toMediaItem() },
+                                    startIndex = startIndex,
+                                    position = positionMs,
+                                    playlistId = playlist.id
+                                )
                             )
                         }
                     }
                 }
             }
-        )
-)
+        },
+        modifier = modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = {
+                    if (!playlist.playlist.isEditable && playlist.songCount == 0 && playlist.playlist.remoteSongCount != 0)
+                        navController.navigate("online_playlist/${playlist.playlist.browseId}")
+                    else
+                        navController.navigate("local_playlist/${playlist.id}")
+                },
+                onLongClick = {
+                    menuState.show {
+                        if (playlist.playlist.isEditable || playlist.songCount != 0) {
+                            PlaylistMenu(
+                                playlist = playlist,
+                                coroutineScope = coroutineScope,
+                                onDismiss = menuState::dismiss
+                            )
+                        } else {
+                            playlist.playlist.browseId?.let { browseId ->
+                                YouTubePlaylistMenu(
+                                    playlist = PlaylistItem(
+                                        id = browseId,
+                                        title = playlist.playlist.name,
+                                        author = null,
+                                        songCountText = null,
+                                        thumbnail = playlist.thumbnails.getOrNull(0) ?: "",
+                                        playEndpoint = WatchEndpoint(
+                                            playlistId = browseId,
+                                            params = playlist.playlist.playEndpointParams
+                                        ),
+                                        shuffleEndpoint = WatchEndpoint(
+                                            playlistId = browseId,
+                                            params = playlist.playlist.shuffleEndpointParams
+                                        ),
+                                        radioEndpoint = WatchEndpoint(
+                                            playlistId = "RDAMPL$browseId",
+                                            params = playlist.playlist.radioEndpointParams
+                                        ),
+                                        isEditable = false
+                                    ),
+                                    coroutineScope = coroutineScope,
+                                    onDismiss = menuState::dismiss
+                                )
+                            }
+                        }
+                    }
+                }
+            )
+    )
+}

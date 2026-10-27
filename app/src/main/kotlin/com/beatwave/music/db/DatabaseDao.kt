@@ -1292,6 +1292,7 @@ interface DatabaseDao {
         sortType: PlaylistSortType,
         descending: Boolean,
     ) = when (sortType) {
+        PlaylistSortType.CUSTOM,
         PlaylistSortType.CREATE_DATE -> playlistsByCreateDateAsc()
         PlaylistSortType.NAME ->
             playlistsByNameAsc().map { playlists ->

@@ -752,10 +752,18 @@ private fun TopPlaylistHeader(
                         if (isPlaying) {
                             playerConnection.player.pause()
                         } else {
+                            val (startIndex, positionMs) = com.beatwave.music.playback.PlaylistPlaybackTracker.resolveStartProgress(
+                                context = context,
+                                playlistId = "top_$topSize",
+                                songIds = songs.map { it.id }
+                            )
                             playerConnection.playQueue(
                                 ListQueue(
                                     title = name,
                                     items = songs.map { it.toMediaItem() },
+                                    startIndex = startIndex,
+                                    position = positionMs,
+                                    playlistId = "top_$topSize"
                                 )
                             )
                         }

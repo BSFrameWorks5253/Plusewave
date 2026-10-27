@@ -720,7 +720,7 @@ private fun CachePlaylistHeader(
                     if (isThisPlaylistPlaying) {
                         playerConnection.player.pause()
                     } else {
-                        val startIndex = PlaylistPlaybackTracker.resolveStartIndex(
+                        val (startIndex, positionMs) = PlaylistPlaybackTracker.resolveStartProgress(
                             context = context,
                             playlistId = "cached",
                             songIds = songs.map { it.id }
@@ -730,6 +730,7 @@ private fun CachePlaylistHeader(
                                 title = context.getString(R.string.cached_playlist),
                                 items = songs.map { it.toMediaItem() },
                                 startIndex = startIndex,
+                                position = positionMs,
                                 playlistId = "cached"
                             )
                         )

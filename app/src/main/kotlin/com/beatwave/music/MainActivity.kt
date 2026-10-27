@@ -700,10 +700,11 @@ class MainActivity : ComponentActivity() {
                     context = context,
                     onSuccess = { latestVersion, isAvailable, _, _, _, _, _, _ ->
                         val currentVersion = BuildConfig.VERSION_NAME
-                        Timber.tag("UpdateCheck").d("Startup check success. Latest: $latestVersion, Current: $currentVersion, isAvailable: $isAvailable")
-                        saveUpdateAvailableState(context, isAvailable)
+                        val strictlyNewer = isAvailable && com.beatwave.music.vivimusic.updater.isNewerVersion(latestVersion, currentVersion)
+                        Timber.tag("UpdateCheck").d("Startup check success. Latest: $latestVersion, Current: $currentVersion, isAvailable: $isAvailable, strictlyNewer: $strictlyNewer")
+                        saveUpdateAvailableState(context, strictlyNewer)
                         
-                        if (isAvailable && getUpdateNotificationsSetting(context)) {
+                        if (strictlyNewer && getUpdateNotificationsSetting(context)) {
                             Timber.tag("UpdateCheck").d("Posting update notification for $latestVersion")
                             UpdateNotificationHelper.showUpdateNotification(context, latestVersion)
                         }
@@ -1587,7 +1588,7 @@ class MainActivity : ComponentActivity() {
                         checkForUpdate(
                             context = context,
                             onSuccess = { tag, isAvailable, changelog, size, date, description, imageUrl, apkUrl ->
-                                if (isAvailable && apkUrl != null) {
+                                if (isAvailable && apkUrl != null && com.beatwave.music.vivimusic.updater.isNewerVersion(tag, BuildConfig.VERSION_NAME)) {
                                     val cleanDescription = if (changelog.isNotEmpty()) {
                                         changelog.joinToString("\n\n") { section ->
                                             "${section.title}:\n" + section.items.joinToString("\n") { "• $it" }

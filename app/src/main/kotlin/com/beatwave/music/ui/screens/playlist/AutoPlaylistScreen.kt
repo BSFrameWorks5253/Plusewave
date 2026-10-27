@@ -785,12 +785,13 @@ private fun AutoPlaylistHeader(
                         playerConnection.player.pause()
                     } else {
                         val songIds = songs.map { it.id }
-                        val startIndex = com.beatwave.music.playback.PlaylistPlaybackTracker.resolveStartIndex(context, playlistType, songIds)
+                        val (startIndex, positionMs) = com.beatwave.music.playback.PlaylistPlaybackTracker.resolveStartProgress(context, playlistType, songIds)
                         playerConnection.playQueue(
                             ListQueue(
                                 title = context.getString(titleRes),
                                 items = songs.map { it.toMediaItem() },
                                 startIndex = startIndex,
+                                position = positionMs,
                                 playlistId = playlistType,
                             ),
                         )

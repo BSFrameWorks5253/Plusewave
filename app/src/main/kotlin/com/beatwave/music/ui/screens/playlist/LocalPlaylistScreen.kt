@@ -1554,12 +1554,13 @@ fun LocalPlaylistHeader(
                             playerConnection.player.play()
                         } else {
                             val songIds = songs.map { it.song.id }
-                            val startIndex = com.beatwave.music.playback.PlaylistPlaybackTracker.resolveStartIndex(context, playlist.id, songIds)
+                            val (startIndex, positionMs) = com.beatwave.music.playback.PlaylistPlaybackTracker.resolveStartProgress(context, playlist.id, songIds)
                             playerConnection.playQueue(
                                 ListQueue(
                                     title = playlist.playlist.name,
                                     items = songs.map { it.song.toMediaItem() },
                                     startIndex = startIndex,
+                                    position = positionMs,
                                     playlistId = playlist.id,
                                 )
                             )

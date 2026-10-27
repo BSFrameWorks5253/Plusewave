@@ -623,35 +623,48 @@ private fun formatGitHubDate(githubDate: String): String = try {
     githubDate
 }
 
-// Parse numerical version components from strings like "v6.1.11", "b6.1.11", "6.1.11-release"
-fun parseVersionNumbers(version: String): List<Int> {
-    val matches = Regex("\\d+").findAll(version)
-    return matches.map { it.value.toIntOrNull() ?: 0 }.toList()
+data class SemanticVersion(
+    val major: Int = 0,
+    val minor: Int = 0,
+    val patch: Int = 0,
+    val isBeta: Boolean = false
+) : Comparable<SemanticVersion> {
+    override fun compareTo(other: SemanticVersion): Int {
+        if (major != other.major) return major.compareTo(other.major)
+        if (minor != other.minor) return minor.compareTo(other.minor)
+        if (patch != other.patch) return patch.compareTo(other.patch)
+        // If numbers match, stable is newer than beta
+        if (!isBeta && other.isBeta) return 1
+        if (isBeta && !other.isBeta) return -1
+        return 0
+    }
 }
 
-// Robust version comparison: returns true if latestVersion > currentVersion
+fun parseSemanticVersion(version: String): SemanticVersion {
+    // Only detect beta if explicitly designated (e.g. -beta, .beta, beta tag, or 'b' directly attached to digit)
+    val isBeta = version.contains("beta", ignoreCase = true) || 
+                 Regex("""(^|[^a-zA-Z])b\d+""", RegexOption.IGNORE_CASE).containsMatchIn(version)
+    val matches = Regex("""\d+""").findAll(version)
+    val nums = matches.mapNotNull { it.value.toIntOrNull() }.toList()
+    return SemanticVersion(
+        major = nums.getOrElse(0) { 0 },
+        minor = nums.getOrElse(1) { 0 },
+        patch = nums.getOrElse(2) { 0 },
+        isBeta = isBeta
+    )
+}
+
+// Parse numerical version components from strings like "v6.1.11", "b6.1.11", "6.1.11-release"
+fun parseVersionNumbers(version: String): List<Int> {
+    val sem = parseSemanticVersion(version)
+    return listOf(sem.major, sem.minor, sem.patch)
+}
+
+// Robust semantic version comparison: returns true IF AND ONLY IF latestVersion > currentVersion
 fun isNewerVersion(latestVersion: String, currentVersion: String): Boolean {
-    val latestParts = parseVersionNumbers(latestVersion)
-    val currentParts = parseVersionNumbers(currentVersion)
-    
-    // Compare version numbers
-    val maxLen = maxOf(latestParts.size, currentParts.size)
-    for (i in 0 until maxLen) {
-        val latest = latestParts.getOrElse(i) { 0 }
-        val current = currentParts.getOrElse(i) { 0 }
-        when {
-            latest > current -> return true
-            latest < current -> return false
-        }
-    }
-    
-    // If numbers are equal, check if one is beta and the other is not
-    val latestIsBeta = latestVersion.contains("beta", ignoreCase = true) || latestVersion.startsWith("b", ignoreCase = true)
-    val currentIsBeta = currentVersion.contains("beta", ignoreCase = true) || currentVersion.startsWith("b", ignoreCase = true)
-    // Stable is "newer" (better) than beta of the same version
-    if (currentIsBeta && !latestIsBeta) return true
-    
-    return false
+    val latest = parseSemanticVersion(latestVersion)
+    val current = parseSemanticVersion(currentVersion)
+    return latest > current
 }
 
 // Real download size of the nightly zip, from the workflow run's artifact listing.
@@ -793,14 +806,8 @@ suspend fun checkForUpdate(
                 val targetTagName = targetRelease.getString("tag_name")
                 val isNewer = isNewerVersion(targetTagName, currentVersion)
 
-                val currentIsBeta = currentVersion.startsWith("b") || currentVersion.contains("beta", ignoreCase = true)
-                val targetIsStable = !targetTagName.startsWith("b") && !targetTagName.contains("beta", ignoreCase = true)
-                val isSameVersionNumbers = parseVersionNumbers(currentVersion) == parseVersionNumbers(targetTagName)
-
-                // Only allow showing an update if target is strictly newer, OR upgrading beta -> stable of the EXACT SAME version
-                val shouldShow = isNewer || (!betaEnabled && currentIsBeta && targetIsStable && isSameVersionNumbers)
-
-                if (shouldShow) {
+                // Only show update if target is strictly newer than current version
+                if (isNewer) {
                     ghTag = targetTagName
                     val changelogList = mutableListOf<ChangelogSection>()
                     try {

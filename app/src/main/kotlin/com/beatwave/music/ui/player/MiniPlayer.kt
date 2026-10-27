@@ -442,36 +442,20 @@ private fun NewMiniPlayer(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
             ) {
-                // Thumbnail album art
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .border(0.5.dp, outlineColor.copy(alpha = 0.3f), CircleShape)
-                ) {
-                    mediaMetadata?.let { metadata ->
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(metadata.thumbnailUrl)
-                                .size(CoilSize(thumbnailPx(36.dp), thumbnailPx(36.dp)))
-                                .crossfade(false)
-                                .build(),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            placeholder = painterResource(R.drawable.thumbnail_fallback),
-                            error = painterResource(R.drawable.thumbnail_fallback),
-                            modifier = Modifier.fillMaxSize().clip(CircleShape)
-                        )
-                    }
-                }
+                // Live rotating vinyl micro-art
+                MiniPlayerVinylMicroArt(
+                    thumbnailUrl = mediaMetadata?.thumbnailUrl,
+                    isPlaying = isPlaying,
+                    size = 40.dp
+                )
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
                 // Center: song info + seek bar below
                 Column(modifier = Modifier.weight(1f)) {
                     NewMiniPlayerSongInfo(
                         mediaMetadata = mediaMetadata,
+                        isPlaying = isPlaying,
                         onSurfaceColor = onSurfaceColor,
                         errorColor = errorColor
                     )
@@ -731,12 +715,170 @@ private fun NewMiniPlayerPlayButton(
     }
 }
 
+@Composable
+fun MiniPlayerVinylMicroArt(
+    thumbnailUrl: String?,
+    isPlaying: Boolean,
+    modifier: Modifier = Modifier,
+    size: androidx.compose.ui.unit.Dp = 40.dp
+) {
+    val rotationAnim = remember { Animatable(0f) }
+
+    LaunchedEffect(isPlaying) {
+        if (isPlaying) {
+            while (true) {
+                rotationAnim.animateTo(
+                    targetValue = rotationAnim.value + 360f,
+                    animationSpec = tween(durationMillis = 6000, easing = LinearEasing)
+                )
+            }
+        }
+    }
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .size(size)
+            .graphicsLayer { rotationZ = rotationAnim.value % 360f }
+    ) {
+        // Outer vinyl disc body with subtle sheen
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(CircleShape)
+                .background(
+                    Brush.sweepGradient(
+                        listOf(
+                            Color(0xFF161616),
+                            Color(0xFF2C2C2C),
+                            Color(0xFF161616),
+                            Color(0xFF2C2C2C),
+                            Color(0xFF161616)
+                        )
+                    )
+                )
+                .border(0.6.dp, Color.White.copy(alpha = 0.25f), CircleShape)
+        )
+
+        // Center vinyl album artwork label
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(size * 0.65f)
+                .clip(CircleShape)
+                .border(0.5.dp, Color.White.copy(alpha = 0.35f), CircleShape)
+        ) {
+            if (thumbnailUrl != null) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(thumbnailUrl)
+                        .size(CoilSize(thumbnailPx(size * 0.65f), thumbnailPx(size * 0.65f)))
+                        .crossfade(false)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    placeholder = painterResource(R.drawable.thumbnail_fallback),
+                    error = painterResource(R.drawable.thumbnail_fallback),
+                    modifier = Modifier.fillMaxSize().clip(CircleShape)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFF333333)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.music_note),
+                        contentDescription = null,
+                        modifier = Modifier.size(size * 0.35f),
+                        tint = Color.White.copy(alpha = 0.7f)
+                    )
+                }
+            }
+        }
+
+        // Center spindle hole
+        Box(
+            modifier = Modifier
+                .size(size * 0.18f)
+                .clip(CircleShape)
+                .background(Color.Black)
+                .border(0.5.dp, Color.White.copy(alpha = 0.5f), CircleShape)
+        )
+    }
+}
+
+@Composable
+fun MiniPlayerEqualizerBars(
+    isPlaying: Boolean,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "eq_bars")
+
+    val bar1 by infiniteTransition.animateFloat(
+        initialValue = 0.25f,
+        targetValue = 0.95f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(420, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "bar1"
+    )
+    val bar2 by infiniteTransition.animateFloat(
+        initialValue = 0.85f,
+        targetValue = 0.3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(310, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "bar2"
+    )
+    val bar3 by infiniteTransition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(520, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "bar3"
+    )
+    val bar4 by infiniteTransition.animateFloat(
+        initialValue = 0.65f,
+        targetValue = 0.25f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(380, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "bar4"
+    )
+
+    Row(
+        modifier = modifier.height(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.Bottom
+    ) {
+        listOf(bar1, bar2, bar3, bar4).forEach { heightFraction ->
+            val effectiveHeight = if (isPlaying) heightFraction else 0.3f
+            Box(
+                modifier = Modifier
+                    .width(2.5.dp)
+                    .fillMaxHeight(effectiveHeight)
+                    .clip(RoundedCornerShape(1.dp))
+                    .background(color)
+            )
+        }
+    }
+}
+
 /**
  * Song info display - title and artist
  */
 @Composable
 private fun NewMiniPlayerSongInfo(
     mediaMetadata: MediaMetadata?,
+    isPlaying: Boolean,
     onSurfaceColor: Color,
     errorColor: Color,
     modifier: Modifier = Modifier
@@ -758,20 +900,31 @@ private fun NewMiniPlayerSongInfo(
                 modifier = Modifier.basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
             )
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (metadata.explicit) MIcon.Explicit()
-                if (metadata.artists.any { it.name.isNotBlank() }) {
-                    Text(
-                        text = metadata.artists.joinToString { it.name },
-                        color = onSurfaceColor.copy(alpha = 0.7f),
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
-                    )
+                Row(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (metadata.explicit) MIcon.Explicit()
+                    if (metadata.artists.any { it.name.isNotBlank() }) {
+                        Text(
+                            text = metadata.artists.joinToString { it.name },
+                            color = onSurfaceColor.copy(alpha = 0.7f),
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
+                        )
+                    }
                 }
+                Spacer(modifier = Modifier.width(6.dp))
+                MiniPlayerEqualizerBars(
+                    isPlaying = isPlaying,
+                    color = onSurfaceColor.copy(alpha = 0.85f)
+                )
             }
 
             AnimatedVisibility(visible = error != null, enter = fadeIn(), exit = fadeOut()) {
