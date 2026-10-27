@@ -723,7 +723,7 @@ private fun CachePlaylistHeader(
                         val startIndex = PlaylistPlaybackTracker.resolveStartIndex(
                             context = context,
                             playlistId = "cached",
-                            playlistSongIds = songs.map { it.id }
+                            songIds = songs.map { it.id }
                         )
                         playerConnection.playQueue(
                             ListQueue(
