@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pulse Wave - Ultra Liquid Glass floating controls dock with gradient and specular border -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:startColor="#E61A1A24"
+        android:endColor="#D90E0E14"
+        android:type="linear" />
+    <stroke
+        android:width="1.2dp"
+        android:color="#48FFFFFF" />
+    <corners android:radius="999dp" />
+</shape>

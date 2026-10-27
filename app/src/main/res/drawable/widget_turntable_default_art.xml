@@ -1,19 +1,123 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Default circular art for turntable widget preview -->
+<!-- Preview & default stand-in for Ultra Liquid Glass 3D Floating Vinyl Turntable Widget -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Circular gradient background -->
+    <!-- Liquid Glass Squircle Card Background with Ambient Glow -->
     <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="135"
+                android:startColor="#261028"
+                android:centerColor="#0E121E"
+                android:endColor="#0A0B10"
+                android:type="linear" />
+            <stroke
+                android:width="1.2dp"
+                android:color="#40FFFFFF" />
+            <corners android:radius="24dp" />
+        </shape>
+    </item>
+
+    <!-- Floating Platter Ambient Drop Shadow -->
+    <item
+        android:bottom="24dp"
+        android:left="24dp"
+        android:right="24dp"
+        android:top="30dp">
+        <shape android:shape="oval">
+            <solid android:color="#99000000" />
+        </shape>
+    </item>
+
+    <!-- Ambient Neon Violet/Cyan Rim Bloom -->
+    <item
+        android:bottom="26dp"
+        android:left="26dp"
+        android:right="26dp"
+        android:top="26dp">
         <shape android:shape="oval">
             <gradient
                 android:angle="135"
-                android:startColor="#283A4D"
-                android:centerColor="#405571"
-                android:endColor="#6B8099"
+                android:startColor="#667928CA"
+                android:endColor="#6600DFD8"
                 android:type="linear" />
         </shape>
     </item>
-    <!-- Centered app icon -->
+
+    <!-- 3D Vinyl Carbon Disc Base -->
     <item
-        android:drawable="@drawable/ic_launcher_foreground"
-        android:gravity="center" />
+        android:bottom="30dp"
+        android:left="30dp"
+        android:right="30dp"
+        android:top="30dp">
+        <shape android:shape="oval">
+            <gradient
+                android:angle="135"
+                android:startColor="#1A1A22"
+                android:centerColor="#0F0F14"
+                android:endColor="#08080B"
+                android:type="radial"
+                android:gradientRadius="180dp" />
+            <stroke
+                android:width="1.5dp"
+                android:color="#40FFFFFF" />
+        </shape>
+    </item>
+
+    <!-- Vinyl Outer Groove Ring 1 -->
+    <item
+        android:bottom="42dp"
+        android:left="42dp"
+        android:right="42dp"
+        android:top="42dp">
+        <shape android:shape="oval">
+            <stroke
+                android:width="1dp"
+                android:color="#1AFFFFFF" />
+        </shape>
+    </item>
+
+    <!-- Vinyl Outer Groove Ring 2 -->
+    <item
+        android:bottom="54dp"
+        android:left="54dp"
+        android:right="54dp"
+        android:top="54dp">
+        <shape android:shape="oval">
+            <stroke
+                android:width="1dp"
+                android:color="#24FFFFFF" />
+        </shape>
+    </item>
+
+    <!-- Center Album Label -->
+    <item
+        android:bottom="74dp"
+        android:left="74dp"
+        android:right="74dp"
+        android:top="74dp">
+        <shape android:shape="oval">
+            <gradient
+                android:angle="135"
+                android:startColor="#7928CA"
+                android:endColor="#FF0080"
+                android:type="linear" />
+            <stroke
+                android:width="2dp"
+                android:color="#80FFFFFF" />
+        </shape>
+    </item>
+
+    <!-- Spindle Hole Center -->
+    <item
+        android:bottom="96dp"
+        android:left="96dp"
+        android:right="96dp"
+        android:top="96dp">
+        <shape android:shape="oval">
+            <solid android:color="#060608" />
+            <stroke
+                android:width="2dp"
+                android:color="#B3E2E2EC" />
+        </shape>
+    </item>
 </layer-list>

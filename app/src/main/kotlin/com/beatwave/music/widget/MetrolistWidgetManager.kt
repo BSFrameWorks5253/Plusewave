@@ -211,13 +211,16 @@ class vivimusicWidgetManager @Inject constructor(
                 val options = appWidgetManager.getAppWidgetOptions(widgetId)
                 val config = WidgetConfig.load(context, widgetId)
                 val turntableViews = createTurntableRemoteViews(
-                    options,
-                    config,
-                    title,
-                    artist,
-                    circularAlbumArt,
-                    isPlaying,
-                    isLiked
+                    options = options,
+                    config = config,
+                    title = title,
+                    artist = artist,
+                    albumArt = albumArt,
+                    isPlaying = isPlaying,
+                    isLiked = isLiked,
+                    duration = duration,
+                    currentPosition = currentPosition,
+                    audioQuality = audioQuality
                 )
                 appWidgetManager.updateAppWidget(widgetId, turntableViews)
             }
@@ -673,116 +676,355 @@ class vivimusicWidgetManager @Inject constructor(
         return views
     }
 
-    private fun createTurntableVinylRecord(source: Bitmap, isPlaying: Boolean): Bitmap {
-        val size = minOf(source.width, source.height).coerceAtLeast(360)
-        val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    private fun createTurntableVinylRecord(
+        card: CardSize,
+        source: Bitmap?,
+        isPlaying: Boolean,
+        duration: Long = 0L,
+        currentPosition: Long = 0L
+    ): Bitmap {
+        val scaleFactor = maxOf(1f, 540f / minOf(card.width, card.height).toFloat())
+        val width = (card.width * scaleFactor).toInt().coerceIn(360, 1600)
+        val height = (card.height * scaleFactor).toInt().coerceIn(360, 1600)
+        val cornerPx = card.cornerPx * scaleFactor
+
+        val output = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
-        val radius = size / 2f
 
-        // 1. Sleek vinyl black base
-        val vinylPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#121215")
+        // 1. Dynamic palette extraction for ambient glow
+        val palette = source?.let { runCatching { Palette.from(it).clearFilters().generate() }.getOrNull() }
+        val vibrantColor = palette?.vibrantSwatch?.rgb
+            ?: palette?.dominantSwatch?.rgb
+            ?: Color.parseColor("#8A2BE2") // Electric violet
+        val secondaryColor = palette?.lightVibrantSwatch?.rgb
+            ?: palette?.mutedSwatch?.rgb
+            ?: Color.parseColor("#00E5FF") // Cyber cyan
+
+        // 2. Liquid Glass Squircle Card Background
+        val squircleRect = RectF(0f, 0f, width.toFloat(), height.toFloat())
+        val outline = ContinuousRoundedRectangle(cornerPx).createOutline(
+            size = Size(width.toFloat(), height.toFloat()),
+            layoutDirection = LayoutDirection.Ltr,
+            density = Density(1f)
+        )
+        val squirclePath = (outline as? Outline.Generic)?.path?.asAndroidPath()
+            ?: android.graphics.Path().apply {
+                addRoundRect(squircleRect, cornerPx, cornerPx, android.graphics.Path.Direction.CW)
+            }
+
+        canvas.save()
+        canvas.clipPath(squirclePath)
+
+        // 2a. Base deep dark glass fill
+        val glassBasePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.argb(235, 12, 13, 19)
         }
-        canvas.drawCircle(radius, radius, radius, vinylPaint)
+        canvas.drawRect(squircleRect, glassBasePaint)
 
-        // 2. Concentric audio grooves
+        // Determine vinyl disc placement based on aspect ratio
+        val isWide = width.toFloat() / height.toFloat() >= 1.25f
+        val vinylCenterX: Float
+        val vinylCenterY: Float
+        val vinylRadius: Float
+
+        if (isWide) {
+            vinylCenterY = height / 2f
+            vinylCenterX = width - (height * 0.50f)
+            vinylRadius = height * 0.41f
+        } else {
+            vinylCenterX = width / 2f
+            vinylCenterY = height * 0.50f
+            vinylRadius = minOf(width, height) * 0.38f
+        }
+
+        // 2b. Dynamic Ambient Glow Bloom behind the floating vinyl
+        val bloomPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = RadialGradient(
+                vinylCenterX, vinylCenterY, vinylRadius * 1.65f,
+                intArrayOf(
+                    ColorUtils.setAlphaComponent(vibrantColor, 180),
+                    ColorUtils.setAlphaComponent(secondaryColor, 85),
+                    ColorUtils.setAlphaComponent(vibrantColor, 20),
+                    Color.TRANSPARENT
+                ),
+                floatArrayOf(0f, 0.45f, 0.78f, 1f),
+                Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawRect(squircleRect, bloomPaint)
+
+        // 2c. Frosted Glass Top-Down Specular Highlight
+        val glassSheenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = LinearGradient(
+                0f, 0f, 0f, height * 0.35f,
+                intArrayOf(
+                    Color.argb(60, 255, 255, 255),
+                    Color.argb(18, 255, 255, 255),
+                    Color.TRANSPARENT
+                ),
+                floatArrayOf(0f, 0.35f, 1f),
+                Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawRect(squircleRect, glassSheenPaint)
+
+        // 3. 3D Floating Vinyl Platter
+        // 3a. Deep Ambient Elevation Drop Shadow
+        val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = RadialGradient(
+                vinylCenterX, vinylCenterY + vinylRadius * 0.08f, vinylRadius * 1.25f,
+                intArrayOf(
+                    Color.argb(165, 0, 0, 0),
+                    Color.argb(100, 0, 0, 0),
+                    Color.argb(30, 0, 0, 0),
+                    Color.TRANSPARENT
+                ),
+                floatArrayOf(0.70f, 0.88f, 0.98f, 1f),
+                Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawCircle(vinylCenterX, vinylCenterY + vinylRadius * 0.08f, vinylRadius * 1.25f, shadowPaint)
+
+        // 3b. Floating Ambient Rim Underglow
+        val neonUnderglowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = vinylRadius * 0.12f
+            shader = RadialGradient(
+                vinylCenterX, vinylCenterY, vinylRadius * 1.08f,
+                intArrayOf(
+                    Color.TRANSPARENT,
+                    ColorUtils.setAlphaComponent(vibrantColor, 125),
+                    Color.TRANSPARENT
+                ),
+                floatArrayOf(0.85f, 0.98f, 1f),
+                Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawCircle(vinylCenterX, vinylCenterY, vinylRadius * 1.01f, neonUnderglowPaint)
+
+        // 3c. Deep carbon vinyl disc body
+        val vinylBasePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = RadialGradient(
+                vinylCenterX, vinylCenterY, vinylRadius,
+                intArrayOf(
+                    Color.parseColor("#16161C"),
+                    Color.parseColor("#0E0E12"),
+                    Color.parseColor("#08080B")
+                ),
+                floatArrayOf(0f, 0.7f, 1f),
+                Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawCircle(vinylCenterX, vinylCenterY, vinylRadius, vinylBasePaint)
+
+        // 3d. Outer edge bevel and run-in lip
+        val outerBevelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 2.5f
+            color = Color.argb(60, 255, 255, 255)
+        }
+        canvas.drawCircle(vinylCenterX, vinylCenterY, vinylRadius - 1.25f, outerBevelPaint)
+
+        val runInLipPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 1.2f
+            color = Color.argb(35, 255, 255, 255)
+        }
+        canvas.drawCircle(vinylCenterX, vinylCenterY, vinylRadius - 5f, runInLipPaint)
+
+        // 3e. Concentric Phonograph Grooves with Track Bands
+        val labelRadius = vinylRadius * 0.44f
         val groovePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            color = Color.argb(22, 255, 255, 255)
-            strokeWidth = 1.2f
+            strokeWidth = 1f
         }
-        val labelRadius = radius * 0.58f
-        var r = labelRadius + 5f
-        while (r < radius - 6f) {
-            canvas.drawCircle(radius, radius, r, groovePaint)
-            r += 9f
+        val totalGrooveWidth = (vinylRadius - 7f) - (labelRadius + 4f)
+        val trackBands = 4
+        val bandWidth = totalGrooveWidth / trackBands
+        for (b in 0 until trackBands) {
+            val bandStart = labelRadius + 4f + (b * bandWidth)
+            val bandEnd = bandStart + bandWidth - 3f
+            var gr = bandStart + 2f
+            var alt = 0
+            while (gr < bandEnd) {
+                groovePaint.color = if (alt % 2 == 0) Color.argb(26, 255, 255, 255) else Color.argb(12, 255, 255, 255)
+                canvas.drawCircle(vinylCenterX, vinylCenterY, gr, groovePaint)
+                gr += 3.2f
+                alt++
+            }
+            // Distinct shiny gap between tracks
+            groovePaint.color = Color.argb(42, 255, 255, 255)
+            canvas.drawCircle(vinylCenterX, vinylCenterY, bandEnd + 1.2f, groovePaint)
         }
 
-        // 3. Realistic vinyl reflection sheen (anisotropic reflections)
+        // 3f. Anisotropic Specular Butterfly Reflection Sheen
         val sweepPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
             shader = SweepGradient(
-                radius, radius,
+                vinylCenterX, vinylCenterY,
                 intArrayOf(
                     Color.argb(0, 255, 255, 255),
-                    Color.argb(45, 255, 255, 255),
+                    Color.argb(62, 255, 255, 255),
                     Color.argb(0, 255, 255, 255),
                     Color.argb(0, 255, 255, 255),
-                    Color.argb(45, 255, 255, 255),
-                    Color.argb(0, 255, 255, 255),
+                    Color.argb(62, 255, 255, 255),
+                    Color.argb(0, 255, 255, 255)
                 ),
-                floatArrayOf(0f, 0.20f, 0.40f, 0.50f, 0.70f, 1f)
+                floatArrayOf(0f, 0.22f, 0.42f, 0.50f, 0.72f, 1f)
             )
         }
         canvas.save()
-        val groovePath = android.graphics.Path().apply {
-            addCircle(radius, radius, radius - 4f, android.graphics.Path.Direction.CW)
-            addCircle(radius, radius, labelRadius, android.graphics.Path.Direction.CCW)
+        val grooveClip = android.graphics.Path().apply {
+            addCircle(vinylCenterX, vinylCenterY, vinylRadius - 3f, android.graphics.Path.Direction.CW)
+            addCircle(vinylCenterX, vinylCenterY, labelRadius + 2f, android.graphics.Path.Direction.CCW)
         }
-        canvas.clipPath(groovePath)
-        canvas.drawCircle(radius, radius, radius, sweepPaint)
+        canvas.clipPath(grooveClip)
+        canvas.drawCircle(vinylCenterX, vinylCenterY, vinylRadius, sweepPaint)
         canvas.restore()
 
-        // 4. Center album art label with crisp circular shader
-        val squareSource = if (source.width != source.height) {
-            val minDim = minOf(source.width, source.height)
-            Bitmap.createBitmap(source, (source.width - minDim) / 2, (source.height - minDim) / 2, minDim, minDim)
-        } else source
+        // 3g. Center Circular Album Art Label
+        val artSource = source ?: getCircularDefaultIcon()
+        val squareArt = if (artSource.width != artSource.height) {
+            val minDim = minOf(artSource.width, artSource.height)
+            Bitmap.createBitmap(artSource, (artSource.width - minDim) / 2, (artSource.height - minDim) / 2, minDim, minDim)
+        } else artSource
 
         val artPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             isFilterBitmap = true
-            shader = BitmapShader(squareSource, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+            shader = BitmapShader(squareArt, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
         }
-        val matrix = android.graphics.Matrix().apply {
-            val s = (labelRadius * 2f) / squareSource.width
+        val artMatrix = android.graphics.Matrix().apply {
+            val s = (labelRadius * 2f) / squareArt.width
             setScale(s, s)
-            postTranslate(radius - labelRadius, radius - labelRadius)
+            postTranslate(vinylCenterX - labelRadius, vinylCenterY - labelRadius)
         }
-        artPaint.shader.setLocalMatrix(matrix)
-        canvas.drawCircle(radius, radius, labelRadius, artPaint)
+        artPaint.shader.setLocalMatrix(artMatrix)
+        canvas.drawCircle(vinylCenterX, vinylCenterY, labelRadius, artPaint)
 
-        // 5. Outer rim highlight on label
-        val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        // 3h. Label Rim Bevel & Center Spindle Pin
+        val labelRimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            color = Color.argb(45, 255, 255, 255)
             strokeWidth = 2.5f
+            color = Color.argb(125, 235, 235, 245)
         }
-        canvas.drawCircle(radius, radius, labelRadius, rimPaint)
+        canvas.drawCircle(vinylCenterX, vinylCenterY, labelRadius, labelRimPaint)
 
-        // 6. Center spindle hole & metallic bevel ring
-        val spindleHolePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#08080A")
+        val spindleHoleRadius = vinylRadius * 0.085f
+        val spindlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#060608")
         }
-        canvas.drawCircle(radius, radius, radius * 0.10f, spindleHolePaint)
+        canvas.drawCircle(vinylCenterX, vinylCenterY, spindleHoleRadius, spindlePaint)
+
         val spindleRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            color = Color.argb(200, 230, 230, 240)
             strokeWidth = 2.5f
+            shader = RadialGradient(
+                vinylCenterX, vinylCenterY, spindleHoleRadius,
+                intArrayOf(Color.parseColor("#FFFFFF"), Color.parseColor("#8E8E98")),
+                null, Shader.TileMode.CLAMP
+            )
         }
-        canvas.drawCircle(radius, radius, radius * 0.10f, spindleRingPaint)
+        canvas.drawCircle(vinylCenterX, vinylCenterY, spindleHoleRadius, spindleRingPaint)
 
-        // 7. Sleek stylus tonearm
-        drawStylusTonearm(canvas, size.toFloat(), isPlaying)
+        // 3i. Outer Rim Glowing Playback Progress Arc
+        if (duration > 0 && currentPosition > 0) {
+            val progressFraction = (currentPosition.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+            val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = 3f
+                strokeCap = Paint.Cap.ROUND
+                color = vibrantColor
+            }
+            val arcRect = RectF(
+                vinylCenterX - vinylRadius - 2.5f,
+                vinylCenterY - vinylRadius - 2.5f,
+                vinylCenterX + vinylRadius + 2.5f,
+                vinylCenterY + vinylRadius + 2.5f
+            )
+            canvas.drawArc(arcRect, -90f, progressFraction * 360f, false, arcPaint)
+
+            val headAngleRad = Math.toRadians((-90.0 + (progressFraction * 360.0)))
+            val headX = (vinylCenterX + (vinylRadius + 2.5f) * Math.cos(headAngleRad)).toFloat()
+            val headY = (vinylCenterY + (vinylRadius + 2.5f) * Math.sin(headAngleRad)).toFloat()
+            val headDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.WHITE
+                style = Paint.Style.FILL
+            }
+            canvas.drawCircle(headX, headY, 3.5f, headDotPaint)
+        }
+
+        // 3j. Subtle neon equalizer bars when actively playing
+        if (isPlaying) {
+            val eqX = vinylCenterX - vinylRadius * 0.70f
+            val eqY = vinylCenterY + vinylRadius * 0.58f
+            val barWidth = vinylRadius * 0.028f
+            val barSpacing = vinylRadius * 0.045f
+            val barHeights = floatArrayOf(vinylRadius * 0.08f, vinylRadius * 0.18f, vinylRadius * 0.12f, vinylRadius * 0.22f)
+            val eqPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = ColorUtils.setAlphaComponent(secondaryColor, 220)
+                strokeCap = Paint.Cap.ROUND
+                strokeWidth = barWidth
+            }
+            for (i in barHeights.indices) {
+                val bx = eqX + (i * barSpacing)
+                val byTop = eqY - barHeights[i]
+                canvas.drawLine(bx, eqY, bx, byTop, eqPaint)
+            }
+        }
+
+        // 4. Precision Hi-Fi Tonearm Stylus
+        drawStylusTonearm(canvas, vinylCenterX, vinylCenterY, vinylRadius, isPlaying)
+
+        // 5. Iridescent Specular Glass Border Rim
+        val glassBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 3f
+            shader = LinearGradient(
+                0f, 0f, width.toFloat(), height.toFloat(),
+                intArrayOf(
+                    Color.argb(105, 255, 255, 255),
+                    Color.argb(32, 255, 255, 255),
+                    Color.argb(16, 255, 255, 255),
+                    Color.argb(65, 255, 255, 255)
+                ),
+                floatArrayOf(0f, 0.3f, 0.7f, 1f),
+                Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawPath(squirclePath, glassBorderPaint)
+
+        canvas.restore()
 
         return output
     }
 
-    private fun drawStylusTonearm(canvas: Canvas, size: Float, isPlaying: Boolean) {
-        val pivotX = size * 0.86f
-        val pivotY = size * 0.14f
-        val pivotRadius = size * 0.055f
+    private fun createTurntableVinylRecord(source: Bitmap, isPlaying: Boolean): Bitmap {
+        val defaultCard = CardSize(width = 600, height = 600, cornerPx = 48f)
+        return createTurntableVinylRecord(defaultCard, source, isPlaying)
+    }
 
-        // 1. Pivot Base shadow and metallic base
+    private fun drawStylusTonearm(
+        canvas: Canvas,
+        cx: Float,
+        cy: Float,
+        radius: Float,
+        isPlaying: Boolean
+    ) {
+        val pivotX = cx + radius * 0.76f
+        val pivotY = cy - radius * 0.70f
+        val pivotRadius = radius * 0.14f
+
+        // 1. Pivot Base shadow & metallic gimbal base
         val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.argb(80, 0, 0, 0)
+            color = Color.argb(90, 0, 0, 0)
             style = Paint.Style.FILL
         }
-        canvas.drawCircle(pivotX + 2f, pivotY + 3f, pivotRadius, shadowPaint)
+        canvas.drawCircle(pivotX + 3f, pivotY + 4f, pivotRadius, shadowPaint)
 
         val pivotBasePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             shader = RadialGradient(
                 pivotX, pivotY, pivotRadius,
-                intArrayOf(Color.parseColor("#E0E0E6"), Color.parseColor("#4A4A52")),
+                intArrayOf(Color.parseColor("#F0F0F5"), Color.parseColor("#35353C")),
                 null,
                 Shader.TileMode.CLAMP
             )
@@ -791,17 +1033,31 @@ class vivimusicWidgetManager @Inject constructor(
 
         val pivotRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            color = Color.parseColor("#222226")
-            strokeWidth = 2f
+            color = Color.parseColor("#1A1A20")
+            strokeWidth = 2.5f
         }
         canvas.drawCircle(pivotX, pivotY, pivotRadius, pivotRingPaint)
 
-        // 2. Tonearm rod coordinates
-        val targetX = if (isPlaying) size * 0.62f else size * 0.86f
-        val targetY = if (isPlaying) size * 0.46f else size * 0.42f
+        // Glowing Status LED on Gimbal Pivot (Neon Cyan when playing, Amber when paused)
+        val ledColor = if (isPlaying) Color.parseColor("#00F2FE") else Color.parseColor("#FF9100")
+        val ledGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = ColorUtils.setAlphaComponent(ledColor, 80)
+            style = Paint.Style.FILL
+        }
+        canvas.drawCircle(pivotX, pivotY, pivotRadius * 0.55f, ledGlowPaint)
 
-        val elbowX = if (isPlaying) size * 0.78f else size * 0.88f
-        val elbowY = if (isPlaying) size * 0.28f else size * 0.26f
+        val ledCorePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = ledColor
+            style = Paint.Style.FILL
+        }
+        canvas.drawCircle(pivotX, pivotY, pivotRadius * 0.30f, ledCorePaint)
+
+        // 2. Tonearm Rod Coordinates
+        val targetX = if (isPlaying) cx + radius * 0.36f else cx + radius * 0.86f
+        val targetY = if (isPlaying) cy - radius * 0.10f else cy - radius * 0.18f
+
+        val elbowX = if (isPlaying) cx + radius * 0.70f else cx + radius * 0.88f
+        val elbowY = if (isPlaying) cy - radius * 0.38f else cy - radius * 0.44f
 
         val armPath = android.graphics.Path().apply {
             moveTo(pivotX, pivotY)
@@ -809,53 +1065,61 @@ class vivimusicWidgetManager @Inject constructor(
             lineTo(targetX, targetY)
         }
 
-        // Arm shadow
+        // Arm Shadow
         val armShadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = size * 0.018f
+            strokeWidth = radius * 0.038f
             strokeCap = Paint.Cap.ROUND
             strokeJoin = Paint.Join.ROUND
-            color = Color.argb(90, 0, 0, 0)
+            color = Color.argb(100, 0, 0, 0)
         }
         val shadowOffsetPath = android.graphics.Path().apply {
-            moveTo(pivotX + 3f, pivotY + 4f)
-            lineTo(elbowX + 3f, elbowY + 4f)
-            lineTo(targetX + 3f, targetY + 4f)
+            moveTo(pivotX + 4f, pivotY + 6f)
+            lineTo(elbowX + 4f, elbowY + 6f)
+            lineTo(targetX + 4f, targetY + 6f)
         }
         canvas.drawPath(shadowOffsetPath, armShadowPaint)
 
-        // Arm rod
+        // Arm Rod
         val armPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = size * 0.018f
+            strokeWidth = radius * 0.038f
             strokeCap = Paint.Cap.ROUND
             strokeJoin = Paint.Join.ROUND
-            color = Color.parseColor("#E6E6EC")
+            color = Color.parseColor("#EDEDF4")
         }
         canvas.drawPath(armPath, armPaint)
 
-        // 3. Cartridge / Headshell at the tip
-        val headAngle = if (isPlaying) 32.0 else 5.0
-        val headLength = size * 0.065f
-        val headWidth = size * 0.026f
+        // 3. Cartridge Headshell at the tip
+        val headAngle = if (isPlaying) 34.0 else 6.0
+        val headLength = radius * 0.15f
+        val headWidth = radius * 0.06f
 
         canvas.save()
         canvas.translate(targetX, targetY)
         canvas.rotate(headAngle.toFloat())
 
         val headPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#1C1C20")
+            color = Color.parseColor("#181820")
             style = Paint.Style.FILL
         }
         val headRect = RectF(-headWidth / 2f, 0f, headWidth / 2f, headLength)
-        canvas.drawRoundRect(headRect, 3f, 3f, headPaint)
+        canvas.drawRoundRect(headRect, 4f, 4f, headPaint)
 
-        // Stylus needle tip highlight
-        val stylusTipPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#E82C2A")
+        // Cartridge metallic top plate highlight
+        val headPlatePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#C8C8D2")
             style = Paint.Style.FILL
         }
-        canvas.drawCircle(0f, headLength - 2f, size * 0.008f, stylusTipPaint)
+        val headPlateRect = RectF(-headWidth / 2f + 1f, 1f, headWidth / 2f - 1f, headLength * 0.45f)
+        canvas.drawRoundRect(headPlateRect, 2f, 2f, headPlatePaint)
+
+        // Stylus Laser-Red LED Needle Tip
+        val stylusTipPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#FF2647")
+            style = Paint.Style.FILL
+        }
+        canvas.drawCircle(0f, headLength - 2f, radius * 0.020f, stylusTipPaint)
 
         canvas.restore()
     }
@@ -865,21 +1129,35 @@ class vivimusicWidgetManager @Inject constructor(
         config: WidgetConfig,
         title: String,
         artist: String,
-        circularAlbumArt: Bitmap?,
+        albumArt: Bitmap?,
         isPlaying: Boolean,
-        isLiked: Boolean
+        isLiked: Boolean,
+        duration: Long = 0L,
+        currentPosition: Long = 0L,
+        audioQuality: String? = null
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_turntable)
+        val card = cardSizeFor(options)
 
-        val vinylRecord = if (circularAlbumArt != null) {
-            createTurntableVinylRecord(circularAlbumArt, isPlaying)
-        } else {
-            createTurntableVinylRecord(getCircularDefaultIcon(), isPlaying)
-        }
-        views.setImageViewBitmap(R.id.widget_turntable_album_art, vinylRecord)
+        val turntableComposite = createTurntableVinylRecord(
+            card = card,
+            source = albumArt,
+            isPlaying = isPlaying,
+            duration = duration,
+            currentPosition = currentPosition
+        )
+        views.setImageViewBitmap(R.id.widget_turntable_album_art, turntableComposite)
 
         views.setTextViewText(R.id.widget_turntable_title, title)
         views.setTextViewText(R.id.widget_turntable_artist, artist)
+
+        // Audio quality / lossless badge
+        if (config.showLosslessBadge && !audioQuality.isNullOrBlank()) {
+            views.setViewVisibility(R.id.widget_turntable_badge, android.view.View.VISIBLE)
+            views.setTextViewText(R.id.widget_turntable_badge, audioQuality)
+        } else {
+            views.setViewVisibility(R.id.widget_turntable_badge, android.view.View.GONE)
+        }
 
         val playPauseIcon = if (isPlaying) R.drawable.ic_widget_pause else R.drawable.ic_widget_play
         views.setImageViewResource(R.id.widget_turntable_play_pause, playPauseIcon)
@@ -894,10 +1172,15 @@ class vivimusicWidgetManager @Inject constructor(
         views.setViewVisibility(R.id.widget_turntable_like_button, likeVisibility)
         val likeIcon = if (isLiked) R.drawable.ic_widget_heart_nav else R.drawable.ic_widget_heart_outline_nav
         views.setImageViewResource(R.id.widget_turntable_like_button, likeIcon)
+        views.setInt(
+            R.id.widget_turntable_like_button,
+            "setColorFilter",
+            if (isLiked) Color.parseColor("#FF2D55") else Color.parseColor("#CCFFFFFF")
+        )
 
         // Set click intents
-        views.setOnClickPendingIntent(R.id.widget_turntable_album_art, getOpenAppIntent())
-        views.setOnClickPendingIntent(R.id.widget_turntable_info_container, getOpenAppIntent())
+        views.setOnClickPendingIntent(R.id.widget_turntable_album_art, getOpenAppIntent(expandPlayer = true))
+        views.setOnClickPendingIntent(R.id.widget_turntable_info_container, getOpenAppIntent(expandPlayer = true))
         views.setOnClickPendingIntent(R.id.widget_turntable_play_container, getTurntablePlayPauseIntent())
         views.setOnClickPendingIntent(R.id.widget_turntable_prev_button, getTurntablePreviousIntent())
         views.setOnClickPendingIntent(R.id.widget_turntable_next_button, getTurntableNextIntent())
