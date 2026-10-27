@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Pulse Wave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
@@ -68,6 +68,7 @@ private data class HomeFeedRow(val id: String, val labelRes: Int)
  */
 private val ArrangeableRows = listOf(
     HomeFeedRow("hero", R.string.home_section_hero),
+    HomeFeedRow("spotify_discovery", R.string.home_section_spotify_discovery),
     HomeFeedRow("keep_listening", R.string.recently_played),
     HomeFeedRow("quick_picks", R.string.quick_picks),
     HomeFeedRow("last_played_recommendation", R.string.recommended_because_listened),

@@ -11,6 +11,8 @@ import android.content.Context
 enum class WidgetBackground {
     /** Dominant colour of the current artwork (default, Apple Music behaviour). */
     ALBUM_TINT,
+    /** Material You (Monet) dynamic wallpaper colors on Android 12+. */
+    SYSTEM_DYNAMIC,
     DARK,
     LIGHT,
     /** A still image the user picked in the widget's config screen. */
@@ -27,11 +29,15 @@ enum class WidgetBackground {
  */
 data class WidgetConfig(
     val background: WidgetBackground = WidgetBackground.ALBUM_TINT,
+    /** Opacity from 0.0f (fully transparent) to 1.0f (solid / full gradient). */
+    val opacity: Float = 1.0f,
     /** content:// uri of the user's chosen background, when [background] is IMAGE. */
     val imageUri: String? = null,
     val showArtwork: Boolean = true,
     val showPrevNext: Boolean = true,
-    val showLike: Boolean = false,
+    val showLike: Boolean = true,
+    val showShuffleRepeat: Boolean = false,
+    val showLosslessBadge: Boolean = true,
     /**
      * Playlist this widget launches/plays instead of the current queue.
      * null = act on whatever is currently playing.
@@ -54,10 +60,13 @@ data class WidgetConfig(
                 background = backgroundName
                     ?.let { name -> WidgetBackground.entries.firstOrNull { it.name == name } }
                     ?: default.background,
+                opacity = p.getFloat(keyOf(widgetId, "opacity"), default.opacity),
                 imageUri = p.getString(keyOf(widgetId, "image"), null),
                 showArtwork = p.getBoolean(keyOf(widgetId, "art"), default.showArtwork),
                 showPrevNext = p.getBoolean(keyOf(widgetId, "prevnext"), default.showPrevNext),
                 showLike = p.getBoolean(keyOf(widgetId, "like"), default.showLike),
+                showShuffleRepeat = p.getBoolean(keyOf(widgetId, "shufflerepeat"), default.showShuffleRepeat),
+                showLosslessBadge = p.getBoolean(keyOf(widgetId, "losslessbadge"), default.showLosslessBadge),
                 playlistId = p.getString(keyOf(widgetId, "playlist"), null),
             )
         }
@@ -65,10 +74,13 @@ data class WidgetConfig(
         fun save(context: Context, widgetId: Int, config: WidgetConfig) {
             prefs(context).edit().apply {
                 putString(keyOf(widgetId, "bg"), config.background.name)
+                putFloat(keyOf(widgetId, "opacity"), config.opacity)
                 putString(keyOf(widgetId, "image"), config.imageUri)
                 putBoolean(keyOf(widgetId, "art"), config.showArtwork)
                 putBoolean(keyOf(widgetId, "prevnext"), config.showPrevNext)
                 putBoolean(keyOf(widgetId, "like"), config.showLike)
+                putBoolean(keyOf(widgetId, "shufflerepeat"), config.showShuffleRepeat)
+                putBoolean(keyOf(widgetId, "losslessbadge"), config.showLosslessBadge)
                 putString(keyOf(widgetId, "playlist"), config.playlistId)
             }.apply()
         }
@@ -77,7 +89,7 @@ data class WidgetConfig(
         fun delete(context: Context, widgetIds: IntArray) {
             prefs(context).edit().apply {
                 widgetIds.forEach { id ->
-                    listOf("bg", "image", "art", "prevnext", "like", "playlist")
+                    listOf("bg", "opacity", "image", "art", "prevnext", "like", "shufflerepeat", "losslessbadge", "playlist")
                         .forEach { remove(keyOf(id, it)) }
                 }
             }.apply()

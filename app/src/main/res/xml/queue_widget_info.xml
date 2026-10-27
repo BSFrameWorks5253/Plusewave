@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="180dp"
+    android:minResizeWidth="180dp"
+    android:minResizeHeight="120dp"
+    android:maxResizeWidth="500dp"
+    android:maxResizeHeight="400dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="3"
+    android:updatePeriodMillis="0"
+    android:configure="com.beatwave.music.widget.WidgetConfigActivity"
+    android:widgetFeatures="reconfigurable|configuration_optional"
+    android:previewLayout="@layout/widget_queue_preview"
+    android:initialLayout="@layout/widget_queue_preview"
+    android:description="@string/queue_widget_description"
+    android:widgetCategory="home_screen"
+    android:resizeMode="horizontal|vertical" />

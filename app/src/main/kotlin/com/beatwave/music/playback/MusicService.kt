@@ -215,8 +215,13 @@ import com.beatwave.music.utils.YTPlayerUtils
 import com.beatwave.music.utils.dataStore
 import com.beatwave.music.utils.get
 import com.beatwave.music.utils.reportException
+import com.beatwave.music.widget.LyricsWidgetReceiver
 import com.beatwave.music.widget.MusicWidgetReceiver
 import com.beatwave.music.widget.NowPlayingWidgetReceiver
+import com.beatwave.music.widget.PlaylistWidgetReceiver
+import com.beatwave.music.widget.QueueWidgetReceiver
+import com.beatwave.music.widget.TurntableWidgetReceiver
+import com.beatwave.music.widget.WidgetQueueItem
 import com.beatwave.music.widget.vivimusicWidgetManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlin.math.PI
@@ -3900,21 +3905,71 @@ class MusicService :
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             MusicWidgetReceiver.ACTION_PLAY_PAUSE -> {
-                if (player.isPlaying) player.pause() else player.play()
+                if (player.isPlaying) {
+                    player.pause()
+                } else {
+                    if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) {
+                        player.prepare()
+                    }
+                    player.play()
+                }
                 updateWidgetUI(player.isPlaying)
             }
             MusicWidgetReceiver.ACTION_LIKE -> {
                 toggleLike()
             }
             MusicWidgetReceiver.ACTION_NEXT -> {
-                player.seekToNext()
+                if (player.hasNextMediaItem()) {
+                    player.seekToNextMediaItem()
+                } else {
+                    player.seekToNext()
+                }
+                if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) {
+                    player.prepare()
+                }
+                player.play()
                 updateWidgetUI(player.isPlaying)
             }
             MusicWidgetReceiver.ACTION_PREVIOUS -> {
-                player.seekToPrevious()
+                if (player.currentPosition > 3000 || !player.hasPreviousMediaItem()) {
+                    player.seekTo(0)
+                } else {
+                    player.seekToPreviousMediaItem()
+                }
+                if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) {
+                    player.prepare()
+                }
+                player.play()
                 updateWidgetUI(player.isPlaying)
             }
-            MusicWidgetReceiver.ACTION_UPDATE_WIDGET -> {
+            MusicWidgetReceiver.ACTION_SHUFFLE -> {
+                player.shuffleModeEnabled = !player.shuffleModeEnabled
+                updateWidgetUI(player.isPlaying)
+            }
+            MusicWidgetReceiver.ACTION_REPEAT -> {
+                player.repeatMode = when (player.repeatMode) {
+                    Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+                    Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+                    else -> Player.REPEAT_MODE_OFF
+                }
+                updateWidgetUI(player.isPlaying)
+            }
+            MusicWidgetReceiver.ACTION_PLAY_PLAYLIST -> {
+                val playlistId = intent.getStringExtra(MusicWidgetReceiver.EXTRA_PLAYLIST_ID) ?: "favorites"
+                playPlaylistById(playlistId)
+            }
+            MusicWidgetReceiver.ACTION_SKIP_TO_QUEUE_ITEM -> {
+                val queueIndex = intent.getIntExtra(MusicWidgetReceiver.EXTRA_QUEUE_INDEX, -1)
+                if (queueIndex in 0 until player.mediaItemCount) {
+                    player.seekToDefaultPosition(queueIndex)
+                    if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) {
+                        player.prepare()
+                    }
+                    player.play()
+                    updateWidgetUI(player.isPlaying)
+                }
+            }
+            MusicWidgetReceiver.ACTION_UPDATE_WIDGET, TurntableWidgetReceiver.ACTION_UPDATE_TURNTABLE_WIDGET -> {
                 updateWidgetUI(player.isPlaying)
             }
         }
@@ -3941,6 +3996,16 @@ class MusicService :
         val appWidgetManager = AppWidgetManager.getInstance(this)
         val hasProgressWidget = appWidgetManager
             .getAppWidgetIds(ComponentName(this, NowPlayingWidgetReceiver::class.java))
+            .isNotEmpty() || appWidgetManager
+            .getAppWidgetIds(ComponentName(this, MusicWidgetReceiver::class.java))
+            .isNotEmpty() || appWidgetManager
+            .getAppWidgetIds(ComponentName(this, LyricsWidgetReceiver::class.java))
+            .isNotEmpty() || appWidgetManager
+            .getAppWidgetIds(ComponentName(this, TurntableWidgetReceiver::class.java))
+            .isNotEmpty() || appWidgetManager
+            .getAppWidgetIds(ComponentName(this, QueueWidgetReceiver::class.java))
+            .isNotEmpty() || appWidgetManager
+            .getAppWidgetIds(ComponentName(this, PlaylistWidgetReceiver::class.java))
             .isNotEmpty()
         if (!hasProgressWidget) return
 
@@ -3955,6 +4020,36 @@ class MusicService :
         }
     }
 
+    private fun playPlaylistById(playlistId: String) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                val mediaItems = if (playlistId == "favorites" || playlistId == "liked") {
+                    database.likedSongs(com.beatwave.music.constants.SongSortType.CREATE_DATE, true)
+                        .first()
+                        .map { it.toMediaItem() }
+                } else {
+                    database.playlistSongs(playlistId)
+                        .first()
+                        .map { it.song.toMediaItem() }
+                }
+
+                if (mediaItems.isNotEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        playQueue(
+                            com.beatwave.music.playback.queues.ListQueue(
+                                title = if (playlistId == "favorites" || playlistId == "liked") getString(R.string.liked_songs) else null,
+                                items = mediaItems,
+                                startIndex = 0,
+                            )
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Error playing playlist from widget: $playlistId")
+            }
+        }
+    }
+
     private fun updateWidgetUI(isPlaying: Boolean) {
         scope.launch {
             try {
@@ -3963,6 +4058,26 @@ class MusicService :
                 val songTitle = song?.title ?: getString(R.string.no_song_playing)
                 val artistName = songData?.artists?.joinToString(", ") { it.name } ?: getString(R.string.tap_to_open)
                 val isLiked = songData?.song?.liked == true
+
+                // Extract upcoming queue items (next 3 items from player)
+                val upcomingQueue = mutableListOf<WidgetQueueItem>()
+                val currentIndex = player.currentMediaItemIndex
+                val totalItems = player.mediaItemCount
+                for (i in (currentIndex + 1) until minOf(currentIndex + 4, totalItems)) {
+                    val item = player.getMediaItemAt(i)
+                    val title = item.mediaMetadata.title?.toString() ?: getString(R.string.unknown)
+                    val artist = item.mediaMetadata.artist?.toString() ?: ""
+                    upcomingQueue.add(WidgetQueueItem(index = i, title = title, artist = artist))
+                }
+
+                // Audio quality badge
+                val fmt = song?.id?.let { sid -> runCatching { database.format(sid).first() }.getOrNull() }
+                val qualityBadge = when {
+                    fmt?.sampleRate != null && fmt.sampleRate >= 96000 -> "HI-RES"
+                    fmt?.itag == 9999 || fmt?.itag == 9998 || fmt?.codecs?.contains("flac", ignoreCase = true) == true || fmt?.mimeType?.contains("flac", ignoreCase = true) == true -> "LOSSLESS"
+                    fmt?.bitrate != null && fmt.bitrate >= 1000000 -> "FLAC"
+                    else -> null
+                }
 
                 widgetManager.updateWidgets(
                     title = songTitle,
@@ -3973,6 +4088,10 @@ class MusicService :
                     duration = if (player.duration != C.TIME_UNSET) player.duration else 0,
                     currentPosition = player.currentPosition,
                     mediaId = song?.id,
+                    isShuffle = player.shuffleModeEnabled,
+                    repeatMode = player.repeatMode,
+                    audioQuality = qualityBadge,
+                    queueItems = upcomingQueue,
                 )
             } catch (e: Exception) {
                 // Widget not added to home screen or other error

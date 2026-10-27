@@ -47,7 +47,7 @@ import com.beatwave.music.utils.rememberPreference
 
 /**
  * Automatically prompts the user with a "What's New" changelog summary
- * when they install BeatWave or update to a new version.
+ * when they install Pulse Wave or update to a new version.
  */
 @Composable
 fun WhatsNewPromptHost(

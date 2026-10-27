@@ -452,13 +452,18 @@ class MainActivity : ComponentActivity() {
         private const val ACTION_LIBRARY = "com.beatwave.music.action.LIBRARY"
         private const val ACTION_LIBRARY_PULSEWAVE = "com.pulsewave.music.action.LIBRARY"
 
+        const val ACTION_EXPAND_PLAYER = "com.pulsewave.music.action.EXPAND_PLAYER"
+        const val ACTION_OPEN_LYRICS = "com.pulsewave.music.action.OPEN_LYRICS"
+        const val EXTRA_EXPAND_PLAYER = "expand_player"
+        const val EXTRA_OPEN_LYRICS = "open_lyrics"
+
         // Ignore a repeat bottom-nav navigate() to the same route within this
         // window, so the floating tab bar's predictive (press/drag) fire can't
         // double-navigate against its own release-fire.
         private const val NavDebounceMs = 250L
 
         // How long the nav bar's shrink/expand-to-pill animation takes before the
-        // actual navigate()/navigateUp() call for entering/exiting search â€” keeps
+        // actual navigate()/navigateUp() call for entering/exiting search — keeps
         // the animation and the route's own screen transition from overlapping.
         // Comfortably past the crossfade's own ~300ms so it always finishes first.
         private const val SearchNavTransitionDelayMs = 360L
@@ -1506,7 +1511,31 @@ class MainActivity : ComponentActivity() {
                 val ringtoneViewModel: com.beatwave.music.ui.screens.settings.RingtoneViewModel = viewModel()
                 val ringtoneUiState by ringtoneViewModel.uiState.collectAsStateWithLifecycle()
 
+                val handleWidgetNavigation: (Intent?) -> Unit = remember(playerBottomSheetState, playerConnection) {
+                    { targetIntent ->
+                        if (targetIntent != null) {
+                            val isLyrics = targetIntent.action == ACTION_OPEN_LYRICS ||
+                                targetIntent.getBooleanExtra(EXTRA_OPEN_LYRICS, false)
+                            val isExpand = targetIntent.action == ACTION_EXPAND_PLAYER ||
+                                targetIntent.getBooleanExtra(EXTRA_EXPAND_PLAYER, false)
+                            if (isLyrics) {
+                                playerConnection?.requestShowLyrics?.value = true
+                                coroutineScope.launch {
+                                    playerBottomSheetState.expandSoft()
+                                }
+                            } else if (isExpand) {
+                                coroutineScope.launch {
+                                    playerBottomSheetState.expandSoft()
+                                }
+                            }
+                        }
+                    }
+                }
+
                 LaunchedEffect(Unit) {
+                    val activeIntent = pendingIntent ?: intent
+                    handleWidgetNavigation(activeIntent)
+
                     if (pendingIntent != null) {
                         handleDeepLinkIntent(pendingIntent!!, navController)
                         pendingIntent = null
@@ -1594,6 +1623,7 @@ class MainActivity : ComponentActivity() {
 
                 DisposableEffect(Unit) {
                     val listener = Consumer<Intent> { intent ->
+                        handleWidgetNavigation(intent)
                         handleDeepLinkIntent(intent, navController)
                     }
 

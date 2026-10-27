@@ -91,6 +91,13 @@ android {
             ?: "pulsewave5253"
         buildConfigField("String", "ADMIN_PASSWORD", "\"$adminPassword\"")
 
+        // GitHub Issue Token from .env, local.properties, or environment variables
+        val githubIssueToken = envProperties.getProperty("GITHUB_ISSUE_TOKEN")
+            ?: localProperties.getProperty("GITHUB_ISSUE_TOKEN")
+            ?: System.getenv("GITHUB_ISSUE_TOKEN")
+            ?: ""
+        buildConfigField("String", "GITHUB_ISSUE_TOKEN", "\"$githubIssueToken\"")
+
 //add nightly build label support
         val isNightly = project.hasProperty("nightly") && project.property("nightly") == "true"
         buildConfigField("Boolean", "IS_NIGHTLY", isNightly.toString())

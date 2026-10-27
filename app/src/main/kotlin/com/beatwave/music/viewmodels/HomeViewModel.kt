@@ -63,6 +63,13 @@ import com.beatwave.music.utils.SyncUtils
 import com.beatwave.music.utils.dataStore
 import com.beatwave.music.utils.get
 import com.beatwave.music.utils.reportException
+import com.beatwave.music.playback.PlayerConnection
+import com.beatwave.music.playback.queues.YouTubeQueue
+import com.beatwave.music.models.toMediaMetadata
+import com.beatwave.music.spotify.SpotifyHomeFeedService
+import com.beatwave.music.spotify.SpotifyHomeSection
+import com.beatwave.music.spotify.SpotifyHomeTrack
+import com.beatwave.music.spotify.SpotifyPlaylistSyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -102,6 +109,8 @@ class HomeViewModel @Inject constructor(
     val syncUtils: SyncUtils,
     val wrappedManager: WrappedManager,
     private val wrappedAudioService: WrappedAudioService,
+    val spotifyHomeFeedService: SpotifyHomeFeedService,
+    val spotifyPlaylistSyncManager: SpotifyPlaylistSyncManager,
 ) : ViewModel() {
     val isRefreshing = MutableStateFlow(false)
     val isLoading = MutableStateFlow(false)
@@ -112,6 +121,7 @@ class HomeViewModel @Inject constructor(
     }.distinctUntilChanged()
 
     val quickPicks = MutableStateFlow<List<Song>?>(null)
+    val spotifyHomeSections = MutableStateFlow<List<SpotifyHomeSection>?>(null)
     val dailyDiscover = MutableStateFlow<List<DailyDiscoverItem>?>(null)
     val forgottenFavorites = MutableStateFlow<List<Song>?>(null)
     val keepListening = MutableStateFlow<List<LocalItem>?>(null)
@@ -771,6 +781,21 @@ class HomeViewModel @Inject constructor(
             launch(Dispatchers.IO) { getCommunityPlaylists() }
             launch(Dispatchers.IO) { loadSimilarRecommendations() }
             launch(Dispatchers.IO) {
+                try {
+                    val sections = spotifyHomeFeedService.getHomeSections()
+                    spotifyHomeSections.value = sections.ifEmpty { null }
+                } catch (e: Exception) {
+                    reportException(e)
+                }
+            }
+            launch(Dispatchers.IO) {
+                try {
+                    spotifyPlaylistSyncManager.syncAllAutoSyncPlaylists()
+                } catch (e: Exception) {
+                    reportException(e)
+                }
+            }
+            launch(Dispatchers.IO) {
                 YouTube.home().onSuccess { page ->
                     homePage.value = page.copy(
                         sections = page.sections.mapNotNull { section ->
@@ -909,6 +934,51 @@ class HomeViewModel @Inject constructor(
         // Run sync when user manually refreshes
         viewModelScope.launch(Dispatchers.IO) {
             syncUtils.tryAutoSync()
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val sections = spotifyHomeFeedService.getHomeSections(forceRefresh = true)
+                spotifyHomeSections.value = sections.ifEmpty { null }
+            } catch (e: Exception) {
+                reportException(e)
+            }
+        }
+    }
+
+    fun playSpotifyTrack(track: SpotifyHomeTrack, playerConnection: PlayerConnection) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val songItem = spotifyHomeFeedService.resolveToSongItem(track)
+                if (songItem != null) {
+                    val mediaMetadata = songItem.toMediaMetadata()
+                    playerConnection.playQueue(
+                        YouTubeQueue(
+                            songItem.endpoint ?: WatchEndpoint(videoId = songItem.id),
+                            mediaMetadata
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                reportException(e)
+            }
+        }
+    }
+
+    fun playSpotifySection(section: SpotifyHomeSection, playerConnection: PlayerConnection) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val firstTrack = section.tracks.firstOrNull() ?: return@launch
+                val songItem = spotifyHomeFeedService.resolveToSongItem(firstTrack) ?: return@launch
+                val mediaMetadata = songItem.toMediaMetadata()
+                playerConnection.playQueue(
+                    YouTubeQueue(
+                        songItem.endpoint ?: WatchEndpoint(videoId = songItem.id),
+                        mediaMetadata
+                    )
+                )
+            } catch (e: Exception) {
+                reportException(e)
+            }
         }
     }
 

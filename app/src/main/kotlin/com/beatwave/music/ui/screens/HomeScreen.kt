@@ -224,6 +224,8 @@ import com.beatwave.music.utils.LocalFolderIndex
 import com.beatwave.music.utils.listItemShape
 import com.beatwave.music.utils.rememberEnumPreference
 import com.beatwave.music.utils.rememberPreference
+import com.beatwave.music.spotify.SpotifyHomeSection
+import com.beatwave.music.spotify.SpotifyHomeTrack
 import com.beatwave.music.viewmodels.CommunityPlaylistItem
 import com.beatwave.music.viewmodels.HomeViewModel
 import kotlin.math.min
@@ -260,6 +262,7 @@ sealed class HomeSection(val id: String, val baseWeight: Int) {
     data object Hero : HomeSection("hero", 110)
     data object SpeedDial : HomeSection("speed_dial", 100)
     data object QuickPicks : HomeSection("quick_picks", 90)
+    data object SpotifyDiscovery : HomeSection("spotify_discovery", 88)
     data object LastPlayedRecommendation : HomeSection("last_played_recommendation", 85)
     data object DailyDiscover : HomeSection("daily_discover", 80)
     data object KeepListening : HomeSection("keep_listening", 50)
@@ -786,6 +789,7 @@ fun HomeScreen(
     val explorePage by viewModel.explorePage.collectAsStateWithLifecycle()
     val dailyDiscover by viewModel.dailyDiscover.collectAsStateWithLifecycle()
     val communityPlaylists by viewModel.communityPlaylists.collectAsStateWithLifecycle()
+    val spotifyHomeSections by viewModel.spotifyHomeSections.collectAsStateWithLifecycle()
 
     val allLocalItems by viewModel.allLocalItems.collectAsStateWithLifecycle()
     val allYtItems by viewModel.allYtItems.collectAsStateWithLifecycle()
@@ -1099,7 +1103,8 @@ fun HomeScreen(
         similarRecommendations,
         lastPlayedRecommendation,
         homePage?.sections,
-        explorePage?.moodAndGenres
+        explorePage?.moodAndGenres,
+        spotifyHomeSections
     ) {
         val hidden = hiddenSectionIds.lineSequence()
             .map(String::trim)
@@ -1108,6 +1113,7 @@ fun HomeScreen(
         val list = mutableListOf<HomeSection>()
 
         if (heroCardEnabled && quickPicks?.isNotEmpty() == true) list.add(HomeSection.Hero)
+        if (spotifyHomeSections?.isNotEmpty() == true) list.add(HomeSection.SpotifyDiscovery)
         // Speed Dial section commented out per request -- gated out here rather than
         // deleting the section's rendering code, so it is one line to bring back.
         // if (speedDialItems.isNotEmpty()) list.add(HomeSection.SpeedDial)
@@ -1176,6 +1182,7 @@ fun HomeScreen(
 
                     HomeSection.SpeedDial,
                     HomeSection.QuickPicks,
+                    HomeSection.SpotifyDiscovery,
                     HomeSection.DailyDiscover -> 500 // Top tier starts equal
 
                     HomeSection.KeepListening,
@@ -1191,6 +1198,7 @@ fun HomeScreen(
                     // Range: [500-200, 500+400] = [300, 900]
                     HomeSection.SpeedDial,
                     HomeSection.QuickPicks,
+                    HomeSection.SpotifyDiscovery,
                     HomeSection.DailyDiscover -> sectionRandom.nextInt(-200, 400)
 
                     // Middle tier: Can jump up to challenge top tier, or drop lower
@@ -1215,6 +1223,7 @@ fun HomeScreen(
                 HomeSection.Hero to 110,
                 HomeSection.KeepListening to 100,
                 HomeSection.QuickPicks to 90,
+                HomeSection.SpotifyDiscovery to 88,
                 HomeSection.SpeedDial to 80,
                 HomeSection.FromTheCommunity to 70,
                 HomeSection.DailyDiscover to 60,
@@ -1597,6 +1606,7 @@ fun HomeScreen(
                     keepListening = keepListening,
                     accountPlaylists = accountPlaylists,
                     communityPlaylists = communityPlaylists,
+                    spotifyHomeSections = spotifyHomeSections,
                     similarRecommendations = similarRecommendations,
                     lastPlayedRecommendation = lastPlayedRecommendation,
                     homePage = homePage,
@@ -1770,6 +1780,7 @@ private fun LazyListScope.homeSectionsContent(
     keepListening: List<LocalItem>?,
     accountPlaylists: List<PlaylistItem>?,
     communityPlaylists: List<CommunityPlaylistItem>?,
+    spotifyHomeSections: List<SpotifyHomeSection>?,
     similarRecommendations: List<SimilarRecommendation>?,
     lastPlayedRecommendation: SimilarRecommendation?,
     homePage: HomePage?,
@@ -1796,6 +1807,7 @@ private fun LazyListScope.homeSectionsContent(
                 isRandomizing = isRandomizing,
                 randomizeJob = randomizeJob,
             )
+            HomeSection.SpotifyDiscovery -> spotifyDiscoverySection(deps, spotifyHomeSections)
             HomeSection.QuickPicks -> quickPicksSection(deps, quickPicks, mediaMetadata, isPlaying, quickPicksSongMap)
             HomeSection.LastPlayedRecommendation -> lastPlayedRecommendationSection(deps, lastPlayedRecommendation)
             HomeSection.FromTheCommunity -> communityPlaylistsSection(deps, communityPlaylists)
@@ -2525,6 +2537,146 @@ private fun LazyListScope.communityPlaylistsSection(
                                     song.toMediaMetadata()
                                 )
                             )
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SpotifyTrackCard(
+    track: SpotifyHomeTrack,
+    onClick: () -> Unit,
+    onPlayClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier
+            .width(160.dp)
+            .bounceClick(onClick = onClick),
+        shape = RoundedCornerShape(AppleTokens.CardCorner),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = 0.15f),
+                    Color.White.copy(alpha = 0.03f)
+                )
+            )
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp)
+                    .clip(RoundedCornerShape(14.dp))
+            ) {
+                AsyncImage(
+                    model = track.thumbnailUrl,
+                    contentDescription = track.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                // Spotify pill badge
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp)
+                        .background(Color(0xFF1DB954).copy(alpha = 0.9f), CircleShape)
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "Spotify",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // Play icon button
+                IconButton(
+                    onClick = onPlayClick,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(6.dp)
+                        .size(36.dp)
+                        .background(Color.Black.copy(alpha = 0.65f), CircleShape)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.play),
+                        contentDescription = "Play",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = track.title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Text(
+                text = track.artist,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+private fun LazyListScope.spotifyDiscoverySection(
+    deps: HomeSectionDeps,
+    spotifyHomeSections: List<SpotifyHomeSection>?,
+) {
+    val sections = spotifyHomeSections?.filter { it.tracks.isNotEmpty() } ?: return
+    sections.forEach { section ->
+        item(key = "spotify_${section.id}_title", contentType = "section_title") {
+            NavigationTitle(
+                title = section.title,
+                label = section.subtitle,
+                onPlayAllClick = {
+                    deps.viewModel.playSpotifySection(section, deps.playerConnection)
+                }
+            )
+        }
+
+        item(key = "spotify_${section.id}_list", contentType = "horizontal_shelf") {
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                contentPadding = PaddingValues(horizontal = AppleTokens.Gutter),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(
+                    items = section.tracks,
+                    key = { "${section.id}_${it.spotifyId}" }
+                ) { track ->
+                    SpotifyTrackCard(
+                        track = track,
+                        onClick = {
+                            deps.viewModel.playSpotifyTrack(track, deps.playerConnection)
+                        },
+                        onPlayClick = {
+                            deps.viewModel.playSpotifyTrack(track, deps.playerConnection)
                         }
                     )
                 }

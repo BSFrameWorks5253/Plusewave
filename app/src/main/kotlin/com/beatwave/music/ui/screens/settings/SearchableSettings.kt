@@ -14,6 +14,8 @@ data class SearchableSetting(
 @Composable
 fun getAllSearchableSettings(): List<SearchableSetting> {
     return listOf(
+        SearchableSetting("Feature Recommendations", "Suggest new features and ideas", "Feedback", "settings/suggestions/recommendations"),
+        SearchableSetting("Issue Noting & Bug Reports", "Report bugs and problems (GitHub Issues)", "Feedback", "settings/suggestions/issues"),
         SearchableSetting(stringResource(R.string.about), null, "About", "settings/about"),
         SearchableSetting("The Story of Pulse Wave", "The official Pulse Wave project", "About", "settings/about"),
         SearchableSetting(stringResource(R.string.account), null, "Account", "settings/account"),

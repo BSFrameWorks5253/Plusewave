@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Compact 4x1 Widget - Single row with album art, song info, like and play
-     buttons. Card painted at runtime; see widget_now_playing_wide. -->
+<!-- Compact 4x1 Widget - Single row with album art, song info, full playback and like controls -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/background"
     android:layout_width="match_parent"
@@ -40,7 +39,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="12dp"
-            android:layout_marginEnd="10dp"
+            android:layout_marginEnd="8dp"
             android:orientation="vertical"
             android:gravity="center_vertical">
 
@@ -67,20 +66,45 @@
                 android:ellipsize="end" />
         </LinearLayout>
 
+        <!-- Previous Button -->
+        <ImageView
+            android:id="@+id/widget_wide_prev_button"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:padding="3dp"
+            android:layout_marginEnd="4dp"
+            android:alpha="0.85"
+            android:src="@drawable/ic_widget_skip_previous"
+            android:contentDescription="@string/previous" />
+
+        <!-- Play/Pause Button -->
+        <ImageView
+            android:id="@+id/widget_wide_play_pause"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:padding="2dp"
+            android:src="@drawable/ic_widget_play"
+            android:contentDescription="@string/play_pause" />
+
+        <!-- Next Button -->
+        <ImageView
+            android:id="@+id/widget_wide_next_button"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:padding="3dp"
+            android:layout_marginStart="4dp"
+            android:alpha="0.85"
+            android:src="@drawable/ic_widget_skip_next"
+            android:contentDescription="@string/next" />
+
+        <!-- Like Button -->
         <ImageView
             android:id="@+id/widget_wide_like_button"
             android:layout_width="22dp"
             android:layout_height="22dp"
-            android:layout_marginEnd="14dp"
+            android:layout_marginStart="10dp"
             android:alpha="0.9"
             android:src="@drawable/ic_widget_heart_outline_nav"
             android:contentDescription="@string/like" />
-
-        <ImageView
-            android:id="@+id/widget_wide_play_pause"
-            android:layout_width="26dp"
-            android:layout_height="26dp"
-            android:src="@drawable/ic_widget_play"
-            android:contentDescription="@string/play_pause" />
     </LinearLayout>
 </FrameLayout>

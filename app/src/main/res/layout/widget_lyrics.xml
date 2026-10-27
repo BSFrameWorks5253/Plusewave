@@ -65,7 +65,7 @@
                 android:layout_width="22dp"
                 android:layout_height="22dp"
                 android:alpha="0.85"
-                android:src="@drawable/ic_widget_music_note"
+                android:src="@drawable/ic_launcher_mono"
                 android:contentDescription="@null" />
         </LinearLayout>
 

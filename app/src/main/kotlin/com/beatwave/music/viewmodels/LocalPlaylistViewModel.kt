@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Pulse Wave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.Collator
 import java.util.Locale
+import com.beatwave.music.spotify.SpotifyPlaylistSyncManager
 import javax.inject.Inject
 
 @HiltViewModel
@@ -39,8 +40,9 @@ class LocalPlaylistViewModel
 @Inject
 constructor(
     @ApplicationContext context: Context,
-    database: MusicDatabase,
+    private val database: MusicDatabase,
     private val syncUtils: SyncUtils,
+    private val spotifyPlaylistSyncManager: SpotifyPlaylistSyncManager,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     val playlistId = savedStateHandle.get<String>("playlistId")!!
@@ -109,13 +111,25 @@ constructor(
     }
 
     /**
-     * Re-syncs this playlist against YouTube. Bound to the pull-to-refresh gesture.
-     * No-op for a purely local playlist, which has no browseId to sync against.
+     * Re-syncs this playlist against YouTube or Spotify in real time.
+     * Bound to the pull-to-refresh gesture and screen entry.
+     * For Spotify playlists, pulls remote tracks and automatically appends any new additions
+     * without overwriting or clearing existing tracks.
      */
     fun refresh() {
         viewModelScope.launch {
-            playlist.first { it != null }?.playlist?.browseId?.let { browseId ->
-                syncUtils.syncPlaylist(browseId, playlistId)
+            val pl = playlist.first { it != null }?.playlist ?: return@launch
+            val browseId = pl.browseId
+            if (playlistId.startsWith("SPOTIFY_PLAYLIST_")) {
+                val spotifyId = pl.browseId ?: playlistId.removePrefix("SPOTIFY_PLAYLIST_")
+                spotifyPlaylistSyncManager.syncPlaylist(playlistId, spotifyId)
+            } else if (browseId != null) {
+                if (browseId.startsWith("spotify:playlist:") || (browseId.length in 20..25 && browseId.all { it.isLetterOrDigit() })) {
+                    val spotifyId = browseId.removePrefix("spotify:playlist:")
+                    spotifyPlaylistSyncManager.syncPlaylist(playlistId, spotifyId)
+                } else {
+                    syncUtils.syncPlaylist(browseId, playlistId)
+                }
             }
         }
     }

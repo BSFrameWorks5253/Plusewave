@@ -118,7 +118,7 @@ fun WrappedIntro(onNext: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // BeatWave Title with Layered Effect
+            // Pulse Wave Title with Layered Effect
             val manager = com.beatwave.music.ui.screens.wrapped.LocalWrappedManager.current
             val periodTitle = manager?.state?.collectAsState()?.value?.periodTitle ?: stringResource(id = R.string.wrapped_intro_title)
 

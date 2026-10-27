@@ -405,7 +405,15 @@ fun NavGraphBuilder.navigationBuilder(
     }
 
     sharedComposable("settings/suggestions") {
-        SuggestionScreen(navController, scrollBehavior)
+        SuggestionScreen(navController, scrollBehavior, initialTab = 0)
+    }
+
+    sharedComposable("settings/suggestions/recommendations") {
+        SuggestionScreen(navController, scrollBehavior, initialTab = 0)
+    }
+
+    sharedComposable("settings/suggestions/issues") {
+        SuggestionScreen(navController, scrollBehavior, initialTab = 1)
     }
 
 

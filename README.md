@@ -3,20 +3,20 @@
   <h3>Pulse Wave is an open-source, Liquid Glass music player for Android</h3>
 
   <p>
-    <a href="https://github.com/beatlabs790/Pulse Wave/releases/tag/v5.0.0">
-      <img src="https://img.shields.io/badge/%E2%AC%87%EF%B8%8F%20DOWNLOAD%20PULSE WAVE%201.5.2-4CAF50?style=for-the-badge&logo=android&logoColor=white" alt="Download Pulse Wave v5.1.2">
+    <a href="https://github.com/BSFrameworks5253/Plusewave/releases">
+      <img src="https://img.shields.io/badge/%E2%AC%87%EF%B8%8F%20DOWNLOAD%20PULSE%20WAVE-4CAF50?style=for-the-badge&logo=android&logoColor=white" alt="Download Pulse Wave">
     </a>
   </p>
   <p>
-    <b><a href="https://github.com/beatlabs790/Pulse Wave/releases/tag/latest">⬇️ DOWNLOAD Latest Build.</a></b>
+    <b><a href="https://github.com/BSFrameworks5253/Plusewave/releases/latest">⬇️ DOWNLOAD Latest Build.</a></b>
     — Latest release. Works on Android 8.0+.
   </p>
   <p>
-    <a href="https://github.com/beatlabs790/Pulse Wave/releases">
-      <img src="https://img.shields.io/github/downloads/beatlabs790/Pulse Wave/total?style=for-the-badge&color=blue" alt="Downloads">
+    <a href="https://github.com/BSFrameworks5253/Plusewave/releases">
+      <img src="https://img.shields.io/github/downloads/BSFrameworks5253/Plusewave/total?style=for-the-badge&color=blue" alt="Downloads">
     </a>
     <a href="LICENSE">
-      <img src="https://img.shields.io/github/license/beatlabs790/Pulse Wave?style=for-the-badge" alt="License">
+      <img src="https://img.shields.io/github/license/BSFrameworks5253/Plusewave?style=for-the-badge" alt="License">
     </a>
     <a href="https://discord.gg/spbuDTePSR">
       <img src="https://img.shields.io/badge/Discord-Join%20Us-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join Discord">
@@ -166,9 +166,9 @@
         </a>
         <br><br>
         <sub>
-          <a href="https://github.com/beatlabs790/Pulse Wave/issues">🐞 Report Bugs</a> &nbsp;•&nbsp;
-          <a href="https://github.com/beatlabs790/Pulse Wave/discussions">💬 Discussions</a> &nbsp;•&nbsp;
-          <a href="https://github.com/beatlabs790/Pulse Wave/releases">🚀 Releases</a>
+          <a href="https://github.com/BSFrameworks5253/Plusewave/issues">🐞 Report Bugs</a> &nbsp;•&nbsp;
+          <a href="https://github.com/BSFrameworks5253/Plusewave/discussions">💬 Discussions</a> &nbsp;•&nbsp;
+          <a href="https://github.com/BSFrameworks5253/Plusewave/releases">🚀 Releases</a>
         </sub>
       </td>
     </tr>

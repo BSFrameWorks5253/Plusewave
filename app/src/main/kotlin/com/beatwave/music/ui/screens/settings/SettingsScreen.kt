@@ -184,6 +184,30 @@ fun SettingsScreen(
         }
 
         if (searchLower.isEmpty()) {
+        // Section: Community & Feedback (Top of Settings)
+        item(key = "feedback_header") { SettingsSectionHeader("RECOMMENDATIONS & ISSUES") }
+        item(key = "feedback_section") {
+            SettingsSection {
+                SettingsNavItem(
+                    icon = painterResource(R.drawable.sparks),
+                    iconTint = Color(0xFFFF9500),
+                    title = "Feature Recommendations",
+                    subtitle = "Suggest new features, design ideas & songs",
+                    onClick = { navController.navigate("settings/suggestions/recommendations") },
+                )
+                SettingsDivider()
+                SettingsNavItem(
+                    icon = painterResource(R.drawable.bug_report),
+                    iconTint = Color(0xFFFF3B30),
+                    title = "Issue Noting & Bug Reports",
+                    subtitle = "Report bugs & glitches (linked to GitHub Issues)",
+                    onClick = { navController.navigate("settings/suggestions/issues") },
+                )
+            }
+        }
+
+        item(key = "spacer_feedback") { Spacer(Modifier.height(24.dp)) }
+
         // Section: General
         item(key = "general_header") { SettingsSectionHeader("GENERAL") }
         item(key = "general_section") {
@@ -463,6 +487,7 @@ private fun SettingsNavItem(
     icon: Painter,
     iconTint: Color,
     title: String,
+    subtitle: String? = null,
     badge: String? = null,
     onClick: () -> Unit,
 ) {
@@ -497,15 +522,23 @@ private fun SettingsNavItem(
 
         Spacer(Modifier.width(16.dp))
 
-        // Title
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.Medium,
-            ),
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
-        )
+        // Title and optional Subtitle
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Medium,
+                ),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            if (!subtitle.isNullOrBlank()) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
 
         // Badge or chevron
         if (badge != null) {

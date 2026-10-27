@@ -55,54 +55,12 @@ jobs:
             fi
           done
 
-      - name: Upload Build Failure Logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-build-failure-log
-          path: build.log
-
-      - name: Dump Failure Log to Step Summary
-        if: always()
-        run: |
-          if [ -f build.log ]; then
-            echo "### Gradle Build Output" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 250 build.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: Push Build Log to Debug Branch
-        if: always()
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git checkout -B ci-build-log
-          if [ -f build.log ]; then
-            git add -f build.log
-          fi
-          MAPPING_FILE="app/build/outputs/mapping/universalGmsRelease/mapping.txt"
-          if [ -f "$MAPPING_FILE" ]; then
-            mkdir -p debug-output
-            cp "$MAPPING_FILE" debug-output/mapping.txt
-            git add -f debug-output/mapping.txt
-          fi
-          git commit -m "ci: capture build log and mapping" || true
-          git push origin ci-build-log --force
-
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: PulseWave-release-apk
           path: app/build/outputs/apk/universalGms/release/*.apk
 
-      - name: Upload ProGuard/R8 Mapping
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: universal-gms-mapping
-          path: app/build/outputs/mapping/universalGmsRelease/mapping.txt
-          if-no-files-found: ignore
       - name: Extract Dynamic Version
         id: get_version
         run: |
@@ -126,3 +84,28 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Build Failure Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-failure-log
+          path: build.log
+
+      - name: Dump Failure Log to Step Summary
+        if: always()
+        run: |
+          if [ -f build.log ]; then
+            echo "### Gradle Build Output" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 250 build.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload ProGuard/R8 Mapping
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: universal-gms-mapping
+          path: app/build/outputs/mapping/universalGmsRelease/mapping.txt
+          if-no-files-found: ignore

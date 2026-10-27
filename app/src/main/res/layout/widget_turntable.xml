@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Turntable Widget - Circular design with play and navigation buttons -->
+<!-- Turntable Widget - Sleek vinyl turntable design with song info and transport controls -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/background"
     android:layout_width="match_parent"
@@ -7,7 +7,7 @@
     android:padding="4dp"
     android:theme="@style/Theme.Widget.PulseWave">
 
-    <!-- Album Art - circular bitmap set programmatically -->
+    <!-- Album Art / Vinyl record disc with grooves, reflections and stylus -->
     <ImageView
         android:id="@+id/widget_turntable_album_art"
         android:layout_width="match_parent"
@@ -17,58 +17,97 @@
         android:src="@drawable/widget_turntable_default_art"
         android:contentDescription="@string/album_art" />
 
-    <!-- Navigation Buttons Container - Top Right (Previous & Next) -->
+    <!-- Top Left: Song Title & Artist info pill -->
     <LinearLayout
+        android:id="@+id/widget_turntable_info_container"
         android:layout_width="wrap_content"
-        android:layout_height="36dp"
-        android:layout_gravity="top|end"
-        android:layout_marginTop="20dp"
-        android:layout_marginEnd="6dp"
-        android:orientation="horizontal"
-        android:background="@drawable/widget_pill_scrim_light"
-        android:gravity="center_vertical">
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="8dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="5dp"
+        android:paddingBottom="5dp"
+        android:orientation="vertical"
+        android:background="@drawable/widget_pill_frosted_dark">
 
-        <!-- Previous Button -->
-        <ImageButton
+        <TextView
+            android:id="@+id/widget_turntable_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/not_playing"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_turntable_artist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tap_to_play"
+            android:textSize="10sp"
+            android:alpha="0.8"
+            android:textColor="#FFFFFF"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+    <!-- Bottom Controls: Frosted glass pill with Prev, Play/Pause, Next, Like -->
+    <LinearLayout
+        android:id="@+id/widget_turntable_controls"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="8dp"
+        android:orientation="horizontal"
+        android:background="@drawable/widget_pill_frosted_dark"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
+
+        <ImageView
             android:id="@+id/widget_turntable_prev_button"
-            android:layout_width="36dp"
-            android:layout_height="match_parent"
-            android:padding="8dp"
-            android:scaleType="fitCenter"
-            android:background="@android:color/transparent"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="6dp"
             android:src="@drawable/ic_widget_skip_previous"
             android:contentDescription="@string/previous" />
 
-        <!-- Next Button -->
-        <ImageButton
+        <FrameLayout
+            android:id="@+id/widget_turntable_play_container"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/widget_pill_scrim_light">
+
+            <ImageView
+                android:id="@+id/widget_turntable_play_pause"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_widget_play"
+                android:contentDescription="@string/play_pause" />
+        </FrameLayout>
+
+        <ImageView
             android:id="@+id/widget_turntable_next_button"
-            android:layout_width="36dp"
-            android:layout_height="match_parent"
-            android:padding="8dp"
-            android:scaleType="fitCenter"
-            android:background="@android:color/transparent"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="6dp"
             android:src="@drawable/ic_widget_skip_next"
             android:contentDescription="@string/next" />
 
-    </LinearLayout>
-
-    <!-- Play Button - Bottom Left -->
-    <FrameLayout
-        android:id="@+id/widget_turntable_play_container"
-        android:layout_width="44dp"
-        android:layout_height="44dp"
-        android:layout_gravity="bottom|start"
-        android:layout_marginBottom="12dp"
-        android:layout_marginStart="12dp"
-        android:background="@drawable/widget_pill_scrim_light">
-
         <ImageView
-            android:id="@+id/widget_turntable_play_pause"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:layout_gravity="center"
-            android:src="@drawable/ic_widget_play"
-            android:contentDescription="@string/play_pause" />
-    </FrameLayout>
-
+            android:id="@+id/widget_turntable_like_button"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="6dp"
+            android:layout_marginStart="4dp"
+            android:src="@drawable/ic_widget_heart_outline_nav"
+            android:contentDescription="@string/like" />
+    </LinearLayout>
 </FrameLayout>

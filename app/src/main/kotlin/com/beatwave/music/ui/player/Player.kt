@@ -236,6 +236,7 @@ import com.beatwave.music.ui.component.WavySlider
 import com.beatwave.music.ui.component.backdrop.backdrops.layerBackdrop
 import com.beatwave.music.ui.component.backdrop.backdrops.rememberLayerBackdrop
 import com.beatwave.music.ui.component.isGlassAllowed
+import com.beatwave.music.ui.component.ReactiveMeshGradient
 import com.beatwave.music.ui.component.liquidGlass
 import com.beatwave.music.ui.component.rememberBottomSheetState
 import com.beatwave.music.ui.component.rememberHeroTint
@@ -1595,159 +1596,18 @@ fun BottomSheetPlayer(
                         }
                     }
                     PlayerBackgroundStyle.LIVE_MESH -> {
-                        val shouldAnimateLiveMesh = isPlaying && !state.isCollapsed
-                        val anchorRotation: androidx.compose.runtime.State<Float>
-                        val fastRotation: androidx.compose.runtime.State<Float>
-                        val slowRotation: androidx.compose.runtime.State<Float>
-
-                        if (shouldAnimateLiveMesh) {
-                            val infiniteTransition = rememberInfiniteTransition(label = "liveMeshRotation")
-                            
-                            anchorRotation = infiniteTransition.animateFloat(
-                                initialValue = 0f,
-                                targetValue = -360f,
-                                animationSpec = infiniteRepeatable(
-                                    animation = tween(80000, easing = LinearEasing),
-                                    repeatMode = RepeatMode.Restart
-                                ),
-                                label = "anchorRotation"
-                            )
-                            
-                            fastRotation = infiniteTransition.animateFloat(
-                                initialValue = 0f,
-                                targetValue = 360f,
-                                animationSpec = infiniteRepeatable(
-                                    animation = tween(40000, easing = LinearEasing),
-                                    repeatMode = RepeatMode.Restart
-                                ),
-                                label = "fastRotation"
-                            )
-                            
-                            slowRotation = infiniteTransition.animateFloat(
-                                initialValue = 0f,
-                                targetValue = 360f,
-                                animationSpec = infiniteRepeatable(
-                                    animation = tween(60000, easing = LinearEasing),
-                                    repeatMode = RepeatMode.Restart
-                                ),
-                                label = "slowRotation"
-                            )
-                        } else {
-                            val zero = remember { mutableFloatStateOf(0f) }
-                            anchorRotation = zero
-                            fastRotation = zero
-                            slowRotation = zero
-                        }
-
-                        AnimatedContent(
-                            targetState = mediaMetadata?.thumbnailUrl,
-                            transitionSpec = {
-                                fadeIn(tween(1500)).togetherWith(fadeOut(tween(1500)))
-                            },
-                            label = "liveMeshBackground"
-                        ) { thumbnailUrl ->
-                            if (thumbnailUrl != null) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .graphicsLayer { alpha = backgroundAlpha() }
-                                        .graphicsLayer {
-                                            // Scale up to avoid showing edges during rotation
-                                            scaleX = 1.7f
-                                            scaleY = 1.7f
-                                        }
-                                ) {
-                                    val matrix = remember { 
-                                        val m = ColorMatrix()
-                                        m.setToSaturation(1.8f) // Reduced to avoid neon look
-                                        m
-                                    }
-                                    val colorFilter = ColorFilter.colorMatrix(matrix)
-
-                                    // All 3 layers depend on Modifier.blur, a no-op below API 31 —
-                                    // without it these would be 3 overlapping, unblurred, rotating
-                                    // 48x48 crops (glitchy), so fall back to solid black there.
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                        // Layer 1: The Anchor (Full Image, Counter-Clockwise)
-                                        AsyncImage(
-                                            model = ImageRequest.Builder(context)
-                                                .data(thumbnailUrl)
-                                                .size(48, 48) // Downsample significantly for performance
-                                                .allowHardware(false)
-                                                .build(),
-                                            contentDescription = null,
-                                            contentScale = ContentScale.Crop,
-                                            colorFilter = colorFilter,
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .blur(100.dp)
-                                                .graphicsLayer { rotationZ = anchorRotation.value }
-                                        )
-
-                                        // Layer 2: Fast Rotating Crop (Top-Left)
-                                        AsyncImage(
-                                            model = ImageRequest.Builder(context)
-                                                .data(thumbnailUrl)
-                                                .size(48, 48) // Downsample significantly for performance
-                                                .allowHardware(false)
-                                                .build(),
-                                            contentDescription = null,
-                                            contentScale = ContentScale.Crop,
-                                            colorFilter = colorFilter,
-                                            alignment = Alignment.TopStart,
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .blur(120.dp)
-                                                .graphicsLayer {
-                                                    rotationZ = fastRotation.value
-                                                    alpha = 0.6f
-                                                }
-                                        )
-
-                                        // Layer 3: Slow Rotating Crop (Bottom-Right)
-                                        AsyncImage(
-                                            model = ImageRequest.Builder(context)
-                                                .data(thumbnailUrl)
-                                                .size(48, 48) // Downsample significantly for performance
-                                                .allowHardware(false)
-                                                .build(),
-                                            contentDescription = null,
-                                            contentScale = ContentScale.Crop,
-                                            colorFilter = colorFilter,
-                                            alignment = Alignment.BottomEnd,
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .blur(120.dp)
-                                                .graphicsLayer {
-                                                    rotationZ = slowRotation.value
-                                                    alpha = 0.5f
-                                                }
-                                        )
-                                    } else {
-                                        Box(modifier = Modifier.fillMaxSize().background(Color.Black))
-                                    }
-
-                                    // Global dark tint to prevent neon look + vertical gradient for depth
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(Color.Black.copy(alpha = 0.2f))
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(
-                                                Brush.verticalGradient(
-                                                    listOf(
-                                                        Color.Transparent,
-                                                        Color.Black.copy(alpha = 0.25f)
-                                                    )
-                                                )
-                                            )
-                                    )
-                                }
-                            }
-                        }
+                        val pColor = gradientColors.getOrNull(0) ?: MaterialTheme.colorScheme.primary
+                        val sColor = gradientColors.getOrNull(1) ?: pColor
+                        val tColor = gradientColors.getOrNull(2) ?: Color.Unspecified
+                        ReactiveMeshGradient(
+                            primaryColor = pColor,
+                            secondaryColor = sColor,
+                            tertiaryColor = tColor,
+                            isPlaying = isPlaying,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer { alpha = backgroundAlpha() }
+                        )
                     }
                     PlayerBackgroundStyle.STATIC -> {
                         Box(

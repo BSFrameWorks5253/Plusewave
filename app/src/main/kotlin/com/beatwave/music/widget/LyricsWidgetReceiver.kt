@@ -5,17 +5,9 @@
 
 package com.beatwave.music.widget
 
-import android.content.Context
-
 /**
  * Lyrics widget: current lyric line with its neighbours faded, plus transport.
  *
  * Same update/click plumbing as [MusicWidgetReceiver]; only the rendering differs.
  */
-class LyricsWidgetReceiver : MusicWidgetReceiver() {
-
-    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
-        super.onDeleted(context, appWidgetIds)
-        WidgetConfig.delete(context, appWidgetIds)
-    }
-}
+class LyricsWidgetReceiver : MusicWidgetReceiver()

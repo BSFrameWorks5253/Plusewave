@@ -687,17 +687,32 @@
     <string name="widget_lyrics_description">Current lyric line with playback controls</string>
     <string name="widget_cfg_background">Background</string>
     <string name="widget_cfg_bg_album">Album colour</string>
+    <string name="widget_cfg_bg_system_dynamic">Material You (Dynamic System)</string>
     <string name="widget_cfg_bg_dark">Dark</string>
     <string name="widget_cfg_bg_light">Light</string>
     <string name="widget_cfg_bg_image">Custom image</string>
     <string name="widget_cfg_choose_image">Choose image</string>
     <string name="widget_cfg_no_image">No image selected</string>
-    <string name="widget_cfg_content">Content</string>
+    <string name="widget_cfg_opacity">Transparency &amp; Frosted Glass</string>
+    <string name="widget_cfg_background_opacity">Background opacity</string>
+    <string name="widget_cfg_content">Content &amp; Controls</string>
     <string name="widget_cfg_show_artwork">Show album artwork</string>
     <string name="widget_cfg_show_prev_next">Show previous / next</string>
     <string name="widget_cfg_show_like">Show like button</string>
+    <string name="widget_cfg_show_shuffle_repeat">Show shuffle &amp; repeat</string>
+    <string name="widget_cfg_show_shuffle_repeat_desc">Add shuffle and repeat controls on wide widgets</string>
+    <string name="widget_cfg_show_lossless_badge">Show audio quality badge</string>
+    <string name="widget_cfg_show_lossless_badge_desc">Display LOSSLESS / FLAC chip next to title</string>
+    <string name="widget_cfg_pinned_playlist">Pinned Playlist</string>
+    <string name="widget_cfg_playlist_default">Current playback (Default)</string>
+    <string name="widget_cfg_playlist_favorites">Favorites / Liked Songs</string>
     <string name="widget_cfg_done">Done</string>
     <string name="widget_no_lyrics">No lyrics available</string>
+    <string name="widget_queue_title">Queue Preview</string>
+    <string name="widget_queue_empty">Queue is empty</string>
+    <string name="widget_queue_up_next">Up Next</string>
+    <string name="widget_playlist_title">Quick Playlist Launcher</string>
+    <string name="widget_playlist_description">One-tap speed dial launcher for your favorite playlist</string>
 
     <!-- Player Client Settings -->
     <string name="player_client">Player client</string>

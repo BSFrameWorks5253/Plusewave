@@ -36,6 +36,9 @@
     <string name="recently_played">Recently Played</string>
     <string name="recently_added">Recently Added</string>
     <string name="home_section_hero">Featured card</string>
+    <string name="home_section_spotify_discovery">Spotify Discovery</string>
+    <string name="spotify_discovery_title">Spotify Discovery</string>
+    <string name="spotify_discovery_subtitle">Trending charts and curated feeds</string>
     <string name="home_section_community">From the community</string>
     <string name="home_section_daily_discover">Daily discover</string>
     <string name="home_section_account_playlists">Your playlists</string>

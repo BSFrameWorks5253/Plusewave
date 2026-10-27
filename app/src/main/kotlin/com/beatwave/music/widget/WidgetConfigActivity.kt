@@ -14,7 +14,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,26 +25,34 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.beatwave.music.R
+import com.beatwave.music.db.MusicDatabase
+import com.beatwave.music.db.entities.Playlist
 import com.beatwave.music.ui.component.PreferenceEntry
 import com.beatwave.music.ui.component.PreferenceGroupTitle
 import com.beatwave.music.ui.component.SwitchPreference
 import com.beatwave.music.ui.theme.vivimusicTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * Per-widget configuration, launched by the launcher via APPWIDGET_CONFIGURE when
@@ -54,6 +64,9 @@ import dagger.hilt.android.AndroidEntryPoint
  */
 @AndroidEntryPoint
 class WidgetConfigActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var database: MusicDatabase
 
     private var widgetId = AppWidgetManager.INVALID_APPWIDGET_ID
 
@@ -79,8 +92,10 @@ class WidgetConfigActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
+                    val playlists by database.playlistsByNameAsc().collectAsState(initial = emptyList())
                     WidgetConfigScreen(
                         initial = WidgetConfig.load(this, widgetId),
+                        playlists = playlists,
                         onConfirm = ::confirm,
                     )
                 }
@@ -104,10 +119,12 @@ class WidgetConfigActivity : ComponentActivity() {
 @Composable
 private fun WidgetConfigScreen(
     initial: WidgetConfig,
+    playlists: List<Playlist>,
     onConfirm: (WidgetConfig) -> Unit,
 ) {
     val context = LocalContext.current
     var config by remember { mutableStateOf(initial) }
+    var showPlaylistDialog by remember { mutableStateOf(false) }
 
     val pickImage = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
@@ -163,6 +180,43 @@ private fun WidgetConfigScreen(
             )
         }
 
+        PreferenceGroupTitle(title = stringResource(R.string.widget_cfg_opacity))
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.widget_cfg_background_opacity),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                val percent = (config.opacity * 100).toInt()
+                val label = when {
+                    percent >= 98 -> "100% (Solid)"
+                    percent in 45..75 -> "$percent% (Frosted Glass)"
+                    percent <= 5 -> "0% (Transparent)"
+                    else -> "$percent%"
+                }
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            Slider(
+                value = config.opacity,
+                onValueChange = { config = config.copy(opacity = it) },
+                valueRange = 0f..1f,
+                steps = 20,
+            )
+        }
+
         PreferenceGroupTitle(title = stringResource(R.string.widget_cfg_content))
 
         SwitchPreference(
@@ -180,6 +234,35 @@ private fun WidgetConfigScreen(
             checked = config.showLike,
             onCheckedChange = { config = config.copy(showLike = it) },
         )
+        SwitchPreference(
+            title = { Text(stringResource(R.string.widget_cfg_show_shuffle_repeat)) },
+            description = stringResource(R.string.widget_cfg_show_shuffle_repeat_desc),
+            checked = config.showShuffleRepeat,
+            onCheckedChange = { config = config.copy(showShuffleRepeat = it) },
+        )
+        SwitchPreference(
+            title = { Text(stringResource(R.string.widget_cfg_show_lossless_badge)) },
+            description = stringResource(R.string.widget_cfg_show_lossless_badge_desc),
+            checked = config.showLosslessBadge,
+            onCheckedChange = { config = config.copy(showLosslessBadge = it) },
+        )
+
+        PreferenceGroupTitle(title = stringResource(R.string.widget_cfg_pinned_playlist))
+
+        val currentPlaylistName = remember(config.playlistId, playlists) {
+            when (config.playlistId) {
+                null -> context.getString(R.string.widget_cfg_playlist_default)
+                "favorites" -> context.getString(R.string.widget_cfg_playlist_favorites)
+                else -> playlists.firstOrNull { it.id == config.playlistId }?.playlist?.name
+                    ?: context.getString(R.string.widget_cfg_playlist_default)
+            }
+        }
+
+        PreferenceEntry(
+            title = { Text(stringResource(R.string.widget_cfg_pinned_playlist)) },
+            description = currentPlaylistName,
+            onClick = { showPlaylistDialog = true },
+        )
 
         Button(
             onClick = { onConfirm(config) },
@@ -190,10 +273,81 @@ private fun WidgetConfigScreen(
             Text(stringResource(R.string.widget_cfg_done))
         }
     }
+
+    if (showPlaylistDialog) {
+        AlertDialog(
+            onDismissRequest = { showPlaylistDialog = false },
+            title = { Text(stringResource(R.string.widget_cfg_pinned_playlist)) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    PreferenceEntry(
+                        title = { Text(stringResource(R.string.widget_cfg_playlist_default)) },
+                        trailingContent = {
+                            RadioButton(
+                                selected = config.playlistId == null,
+                                onClick = {
+                                    config = config.copy(playlistId = null)
+                                    showPlaylistDialog = false
+                                }
+                            )
+                        },
+                        onClick = {
+                            config = config.copy(playlistId = null)
+                            showPlaylistDialog = false
+                        }
+                    )
+                    PreferenceEntry(
+                        title = { Text(stringResource(R.string.widget_cfg_playlist_favorites)) },
+                        trailingContent = {
+                            RadioButton(
+                                selected = config.playlistId == "favorites",
+                                onClick = {
+                                    config = config.copy(playlistId = "favorites")
+                                    showPlaylistDialog = false
+                                }
+                            )
+                        },
+                        onClick = {
+                            config = config.copy(playlistId = "favorites")
+                            showPlaylistDialog = false
+                        }
+                    )
+                    playlists.forEach { p ->
+                        PreferenceEntry(
+                            title = { Text(p.playlist.name) },
+                            trailingContent = {
+                                RadioButton(
+                                    selected = config.playlistId == p.id,
+                                    onClick = {
+                                        config = config.copy(playlistId = p.id)
+                                        showPlaylistDialog = false
+                                    }
+                                )
+                            },
+                            onClick = {
+                                config = config.copy(playlistId = p.id)
+                                showPlaylistDialog = false
+                            }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showPlaylistDialog = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            }
+        )
+    }
 }
 
 private fun WidgetBackground.labelRes(): Int = when (this) {
     WidgetBackground.ALBUM_TINT -> R.string.widget_cfg_bg_album
+    WidgetBackground.SYSTEM_DYNAMIC -> R.string.widget_cfg_bg_system_dynamic
     WidgetBackground.DARK -> R.string.widget_cfg_bg_dark
     WidgetBackground.LIGHT -> R.string.widget_cfg_bg_light
     WidgetBackground.IMAGE -> R.string.widget_cfg_bg_image

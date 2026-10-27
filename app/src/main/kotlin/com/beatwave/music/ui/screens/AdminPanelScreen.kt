@@ -27,6 +27,7 @@ import com.beatwave.music.R
 import com.beatwave.music.SuggestionRow
 import com.beatwave.music.BugReportRow
 import com.beatwave.music.api.SupabaseService
+import com.beatwave.music.api.GitHubIssueService
 import com.beatwave.music.LocalDatabase
 import com.beatwave.music.constants.ShowWrappedCardKey
 import com.beatwave.music.constants.WrappedSeenKey
@@ -47,7 +48,7 @@ fun AdminPanelScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Publish Update", "Publish News", "Test Wrapped", "Suggestions", "Bug Reports")
+    val tabs = listOf("Recommendations", "Issue Noting", "Publish Update", "Publish News", "Test Wrapped")
 
     Scaffold(
         topBar = {
@@ -84,11 +85,11 @@ fun AdminPanelScreen(
             val playerBottomPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues().calculateBottomPadding()
             Box(modifier = Modifier.fillMaxSize()) {
                 when (selectedTab) {
-                    0 -> PublishUpdateTab(navController, playerBottomPadding)
-                    1 -> PublishNewsTab(navController, playerBottomPadding)
-                    2 -> TestWrappedTab(navController, playerBottomPadding)
-                    3 -> SuggestionsTab(playerBottomPadding)
-                    else -> BugReportsTab(playerBottomPadding)
+                    0 -> SuggestionsTab(playerBottomPadding)
+                    1 -> BugReportsTab(playerBottomPadding)
+                    2 -> PublishUpdateTab(navController, playerBottomPadding)
+                    3 -> PublishNewsTab(navController, playerBottomPadding)
+                    else -> TestWrappedTab(navController, playerBottomPadding)
                 }
             }
         }
@@ -758,6 +759,20 @@ fun BugReportsTab(bottomPadding: androidx.compose.ui.unit.Dp = 0.dp) {
                         )
                     }
                 }
+
+                OutlinedButton(
+                    onClick = { GitHubIssueService.openIssuesPanel(context) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.github),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("View GitHub Issues Panel ↗")
+                }
             }
 
             if (filteredBugReports.isEmpty()) {
@@ -933,6 +948,29 @@ fun BugReportItemCard(
                         colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFFF9800))
                     ) {
                         Text("Close")
+                    }
+
+                    val context = LocalContext.current
+                    TextButton(
+                        onClick = {
+                            GitHubIssueService.openPrefilledIssueInBrowser(
+                                context = context,
+                                title = item.description.lines().firstOrNull()?.take(60) ?: "Bug Report",
+                                description = item.description,
+                                reporterName = item.user_name,
+                                instaId = item.insta_id,
+                                deviceInfo = item.device_info,
+                                isBug = true
+                            )
+                        }
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.github),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text("GitHub")
                     }
                 }
             }

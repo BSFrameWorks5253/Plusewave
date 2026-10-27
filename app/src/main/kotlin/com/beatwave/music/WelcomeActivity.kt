@@ -423,7 +423,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        BeatWaveSonicWaveformVisualizer(
+                        PulseWaveSonicWaveformVisualizer(
                             modifier = Modifier.size(280.dp)
                         )
 
@@ -1230,7 +1230,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
 }
 
 @Composable
-fun BeatWaveSonicWaveformVisualizer(modifier: Modifier = Modifier) {
+fun PulseWaveSonicWaveformVisualizer(modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulsewaveSonic")
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 0.94f,
