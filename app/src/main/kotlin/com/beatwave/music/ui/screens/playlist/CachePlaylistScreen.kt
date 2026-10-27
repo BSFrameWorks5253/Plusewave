@@ -105,6 +105,7 @@ import com.beatwave.music.constants.SongSortTypeKey
 import com.beatwave.music.db.entities.Song
 import com.beatwave.music.extensions.toMediaItem
 import com.beatwave.music.playback.ExoDownloadService
+import com.beatwave.music.playback.PlaylistPlaybackTracker
 import com.beatwave.music.playback.queues.ListQueue
 import com.beatwave.music.ui.component.DraggableScrollbar
 import com.beatwave.music.ui.component.EmptyPlaceholder
@@ -426,7 +427,8 @@ fun CachePlaylistScreen(
                                                 ListQueue(
                                                     title = "Cache Songs",
                                                     items = cachedSongs.map { it.toMediaItem() },
-                                                    startIndex = cachedSongs.indexOfFirst { it.id == song.id }
+                                                    startIndex = cachedSongs.indexOfFirst { it.id == song.id },
+                                                    playlistId = "cached"
                                                 )
                                             )
                                         }
@@ -718,10 +720,17 @@ private fun CachePlaylistHeader(
                     if (isThisPlaylistPlaying) {
                         playerConnection.player.pause()
                     } else {
+                        val startIndex = PlaylistPlaybackTracker.resolveStartIndex(
+                            context = context,
+                            playlistId = "cached",
+                            playlistSongIds = songs.map { it.id }
+                        )
                         playerConnection.playQueue(
                             ListQueue(
                                 title = context.getString(R.string.cached_playlist),
                                 items = songs.map { it.toMediaItem() },
+                                startIndex = startIndex,
+                                playlistId = "cached"
                             )
                         )
                     }

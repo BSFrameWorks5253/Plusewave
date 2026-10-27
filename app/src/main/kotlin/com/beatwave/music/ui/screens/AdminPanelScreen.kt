@@ -715,6 +715,42 @@ fun BugReportsTab(bottomPadding: androidx.compose.ui.unit.Dp = 0.dp) {
         }
     }
 
+    var showClearAllDialog by remember { mutableStateOf(false) }
+
+    if (showClearAllDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showClearAllDialog = false },
+            title = { Text("Clear All Bug Reports?") },
+            text = { Text("This will permanently delete all bug reports from the server. This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showClearAllDialog = false
+                        isFetching = true
+                        coroutineScope.launch {
+                            val res = SupabaseService.clearAllBugReports()
+                            isFetching = false
+                            if (res.isSuccess) {
+                                Toast.makeText(context, "All bug reports cleared", Toast.LENGTH_SHORT).show()
+                                refreshBugReports()
+                            } else {
+                                Toast.makeText(context, "Failed to clear: ${res.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Clear All")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearAllDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     if (isFetching) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
@@ -760,18 +796,41 @@ fun BugReportsTab(bottomPadding: androidx.compose.ui.unit.Dp = 0.dp) {
                     }
                 }
 
-                OutlinedButton(
-                    onClick = { GitHubIssueService.openIssuesPanel(context) },
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.github),
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text("View GitHub Issues Panel ↗")
+                    OutlinedButton(
+                        onClick = { GitHubIssueService.openIssuesPanel(context) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.github),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("GitHub Issues ↗")
+                    }
+
+                    Button(
+                        onClick = { showClearAllDialog = true },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Clear All Reports")
+                    }
                 }
             }
 

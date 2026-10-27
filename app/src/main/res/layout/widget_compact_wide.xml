@@ -106,5 +106,15 @@
             android:alpha="0.9"
             android:src="@drawable/ic_widget_heart_outline_nav"
             android:contentDescription="@string/like" />
+
+        <!-- Quick Play Playlist Button -->
+        <ImageView
+            android:id="@+id/widget_wide_playlist_button"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_marginStart="8dp"
+            android:alpha="0.9"
+            android:src="@drawable/playlist_play"
+            android:contentDescription="@string/filter_playlists" />
     </LinearLayout>
 </FrameLayout>

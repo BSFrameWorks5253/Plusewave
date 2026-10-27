@@ -623,16 +623,20 @@ private fun formatGitHubDate(githubDate: String): String = try {
     githubDate
 }
 
+// Parse numerical version components from strings like "v6.1.11", "b6.1.11", "6.1.11-release"
+fun parseVersionNumbers(version: String): List<Int> {
+    val matches = Regex("\\d+").findAll(version)
+    return matches.map { it.value.toIntOrNull() ?: 0 }.toList()
+}
+
 // Robust version comparison: returns true if latestVersion > currentVersion
 fun isNewerVersion(latestVersion: String, currentVersion: String): Boolean {
-    val latestVersionClean = latestVersion.removePrefix("b").removePrefix("v")
-    val currentVersionClean = currentVersion.removePrefix("b").removePrefix("v")
-
-    val latestParts = latestVersionClean.split(".").map { it.toIntOrNull() ?: 0 }
-    val currentParts = currentVersionClean.split(".").map { it.toIntOrNull() ?: 0 }
+    val latestParts = parseVersionNumbers(latestVersion)
+    val currentParts = parseVersionNumbers(currentVersion)
     
     // Compare version numbers
-    for (i in 0 until maxOf(latestParts.size, currentParts.size)) {
+    val maxLen = maxOf(latestParts.size, currentParts.size)
+    for (i in 0 until maxLen) {
         val latest = latestParts.getOrElse(i) { 0 }
         val current = currentParts.getOrElse(i) { 0 }
         when {
@@ -642,12 +646,10 @@ fun isNewerVersion(latestVersion: String, currentVersion: String): Boolean {
     }
     
     // If numbers are equal, check if one is beta and the other is not
-    if (latestVersionClean == currentVersionClean) {
-        val latestIsBeta = latestVersion.startsWith("b")
-        val currentIsBeta = currentVersion.startsWith("b")
-        // Stable is "newer" (better) than beta of the same version
-        if (currentIsBeta && !latestIsBeta) return true
-    }
+    val latestIsBeta = latestVersion.contains("beta", ignoreCase = true) || latestVersion.startsWith("b", ignoreCase = true)
+    val currentIsBeta = currentVersion.contains("beta", ignoreCase = true) || currentVersion.startsWith("b", ignoreCase = true)
+    // Stable is "newer" (better) than beta of the same version
+    if (currentIsBeta && !latestIsBeta) return true
     
     return false
 }
@@ -669,7 +671,7 @@ private fun fetchNightlyArtifactSize(runId: Long): String = try {
     ""
 }
 
-// Fetches ALL releases, finds the latest version > current, and returns its info
+// Fetches releases, finds the latest version > current, and returns its info
 suspend fun checkForUpdate(
     context: Context,
     onSuccess: (tag: String, isAvailable: Boolean, changelog: List<ChangelogSection>, size: String, date: String, description: String?, imageUrl: String?, apkUrl: String?) -> Unit,
@@ -677,33 +679,74 @@ suspend fun checkForUpdate(
 ) {
     withContext(Dispatchers.IO) {
         try {
-            val url = URL("https://api.github.com/repos/BSFrameworks5253/Plusewave/releases")
-            val json = url.openStream().bufferedReader().use { it.readText() }
-            val releases = JSONArray(json)
-            
             val currentVersion = BuildConfig.VERSION_NAME
             val betaEnabled = getBetaUpdatesSetting(context)
 
-            var isNightlyUpdate = false
-            var nightlyRunObject: JSONObject? = null
+            // 1. Check Supabase updates as a fast and reliable source
+            val supabaseUpdate = try {
+                com.beatwave.music.api.SupabaseService.checkLatestUpdate().getOrNull()
+            } catch (e: Exception) {
+                Timber.tag("UpdateCheck").w(e, "Error checking Supabase updates")
+                null
+            }
 
-            if (betaEnabled) {
+            // 2. Fetch GitHub Releases
+            var releases: JSONArray? = null
+            try {
+                val url = URL("https://api.github.com/repos/BSFrameworks5253/Plusewave/releases")
+                val connection = (url.openConnection() as java.net.HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    setRequestProperty("User-Agent", "PulseWave/$currentVersion")
+                    setRequestProperty("Accept", "application/vnd.github.v3+json")
+                    connectTimeout = 8000
+                    readTimeout = 8000
+                }
+                if (connection.responseCode in 200..299) {
+                    val json = connection.inputStream.bufferedReader().use { it.readText() }
+                    releases = JSONArray(json)
+                } else {
+                    Timber.tag("UpdateCheck").w("GitHub API returned HTTP ${connection.responseCode}")
+                }
+            } catch (e: Exception) {
+                Timber.tag("UpdateCheck").w(e, "Error fetching GitHub releases")
+            }
+
+            // 3. Check Nightly run ONLY if this is actually a nightly build AND beta updates are enabled
+            val isCurrentNightly = try { BuildConfig.IS_NIGHTLY } catch (_: Exception) { false }
+            if (betaEnabled && isCurrentNightly) {
                 try {
                     val nightlyUrl = URL("https://api.github.com/repos/BSFrameworks5253/Plusewave/actions/workflows/nightly.yml/runs?status=success&per_page=1")
-                    val nightlyJson = nightlyUrl.openStream().bufferedReader().use { it.readText() }
-                    val nightlyData = JSONObject(nightlyJson)
-                    val runs = nightlyData.optJSONArray("workflow_runs")
-                    if (runs != null && runs.length() > 0) {
-                        val firstRun = runs.getJSONObject(0)
-                        val runNumber = firstRun.getInt("run_number")
+                    val nightlyConn = (nightlyUrl.openConnection() as java.net.HttpURLConnection).apply {
+                        requestMethod = "GET"
+                        setRequestProperty("User-Agent", "PulseWave/$currentVersion")
+                        setRequestProperty("Accept", "application/vnd.github.v3+json")
+                        connectTimeout = 8000
+                        readTimeout = 8000
+                    }
+                    if (nightlyConn.responseCode in 200..299) {
+                        val nightlyJson = nightlyConn.inputStream.bufferedReader().use { it.readText() }
+                        val nightlyData = JSONObject(nightlyJson)
+                        val runs = nightlyData.optJSONArray("workflow_runs")
+                        if (runs != null && runs.length() > 0) {
+                            val firstRun = runs.getJSONObject(0)
+                            val runNumber = firstRun.getInt("run_number")
 
-                        // The running build stamps its own nightly run number at compile time
-                        // (BuildConfig.NIGHTLY_RUN), so "is this newer" is a plain comparison
-                        // instead of a guess from install timestamps or a download-time marker.
-                        // Stable/local builds report 0, so any published nightly counts as newer.
-                        if (runNumber > BuildConfig.NIGHTLY_RUN) {
-                            isNightlyUpdate = true
-                            nightlyRunObject = firstRun
+                            if (runNumber > BuildConfig.NIGHTLY_RUN) {
+                                val runUpdatedAt = firstRun.getString("updated_at")
+                                val displayTag = "nightly-r$runNumber"
+                                val changelogList = mutableListOf<ChangelogSection>()
+                                val headCommit = firstRun.optJSONObject("head_commit")
+                                val commitMessage = headCommit?.optString("message") ?: "New features and bug fixes"
+                                val subjectLine = commitMessage.lineSequence().firstOrNull { it.isNotBlank() } ?: commitMessage
+                                changelogList.add(ChangelogSection(context.getString(R.string.changelog), listOf(subjectLine)))
+                                val formattedReleaseDate = formatGitHubDate(runUpdatedAt)
+                                val apkDownloadUrl = "https://nightly.link/BSFrameworks5253/Plusewave/workflows/nightly.yml/main/pulsewave-gms-nightly.zip"
+                                val apkSize = fetchNightlyArtifactSize(firstRun.getLong("id"))
+                                withContext(Dispatchers.Main) {
+                                    onSuccess(displayTag, true, changelogList, apkSize, formattedReleaseDate, "Bleeding-edge nightly build from main branch.", null, apkDownloadUrl)
+                                }
+                                return@withContext
+                            }
                         }
                     }
                 } catch (e: Exception) {
@@ -711,149 +754,179 @@ suspend fun checkForUpdate(
                 }
             }
 
-            if (isNightlyUpdate && nightlyRunObject != null) {
-                val runNumber = nightlyRunObject.getInt("run_number")
-                val runUpdatedAt = nightlyRunObject.getString("updated_at")
-                val displayTag = "nightly-r$runNumber"
-                
-                val changelogList = mutableListOf<ChangelogSection>()
-                val headCommit = nightlyRunObject.optJSONObject("head_commit")
-                val commitMessage = headCommit?.optString("message") ?: "New features and bug fixes"
-                // Only use the subject line (first line) of the commit message.
-                // Git commit bodies (lines after the blank separator) are implementation
-                // details and should not appear as separate changelog bullet points.
-                val subjectLine = commitMessage.lineSequence().firstOrNull { it.isNotBlank() } ?: commitMessage
-                changelogList.add(ChangelogSection(context.getString(R.string.changelog), listOf(subjectLine)))
-                
-                val formattedReleaseDate = formatGitHubDate(runUpdatedAt)
-                val apkDownloadUrl = "https://nightly.link/BSFrameworks5253/Plusewave/workflows/nightly.yml/main/pulsewave-gms-nightly.zip"
-                val apkSize = fetchNightlyArtifactSize(nightlyRunObject.getLong("id"))
-                withContext(Dispatchers.Main) {
-                    onSuccess(displayTag, true, changelogList, apkSize, formattedReleaseDate, "Bleeding-edge nightly build from main branch.", null, apkDownloadUrl)
-                }
-                return@withContext
-            }
-
             var bestStableRelease: JSONObject? = null
             var bestOverallRelease: JSONObject? = null
 
-            for (i in 0 until releases.length()) {
-                val release = releases.getJSONObject(i)
-                val tagName = release.getString("tag_name")
-                val isBeta = tagName.startsWith("b")
-                
-                // Track best stable
-                if (!isBeta) {
-                    if (bestStableRelease == null || isNewerVersion(tagName, bestStableRelease.getString("tag_name"))) {
-                        bestStableRelease = release
+            if (releases != null) {
+                for (i in 0 until releases.length()) {
+                    val release = releases.getJSONObject(i)
+                    val tagName = release.getString("tag_name")
+                    val isBeta = tagName.startsWith("b") || tagName.contains("beta", ignoreCase = true)
+                    
+                    // Track best stable
+                    if (!isBeta) {
+                        if (bestStableRelease == null || isNewerVersion(tagName, bestStableRelease.getString("tag_name"))) {
+                            bestStableRelease = release
+                        }
                     }
-                }
-                
-                // Track best overall
-                if (bestOverallRelease == null || isNewerVersion(tagName, bestOverallRelease.getString("tag_name"))) {
-                    bestOverallRelease = release
+                    
+                    // Track best overall
+                    if (bestOverallRelease == null || isNewerVersion(tagName, bestOverallRelease.getString("tag_name"))) {
+                        bestOverallRelease = release
+                    }
                 }
             }
 
-            // Select the target release based on user preference
             val targetRelease = if (betaEnabled) bestOverallRelease else bestStableRelease
+
+            // Determine if GitHub has a strictly newer version or track-switch of the same version
+            var ghHasUpdate = false
+            var ghTag = ""
+            var ghChangelog: List<ChangelogSection> = emptyList()
+            var ghSize = ""
+            var ghDate = ""
+            var ghDesc: String? = null
+            var ghImg: String? = null
+            var ghApkUrl: String? = null
 
             if (targetRelease != null) {
                 val targetTagName = targetRelease.getString("tag_name")
                 val isNewer = isNewerVersion(targetTagName, currentVersion)
-                
-                // Track Switch Logic:
-                // If the user has disabled beta updates, we should offer the latest stable release
-                // even if it's technically a lower version number than their current beta/custom build.
-                // This allows users to correctly "roll back" to the stable track.
-                val currentIsBeta = currentVersion.startsWith("b")
-                val targetIsStable = targetTagName.startsWith("v")
-                
-                // Compare version numbers ignoring prefixes
-                val currentClean = currentVersion.removePrefix("b").removePrefix("v")
-                val targetClean = targetTagName.removePrefix("b").removePrefix("v")
-                val isDifferentVersion = currentClean != targetClean
-                
-                var shouldShow = isNewer
-                if (!shouldShow && !betaEnabled) {
-                    // Logic: If I'm on a Beta (b5.0.7) and latest stable is v5.0.6, 
-                    // and I just turned OFF beta, I want to see v5.0.6.
-                    if (currentIsBeta && targetIsStable) {
-                        shouldShow = true
-                    } else if (isDifferentVersion && targetIsStable) {
-                        // Also show if current is a newer unofficial stable (e.g. built locally as 5.0.7)
-                        // but user wants the official stable 5.0.6.
-                        shouldShow = true
-                    }
-                }
+
+                val currentIsBeta = currentVersion.startsWith("b") || currentVersion.contains("beta", ignoreCase = true)
+                val targetIsStable = !targetTagName.startsWith("b") && !targetTagName.contains("beta", ignoreCase = true)
+                val isSameVersionNumbers = parseVersionNumbers(currentVersion) == parseVersionNumbers(targetTagName)
+
+                // Only allow showing an update if target is strictly newer, OR upgrading beta -> stable of the EXACT SAME version
+                val shouldShow = isNewer || (!betaEnabled && currentIsBeta && targetIsStable && isSameVersionNumbers)
 
                 if (shouldShow) {
-                    val tagWithPrefix = targetRelease.getString("tag_name")
-                    val displayTag = tagWithPrefix
-
-                    // FETCH CHANGELOG.JSON FROM RELEASE ASSETS
+                    ghTag = targetTagName
                     val changelogList = mutableListOf<ChangelogSection>()
-                    var description: String? = null
-                    var imageUrl: String? = null
                     try {
-                        val changelogUrl =
-                            URL("https://github.com/BSFrameworks5253/Plusewave/releases/download/$tagWithPrefix/changelog.json")
-                        val changelogJson = changelogUrl.openStream().bufferedReader().use { it.readText() }
-                        val changelogData = JSONObject(changelogJson)
-
-                        description = changelogData.optString("description").takeIf { it.isNotEmpty() }
-                        imageUrl = changelogData.optString("image").takeIf { it.isNotEmpty() }
-
-                        val changelogArray = changelogData.getJSONArray("changelog")
-                        for (j in 0 until changelogArray.length()) {
-                            val sectionObj = changelogArray.getJSONObject(j)
-                            val title = sectionObj.getString("title")
-                            val itemsArray = sectionObj.getJSONArray("items")
-                            val itemsList = mutableListOf<String>()
-                            for (k in 0 until itemsArray.length()) {
-                                itemsList.add(itemsArray.getString(k))
-                            }
-                            changelogList.add(ChangelogSection(title, itemsList))
+                        val changelogUrl = URL("https://github.com/BSFrameworks5253/Plusewave/releases/download/$targetTagName/changelog.json")
+                        val changelogConn = (changelogUrl.openConnection() as java.net.HttpURLConnection).apply {
+                            setRequestProperty("User-Agent", "PulseWave/$currentVersion")
+                            connectTimeout = 5000
+                            readTimeout = 5000
                         }
-                    } catch (e: Exception) {
-                        // Fallback: Parse body as a single list if it starts with characters or split by lines
+                        if (changelogConn.responseCode in 200..299) {
+                            val changelogJson = changelogConn.inputStream.bufferedReader().use { it.readText() }
+                            val changelogData = JSONObject(changelogJson)
+                            ghDesc = changelogData.optString("description").takeIf { it.isNotEmpty() }
+                            ghImg = changelogData.optString("image").takeIf { it.isNotEmpty() }
+                            val changelogArray = changelogData.getJSONArray("changelog")
+                            for (j in 0 until changelogArray.length()) {
+                                val sectionObj = changelogArray.getJSONObject(j)
+                                val title = sectionObj.getString("title")
+                                val itemsArray = sectionObj.getJSONArray("items")
+                                val itemsList = mutableListOf<String>()
+                                for (k in 0 until itemsArray.length()) {
+                                    itemsList.add(itemsArray.getString(k))
+                                }
+                                changelogList.add(ChangelogSection(title, itemsList))
+                            }
+                        } else {
+                            throw Exception("HTTP ${changelogConn.responseCode}")
+                        }
+                    } catch (_: Exception) {
                         val body = targetRelease.optString("body", context.getString(R.string.no_changelog_available))
                         val fallbackItems = body.split("\n").filter { it.isNotBlank() }
                         changelogList.add(ChangelogSection(context.getString(R.string.changelog), fallbackItems))
                     }
+                    ghChangelog = changelogList
 
-                    val publishedAt = targetRelease.getString("published_at")
-                    val formattedReleaseDate = formatGitHubDate(publishedAt)
-                    val assets = targetRelease.getJSONArray("assets")
+                    val publishedAt = targetRelease.optString("published_at")
+                    ghDate = if (publishedAt.isNotEmpty()) formatGitHubDate(publishedAt) else ""
 
-                    var apkSizeInMB = ""
-                    var apkDownloadUrl = ""
-                    for (j in 0 until assets.length()) {
-                        val asset = assets.getJSONObject(j)
-                        val assetName = asset.getString("name")
-                        if (assetName.endsWith(".apk")) {
-                            val apkSizeInBytes = asset.getLong("size")
-                            apkSizeInMB = String.format("%.1f", apkSizeInBytes / (1024.0 * 1024.0))
-                            apkDownloadUrl = asset.getString("browser_download_url")
-                            break
+                    val assets = targetRelease.optJSONArray("assets")
+                    if (assets != null) {
+                        for (j in 0 until assets.length()) {
+                            val asset = assets.getJSONObject(j)
+                            val assetName = asset.getString("name")
+                            if (assetName.endsWith(".apk")) {
+                                val apkSizeInBytes = asset.optLong("size", 0L)
+                                ghSize = if (apkSizeInBytes > 0) String.format("%.1f", apkSizeInBytes / (1024.0 * 1024.0)) else ""
+                                ghApkUrl = asset.getString("browser_download_url")
+                                break
+                            }
                         }
                     }
-
-                    if (apkDownloadUrl.isNotEmpty()) {
-                        withContext(Dispatchers.Main) {
-                            onSuccess(displayTag, true, changelogList, apkSizeInMB, formattedReleaseDate, description, imageUrl, apkDownloadUrl)
-                        }
-                        return@withContext
+                    if (ghApkUrl.isNullOrEmpty()) {
+                        ghApkUrl = "https://github.com/BSFrameworks5253/Plusewave/releases/download/$targetTagName/PulseWave-$targetTagName-universal-release.apk"
                     }
+                    ghHasUpdate = true
                 }
             }
 
-            // No update found or APK missing
+            // Check if Supabase has a newer update than both currentVersion and GitHub's candidate
+            if (supabaseUpdate != null && isNewerVersion(supabaseUpdate.version, currentVersion)) {
+                val isSupabaseNewerThanGithub = !ghHasUpdate || isNewerVersion(supabaseUpdate.version, ghTag)
+                if (isSupabaseNewerThanGithub) {
+                    val items = supabaseUpdate.description.split("\n").filter { it.isNotBlank() }
+                    val supaChangelog = listOf(
+                        ChangelogSection(
+                            title = supabaseUpdate.title.ifEmpty { context.getString(R.string.changelog) },
+                            items = items
+                        )
+                    )
+                    withContext(Dispatchers.Main) {
+                        onSuccess(
+                            supabaseUpdate.version,
+                            true,
+                            supaChangelog,
+                            "",
+                            supabaseUpdate.created_at?.let { formatGitHubDate(it) } ?: "",
+                            supabaseUpdate.description,
+                            null,
+                            supabaseUpdate.apk_url
+                        )
+                    }
+                    return@withContext
+                }
+            }
+
+            if (ghHasUpdate) {
+                withContext(Dispatchers.Main) {
+                    onSuccess(ghTag, true, ghChangelog, ghSize, ghDate, ghDesc, ghImg, ghApkUrl)
+                }
+                return@withContext
+            }
+
+            // Neither source has an update newer than currentVersion
             withContext(Dispatchers.Main) {
                 onSuccess(currentVersion, false, emptyList(), "", "", null, null, null)
             }
         } catch (e: Exception) {
             Timber.tag("UpdateCheck").e(e, "Error checking for updates: ${e.message}")
+            // Check Supabase fallback before failing
+            try {
+                val supabaseUpdate = com.beatwave.music.api.SupabaseService.checkLatestUpdate().getOrNull()
+                val currentVersion = BuildConfig.VERSION_NAME
+                if (supabaseUpdate != null && isNewerVersion(supabaseUpdate.version, currentVersion)) {
+                    val items = supabaseUpdate.description.split("\n").filter { it.isNotBlank() }
+                    val supaChangelog = listOf(
+                        ChangelogSection(
+                            title = supabaseUpdate.title.ifEmpty { context.getString(R.string.changelog) },
+                            items = items
+                        )
+                    )
+                    withContext(Dispatchers.Main) {
+                        onSuccess(
+                            supabaseUpdate.version,
+                            true,
+                            supaChangelog,
+                            "",
+                            supabaseUpdate.created_at?.let { formatGitHubDate(it) } ?: "",
+                            supabaseUpdate.description,
+                            null,
+                            supabaseUpdate.apk_url
+                        )
+                    }
+                    return@withContext
+                }
+            } catch (_: Exception) {}
+
             withContext(Dispatchers.Main) { onError() }
         }
     }

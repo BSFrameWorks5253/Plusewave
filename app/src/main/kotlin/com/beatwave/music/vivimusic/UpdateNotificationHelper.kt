@@ -34,7 +34,7 @@ object UpdateNotificationHelper {
         val apkUrl = if (versionName.contains("nightly", ignoreCase = true)) {
             "https://nightly.link/BSFrameworks5253/Plusewave/workflows/nightly.yml/main/pulsewave-gms-nightly.zip"
         } else {
-            "https://github.com/BSFrameworks5253/Plusewave/releases/download/$versionName/pulsewave-$versionName.apk"
+            "https://github.com/BSFrameworks5253/Plusewave/releases/download/$versionName/PulseWave-$versionName-universal-release.apk"
         }
         val intent = Intent(Intent.ACTION_VIEW, apkUrl.toUri())
 

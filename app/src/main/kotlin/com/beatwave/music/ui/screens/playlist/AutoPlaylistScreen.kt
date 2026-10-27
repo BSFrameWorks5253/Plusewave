@@ -471,11 +471,14 @@ fun AutoPlaylistScreen(
                                             } else if (song.id == mediaMetadata?.id) {
                                                 playerConnection.togglePlayPause()
                                             } else {
+                                                val songIdx = songs.indexOfFirst { it.id == song.id }
+                                                com.beatwave.music.playback.PlaylistPlaybackTracker.savePlaylistProgress(context, playlistType, song.id, songIdx)
                                                 playerConnection.playQueue(
                                                     ListQueue(
                                                         title = playlistName,
                                                         items = songs.map { it.toMediaItem() },
-                                                        startIndex = songs.indexOfFirst { it.id == song.id },
+                                                        startIndex = songIdx,
+                                                        playlistId = playlistType,
                                                     ),
                                                 )
                                             }
@@ -779,10 +782,14 @@ private fun AutoPlaylistHeader(
                     if (isThisPlaylistPlaying) {
                         playerConnection.player.pause()
                     } else {
+                        val songIds = songs.map { it.id }
+                        val startIndex = com.beatwave.music.playback.PlaylistPlaybackTracker.resolveStartIndex(context, playlistType, songIds)
                         playerConnection.playQueue(
                             ListQueue(
                                 title = context.getString(titleRes),
                                 items = songs.map { it.toMediaItem() },
+                                startIndex = startIndex,
+                                playlistId = playlistType,
                             ),
                         )
                     }

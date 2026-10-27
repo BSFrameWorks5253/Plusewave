@@ -881,11 +881,16 @@ fun LocalPlaylistScreen(
                                         } else if (song.song.id == mediaMetadata?.id) {
                                             playerConnection.togglePlayPause()
                                         } else {
+                                            val songIdx = songs.indexOfFirst { it.map.id == song.map.id }
+                                            playlist?.id?.let { pid ->
+                                                com.beatwave.music.playback.PlaylistPlaybackTracker.savePlaylistProgress(context, pid, song.song.id, songIdx)
+                                            }
                                             playerConnection.playQueue(
                                                 ListQueue(
                                                     title = playlist!!.playlist.name,
                                                     items = songs.map { it.song.toMediaItem() },
-                                                    startIndex = songs.indexOfFirst { it.map.id == song.map.id },
+                                                    startIndex = songIdx,
+                                                    playlistId = playlist?.id,
                                                 ),
                                             )
                                         }
@@ -1546,10 +1551,14 @@ fun LocalPlaylistHeader(
                         } else if (songs.any { it.song.id == mediaMetadata?.id }) {
                             playerConnection.player.play()
                         } else {
+                            val songIds = songs.map { it.song.id }
+                            val startIndex = com.beatwave.music.playback.PlaylistPlaybackTracker.resolveStartIndex(context, playlist.id, songIds)
                             playerConnection.playQueue(
                                 ListQueue(
                                     title = playlist.playlist.name,
                                     items = songs.map { it.song.toMediaItem() },
+                                    startIndex = startIndex,
+                                    playlistId = playlist.id,
                                 )
                             )
                         }

@@ -457,6 +457,7 @@ fun OnlinePlaylistScreen(
                                         } else if (songItem.id == mediaMetadata?.id) {
                                             playerConnection.togglePlayPause()
                                         } else {
+                                            com.beatwave.music.playback.PlaylistPlaybackTracker.savePlaylistProgress(context, playlist.id, songItem.id, index)
                                             playerConnection.playQueue(
                                                 YouTubePlaylistQueue(
                                                     playlistId = playlist.id,
@@ -960,7 +961,8 @@ private fun OnlinePlaylistHeader(
                                             playlistId = playlist.id,
                                             playlistTitle = playlist.title,
                                             initialSongs = songs,
-                                            initialContinuation = continuation
+                                            initialContinuation = continuation,
+                                            startIndex = com.beatwave.music.playback.PlaylistPlaybackTracker.resolveStartIndex(context, playlist.id, songs.map { it.id })
                                         )
                                     )
                                 }

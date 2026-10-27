@@ -645,6 +645,12 @@ class vivimusicWidgetManager @Inject constructor(
         views.setImageViewResource(R.id.widget_wide_like_button, likeIcon)
         views.setOnClickPendingIntent(R.id.widget_wide_like_button, getLikeIntent())
 
+        // Playlist quick-play button
+        views.setOnClickPendingIntent(
+            R.id.widget_wide_playlist_button,
+            getPlayPlaylistIntent(config.playlistId ?: "favorites"),
+        )
+
         applyCardInk(
             views,
             ink,
@@ -653,7 +659,8 @@ class vivimusicWidgetManager @Inject constructor(
                 R.id.widget_wide_prev_button,
                 R.id.widget_wide_play_pause,
                 R.id.widget_wide_next_button,
-                R.id.widget_wide_like_button
+                R.id.widget_wide_like_button,
+                R.id.widget_wide_playlist_button,
             ),
         )
 
@@ -1302,6 +1309,13 @@ class vivimusicWidgetManager @Inject constructor(
                 views.setOnClickPendingIntent(R.id.widget_np_wide_like, getLikeIntent())
                 tint(views, R.id.widget_np_wide_like, ink)
 
+                // Playlist quick-play button
+                views.setOnClickPendingIntent(
+                    R.id.widget_np_wide_playlist,
+                    getPlayPlaylistIntent(config.playlistId ?: "favorites"),
+                )
+                tint(views, R.id.widget_np_wide_playlist, ink)
+
                 // Shuffle & Repeat buttons
                 val shuffleRepeatVisibility = if (config.showShuffleRepeat) android.view.View.VISIBLE else android.view.View.GONE
                 views.setViewVisibility(R.id.widget_np_wide_shuffle, shuffleRepeatVisibility)
@@ -1526,6 +1540,12 @@ class vivimusicWidgetManager @Inject constructor(
         views.setOnClickPendingIntent(R.id.widget_queue_prev, getPreviousIntent())
         views.setOnClickPendingIntent(R.id.widget_queue_next, getNextIntent())
 
+        // Quick play playlist button
+        views.setOnClickPendingIntent(
+            R.id.widget_queue_playlist,
+            getPlayPlaylistIntent(config.playlistId ?: "favorites"),
+        )
+
         // Header clicks deep-link to player
         views.setOnClickPendingIntent(R.id.widget_queue_bg, getOpenAppIntent())
         views.setOnClickPendingIntent(R.id.widget_queue_art, getOpenAppIntent(expandPlayer = true))
@@ -1550,6 +1570,7 @@ class vivimusicWidgetManager @Inject constructor(
             R.id.widget_queue_prev,
             R.id.widget_queue_play_pause,
             R.id.widget_queue_next,
+            R.id.widget_queue_playlist,
         ).forEach { tint(views, it, ink) }
 
         // Bind up to 3 queue items

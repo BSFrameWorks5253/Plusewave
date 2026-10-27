@@ -1726,6 +1726,8 @@ class MusicService :
         }
 
         currentQueue = queue
+        val playlistIdToTrack = (queue as? com.beatwave.music.playback.queues.ListQueue)?.playlistId
+        PlaylistPlaybackTracker.saveActivePlaylist(this, playlistIdToTrack)
         queueTitle = null
         val persistShuffleAcrossQueues = dataStore.get(PersistentShuffleAcrossQueuesKey, false)
         val previousShuffleEnabled = player.shuffleModeEnabled
@@ -1790,6 +1792,11 @@ class MusicService :
     }
 
     fun startRadioSeamlessly() {
+        if (currentQueue is com.beatwave.music.playback.queues.ListQueue) {
+            Timber.tag(TAG).d("startRadioSeamlessly skipped: active queue is a fixed playlist")
+            return
+        }
+
         // Safety Check: Ensure Player is initilized
         if (!playerInitialized.value) {
             Timber.tag(TAG).w("startRadioSeamlessly called before player initialization")
@@ -2341,8 +2348,18 @@ class MusicService :
                 }
             } else if (player.mediaItemCount - player.currentMediaItemIndex <= 2 && !currentQueue.hasNextPage()) {
                 // When queue is about to end and has no more pages, seamlessly continue with similar genre songs
-                startRadioSeamlessly()
+                // ONLY for online search / radio queues, NEVER for fixed user playlists!
+                if (currentQueue !is com.beatwave.music.playback.queues.ListQueue) {
+                    startRadioSeamlessly()
+                }
             }
+        }
+
+        // Track playlist progress so resuming later starts from this song
+        val activePid = (currentQueue as? com.beatwave.music.playback.queues.ListQueue)?.playlistId
+            ?: PlaylistPlaybackTracker.getActivePlaylist(this)
+        if (activePid != null && mediaItem != null) {
+            PlaylistPlaybackTracker.savePlaylistProgress(this, activePid, mediaItem.mediaId, player.currentMediaItemIndex)
         }
 
         // Save state when media item changes
@@ -2373,7 +2390,9 @@ class MusicService :
                 player.prepare()
                 player.play()
             } else if (repeatMode == REPEAT_MODE_OFF && dataStore.get(AutoLoadMoreKey, true)) {
-                startRadioSeamlessly()
+                if (currentQueue !is com.beatwave.music.playback.queues.ListQueue) {
+                    startRadioSeamlessly()
+                }
             }
         }
 
@@ -4034,12 +4053,15 @@ class MusicService :
                 }
 
                 if (mediaItems.isNotEmpty()) {
+                    val songIds = mediaItems.map { it.mediaId }
+                    val startIndex = PlaylistPlaybackTracker.resolveStartIndex(this@MusicService, playlistId, songIds)
                     withContext(Dispatchers.Main) {
                         playQueue(
                             com.beatwave.music.playback.queues.ListQueue(
                                 title = if (playlistId == "favorites" || playlistId == "liked") getString(R.string.liked_songs) else null,
                                 items = mediaItems,
-                                startIndex = 0,
+                                startIndex = startIndex,
+                                playlistId = playlistId,
                             )
                         )
                     }

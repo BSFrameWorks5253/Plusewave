@@ -93,6 +93,17 @@
                 android:alpha="0.85"
                 android:src="@drawable/ic_widget_skip_next"
                 android:contentDescription="@string/next" />
+
+            <!-- Quick Play Playlist Button -->
+            <ImageView
+                android:id="@+id/widget_queue_playlist"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:padding="4dp"
+                android:layout_marginStart="4dp"
+                android:alpha="0.85"
+                android:src="@drawable/playlist_play"
+                android:contentDescription="@string/filter_playlists" />
         </LinearLayout>
 
         <!-- Divider line -->
