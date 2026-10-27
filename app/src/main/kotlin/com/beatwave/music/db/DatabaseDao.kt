@@ -489,8 +489,14 @@ interface DatabaseDao {
         toTimeStamp: Long? = LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli(),
     ): Flow<List<Album>>
 
-    @Query("SELECT SUM(playTime) FROM event WHERE timestamp >= :fromTimeStamp AND timestamp <= :toTimeStamp")
+    @Query("SELECT SUM(playTime) FROM event WHERE timestamp > :fromTimeStamp AND timestamp <= :toTimeStamp")
     fun getTotalPlayTimeInRange(fromTimeStamp: Long, toTimeStamp: Long): Flow<Long?>
+
+    @Query("SELECT COUNT(1) FROM event WHERE timestamp > :fromTimeStamp AND timestamp <= :toTimeStamp")
+    fun getTotalPlayCountInRange(fromTimeStamp: Long, toTimeStamp: Long): Flow<Int>
+
+    @Query("UPDATE event SET playTime = :playTime WHERE id = :id")
+    fun updateEventPlayTime(id: Long, playTime: Long)
 
     @Query("SELECT COUNT(DISTINCT songId) FROM event WHERE timestamp >= :fromTimeStamp AND timestamp <= :toTimeStamp")
     fun getUniqueSongCountInRange(fromTimeStamp: Long, toTimeStamp: Long): Flow<Int>
@@ -1717,7 +1723,7 @@ interface DatabaseDao {
     fun insert(searchHistory: SearchHistory)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insert(event: Event)
+    fun insert(event: Event): Long
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(map: RelatedSongMap)

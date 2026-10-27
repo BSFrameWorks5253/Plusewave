@@ -27,6 +27,8 @@
     <string name="good_night">Good night</string>
     <string name="history">History</string>
     <string name="stats">Stats</string>
+    <string name="total_listening_time">Total Listening Time</string>
+    <string name="plays">Plays</string>
     <string name="mood_and_genres">Mood and Genres</string>
     <string name="account">Account</string>
     <string name="quick_picks">Quick picks</string>

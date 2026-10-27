@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Pulse Wave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
@@ -47,6 +47,41 @@ constructor(
 ) : ViewModel() {
     val selectedOption = MutableStateFlow(OptionStats.CONTINUOUS)
     val indexChips = MutableStateFlow(0)
+
+    val totalListeningTime =
+        combine(
+            selectedOption,
+            indexChips,
+        ) { first, second -> Pair(first, second) }
+            .flatMapLatest { (selection, t) ->
+                val fromTime = statToPeriod(selection, t)
+                val toTime = if (selection == OptionStats.CONTINUOUS || t == 0) {
+                    LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli()
+                } else {
+                    statToPeriod(selection, t - 1)
+                }
+                database.getTotalPlayTimeInRange(fromTime, toTime)
+            }
+            .map { it ?: 0L }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.Lazily, 0L)
+
+    val totalPlayCount =
+        combine(
+            selectedOption,
+            indexChips,
+        ) { first, second -> Pair(first, second) }
+            .flatMapLatest { (selection, t) ->
+                val fromTime = statToPeriod(selection, t)
+                val toTime = if (selection == OptionStats.CONTINUOUS || t == 0) {
+                    LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli()
+                } else {
+                    statToPeriod(selection, t - 1)
+                }
+                database.getTotalPlayCountInRange(fromTime, toTime)
+            }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.Lazily, 0)
 
     val mostPlayedSongsStats =
         combine(

@@ -94,6 +94,7 @@ import com.beatwave.music.ui.menu.SongMenu
 import com.beatwave.music.ui.utils.backToMain
 import com.beatwave.music.ui.utils.bleedStart
 import com.beatwave.music.ui.utils.plusStart
+import com.beatwave.music.utils.formatListeningTime
 import com.beatwave.music.utils.joinByBullet
 import com.beatwave.music.utils.makeTimeString
 import com.beatwave.music.viewmodels.StatsViewModel
@@ -118,6 +119,8 @@ fun StatsScreen(
     val mostPlayedSongsStats by viewModel.mostPlayedSongsStats.collectAsState()
     val mostPlayedArtists by viewModel.mostPlayedArtists.collectAsState()
     val mostPlayedAlbums by viewModel.mostPlayedAlbums.collectAsState()
+    val totalListeningTime by viewModel.totalListeningTime.collectAsState()
+    val totalPlayCount by viewModel.totalPlayCount.collectAsState()
     val firstEvent by viewModel.firstEvent.collectAsState()
     val currentDate = LocalDateTime.now()
 
@@ -291,6 +294,83 @@ fun StatsScreen(
                     )
                 }
 
+                item(key = "listening_summary_card") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .liquidGlass(
+                                shape = ContinuousRoundedRectangle(percent = 28),
+                                tint = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                            )
+                            .padding(20.dp),
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(R.string.total_listening_time),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = onTint.copy(alpha = 0.7f),
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = formatListeningTime(totalListeningTime),
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = onTint,
+                            )
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.plays),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = onTint.copy(alpha = 0.6f),
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "$totalPlayCount",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = onTint,
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.songs),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = onTint.copy(alpha = 0.6f),
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "${mostPlayedSongsStats.size}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = onTint,
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.artists),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = onTint.copy(alpha = 0.6f),
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "${mostPlayedArtists.size}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = onTint,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if (mostPlayedSongs.isNotEmpty()) {
                     item(key = "mostPlayedSongs") {
                         NavigationTitle(
@@ -314,12 +394,13 @@ fun StatsScreen(
                                     title = "${index + 1}. ${song.title}",
                                     subtitle =
                                     joinByBullet(
+                                        song.artistName,
                                         pluralStringResource(
                                             R.plurals.n_time,
                                             song.songCountListened,
                                             song.songCountListened,
                                         ),
-                                        makeTimeString(song.timeListened),
+                                        formatListeningTime(song.timeListened),
                                     ),
                                     thumbnailUrl = song.thumbnailUrl,
                                     isActive = song.id == mediaMetadata?.id,
@@ -385,7 +466,7 @@ fun StatsScreen(
                                             artist.songCount,
                                             artist.songCount
                                         ),
-                                        makeTimeString(artist.timeListened?.toLong()),
+                                        formatListeningTime(artist.timeListened?.toLong()),
                                     ),
                                     thumbnailUrl = artist.artist.thumbnailUrl,
                                     modifier =
@@ -436,10 +517,10 @@ fun StatsScreen(
                                     joinByBullet(
                                         pluralStringResource(
                                             R.plurals.n_time,
-                                            album.songCountListened!!,
-                                            album.songCountListened
+                                            album.songCountListened ?: 0,
+                                            album.songCountListened ?: 0,
                                         ),
-                                        makeTimeString(album.timeListened),
+                                        formatListeningTime(album.timeListened),
                                     ),
                                     thumbnailUrl = album.album.thumbnailUrl,
                                     isActive = album.id == mediaMetadata?.album?.id,

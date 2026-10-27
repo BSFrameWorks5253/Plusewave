@@ -191,6 +191,22 @@ abstract class InternalDatabase : RoomDatabase() {
                             } catch (e: Exception) {
                                 Timber.tag("MusicDatabase").e(e, "Failed to set PRAGMA settings")
                             }
+                            try {
+                                db.execSQL(
+                                    """
+                                    DELETE FROM event 
+                                    WHERE id IN (
+                                        SELECT e1.id 
+                                        FROM event e1 
+                                        JOIN event e2 ON e1.songId = e2.songId 
+                                            AND e2.id > e1.id 
+                                            AND (e2.timestamp - e1.timestamp) BETWEEN 1 AND 25000
+                                    )
+                                    """.trimIndent()
+                                )
+                            } catch (e: Exception) {
+                                Timber.tag("MusicDatabase").w(e, "Failed to deduplicate historical event records")
+                            }
                         }
                     })
                     .build(),

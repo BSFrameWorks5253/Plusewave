@@ -24,6 +24,24 @@ fun makeTimeString(duration: Long?): String {
     }
 }
 
+fun formatListeningTime(durationMs: Long?): String {
+    if (durationMs == null || durationMs <= 0L) return "0s"
+    val totalSeconds = durationMs / 1000
+    val days = totalSeconds / 86400
+    val remainderDay = totalSeconds % 86400
+    val hours = remainderDay / 3600
+    val remainderHour = remainderDay % 3600
+    val minutes = remainderHour / 60
+    val seconds = remainderHour % 60
+
+    return when {
+        days > 0 -> if (hours > 0) "${days}d ${hours}h" else "${days}d"
+        hours > 0 -> if (minutes > 0) "${hours}h ${minutes}m" else "${hours}h"
+        minutes > 0 -> if (seconds > 0) "${minutes}m ${seconds}s" else "${minutes}m"
+        else -> "${seconds}s"
+    }
+}
+
 fun md5(str: String): String {
     val md = MessageDigest.getInstance("MD5")
     return BigInteger(1, md.digest(str.toByteArray())).toString(16).padStart(32, '0')

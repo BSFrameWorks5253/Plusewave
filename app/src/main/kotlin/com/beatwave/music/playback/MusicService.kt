@@ -351,6 +351,10 @@ class MusicService :
 
     // Last DB write per media id, to coalesce the ~3s ExoPlayer stats reports.
     private val lastStatsWriteAt = HashMap<String, Long>()
+    private var activeStatsSessionSongId: String? = null
+    private var activeStatsEventId: Long? = null
+    private var activeStatsRecordedMs: Long = 0L
+    private var activeStatsSessionSyncedMediaId: String? = null
 
     private val binder = MusicBinder()
 
@@ -2283,6 +2287,10 @@ class MusicService :
             }
         }
         previousMediaItemIndex = player.currentMediaItemIndex
+        activeStatsSessionSongId = null
+        activeStatsEventId = null
+        activeStatsRecordedMs = 0L
+        activeStatsSessionSyncedMediaId = null
 
         playerStallWatchdogs[player]?.let { watchdog ->
             watchdog.armed = mediaItem?.mediaId?.let { losslessStreamMediaIds.contains(it) } == true
@@ -2417,6 +2425,10 @@ class MusicService :
         }
 
         if (playbackState == Player.STATE_IDLE || playbackState == Player.STATE_ENDED) {
+            activeStatsSessionSongId = null
+            activeStatsEventId = null
+            activeStatsRecordedMs = 0L
+            activeStatsSessionSyncedMediaId = null
             scrobbleManager?.onSongStop()
             checkAndSubmitListenBrainzFinished()
         }
@@ -3653,34 +3665,51 @@ class MusicService :
     ) {
         val mediaItem = eventTime.timeline.getWindow(eventTime.windowIndex, Timeline.Window()).mediaItem
         val historyDurationMs = dataStore[HistoryDuration]?.times(1000f) ?: 30000f
+        val songId = mediaItem.mediaId
+        val currentPlayTime = playbackStats.totalPlayTimeMs
 
-        if (playbackStats.totalPlayTimeMs >= historyDurationMs &&
+        if (currentPlayTime >= historyDurationMs &&
             !dataStore.get(PauseListenHistoryKey, false)
         ) {
-            // Coalesce stats writes: ExoPlayer reports every ~3s during playback, so
-            // without this a single listen inserts a history row and invalidates the
-            // events/stats flows every few seconds. Writing at most once per song per
-            // window keeps short listens recorded while stopping the storm.
             val now = System.currentTimeMillis()
-            if (now - (lastStatsWriteAt[mediaItem.mediaId] ?: 0L) >= STATS_WRITE_INTERVAL_MS) {
-                lastStatsWriteAt[mediaItem.mediaId] = now
-                database.query {
-                    incrementTotalPlayTime(mediaItem.mediaId, playbackStats.totalPlayTimeMs)
-                    try {
-                        insert(
-                            Event(
-                                songId = mediaItem.mediaId,
-                                timestamp = LocalDateTime.now(),
-                                playTime = playbackStats.totalPlayTimeMs,
-                            ),
-                        )
-                    } catch (_: SQLException) {
+            if (now - (lastStatsWriteAt[songId] ?: 0L) >= STATS_WRITE_INTERVAL_MS) {
+                lastStatsWriteAt[songId] = now
+                if (activeStatsSessionSongId == songId && activeStatsEventId != null) {
+                    val delta = (currentPlayTime - activeStatsRecordedMs).coerceAtLeast(0L)
+                    activeStatsRecordedMs = currentPlayTime
+                    val eventId = activeStatsEventId!!
+                    database.query {
+                        if (delta > 0L) {
+                            incrementTotalPlayTime(songId, delta)
+                        }
+                        updateEventPlayTime(eventId, currentPlayTime)
+                    }
+                } else {
+                    activeStatsSessionSongId = songId
+                    activeStatsRecordedMs = currentPlayTime
+                    database.query {
+                        incrementTotalPlayTime(songId, currentPlayTime)
+                        incrementPlayCount(songId)
+                        try {
+                            val newId = insert(
+                                Event(
+                                    songId = songId,
+                                    timestamp = LocalDateTime.now(),
+                                    playTime = currentPlayTime,
+                                ),
+                            )
+                            if (newId > 0) {
+                                activeStatsEventId = newId
+                            }
+                        } catch (_: SQLException) {
+                        }
                     }
                 }
             }
         }
 
-        if (playbackStats.totalPlayTimeMs >= historyDurationMs) {
+        if (currentPlayTime >= historyDurationMs && activeStatsSessionSyncedMediaId != mediaItem.mediaId) {
+            activeStatsSessionSyncedMediaId = mediaItem.mediaId
             val title = mediaItem.mediaMetadata.title?.toString()
             val artist = mediaItem.mediaMetadata.artist?.toString()
             val playTime = playbackStats.totalPlayTimeMs
