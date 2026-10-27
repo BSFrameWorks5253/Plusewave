@@ -45,6 +45,7 @@ import com.beatwave.music.db.entities.SortedSongAlbumMap
 import com.beatwave.music.db.entities.SortedSongArtistMap
 import com.beatwave.music.extensions.toSQLiteQuery
 import timber.log.Timber
+import java.io.File
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -164,8 +165,25 @@ abstract class InternalDatabase : RoomDatabase() {
     companion object {
         const val DB_NAME = "song.db"
 
-        fun newInstance(context: Context): MusicDatabase =
-            MusicDatabase(
+        fun newInstance(context: Context): MusicDatabase {
+            // Safety backup: Take an automatic snapshot of song.db before opening/migrating
+            // so user music, playlists, and stats can NEVER be lost during app version updates!
+            try {
+                val dbFile = context.getDatabasePath(DB_NAME)
+                if (dbFile.exists() && dbFile.length() > 0) {
+                    val backupDir = File(context.filesDir, "db_backups")
+                    if (!backupDir.exists()) backupDir.mkdirs()
+                    val backupFile = File(backupDir, "song_latest.db.bak")
+                    if (!backupFile.exists() || System.currentTimeMillis() - backupFile.lastModified() > 1800_000L) {
+                        dbFile.copyTo(backupFile, overwrite = true)
+                        Timber.tag("MusicDatabase").d("Safety backup of database updated successfully (${dbFile.length()} bytes)")
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.tag("MusicDatabase").w(e, "Failed to create safety backup of song.db")
+            }
+
+            return MusicDatabase(
                 delegate =
                 Room
                     .databaseBuilder(context, InternalDatabase::class.java, DB_NAME)
