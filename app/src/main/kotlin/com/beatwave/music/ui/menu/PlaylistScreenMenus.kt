@@ -90,6 +90,7 @@ fun LocalPlaylistMenu(
     }
 
     val isSyncablePlaylist = playlist.playlist.browseId != null || playlist.playlist.id.startsWith("SPOTIFY_PLAYLIST_")
+    val isYouTubePlaylist = playlist.playlist.browseId != null
 
     val menuItems = buildList {
         add(

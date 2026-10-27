@@ -396,6 +396,7 @@ fun AutoPlaylistScreen(
                                     iconRes = iconRes,
                                     context = context,
                                     menuState = menuState,
+                                    playlistType = viewModel.playlist,
                                     modifier = Modifier,
                                 )
                             }
@@ -472,13 +473,13 @@ fun AutoPlaylistScreen(
                                                 playerConnection.togglePlayPause()
                                             } else {
                                                 val songIdx = songs.indexOfFirst { it.id == song.id }
-                                                com.beatwave.music.playback.PlaylistPlaybackTracker.savePlaylistProgress(context, playlistType, song.id, songIdx)
+                                                com.beatwave.music.playback.PlaylistPlaybackTracker.savePlaylistProgress(context, viewModel.playlist, song.id, songIdx)
                                                 playerConnection.playQueue(
                                                     ListQueue(
                                                         title = playlistName,
                                                         items = songs.map { it.toMediaItem() },
                                                         startIndex = songIdx,
-                                                        playlistId = playlistType,
+                                                        playlistId = viewModel.playlist,
                                                     ),
                                                 )
                                             }
@@ -710,6 +711,7 @@ private fun AutoPlaylistHeader(
     iconRes: Int,
     context: android.content.Context,
     menuState: MenuState,
+    playlistType: String = "",
     modifier: Modifier = Modifier,
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return

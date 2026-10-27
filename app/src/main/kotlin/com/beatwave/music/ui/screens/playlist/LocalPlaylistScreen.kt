@@ -699,7 +699,8 @@ fun LocalPlaylistScreen(
                                 onStartSearch = { isSearching = true },
                                 snackbarHostState = snackbarHostState,
                                 heroScale = heroZoom.scale,
-                                modifier = Modifier.animateItem()
+                                modifier = Modifier.animateItem(),
+                                onSync = { viewModel.refresh() }
                             )
                         }
                     }
@@ -1147,6 +1148,7 @@ fun LocalPlaylistHeader(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier,
     heroScale: Float = 1f,
+    onSync: () -> Unit = {},
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
@@ -1491,7 +1493,7 @@ fun LocalPlaylistHeader(
                                 downloadState = downloadState,
                                 onEdit = onShowEditDialog,
                                 onSync = {
-                                    viewModel.refresh()
+                                    onSync()
                                     scope.launch(Dispatchers.Main) {
                                         snackbarHostState.showSnackbar(context.getString(R.string.playlist_synced))
                                     }
