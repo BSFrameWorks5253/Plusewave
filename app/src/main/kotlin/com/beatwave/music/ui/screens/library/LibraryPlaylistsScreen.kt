@@ -318,8 +318,11 @@ fun LibraryPlaylistsScreen(
         }
     }
 
+    // Hoisted: both view types de-duped the same list separately, and the scroll rail
+    // needs the resulting count too.
+    val visiblePlaylists = remember(playlists) { playlists.distinctBy { it.id } }
     // In-memory mutable list for 60fps smooth dragging without IO DataStore write spam
-    val localPlaylists = remember(playlists) { playlists.distinctBy { it.id }.toMutableStateList() }
+    val localPlaylists = remember(visiblePlaylists) { visiblePlaylists.toMutableStateList() }
     var hasDragged by remember { mutableStateOf(false) }
 
     val reorderableListState = rememberReorderableLazyListState(
