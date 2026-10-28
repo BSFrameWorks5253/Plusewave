@@ -6,7 +6,6 @@
 package com.beatwave.music.playback
 
 import android.content.Context
-import androidx.hilt.work.HiltWorker
 import androidx.media3.common.util.UnstableApi
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
@@ -16,13 +15,22 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.beatwave.music.db.MusicDatabase
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface AutoDownloadWorkerEntryPoint {
+    fun database(): MusicDatabase
+    fun downloadUtil(): DownloadUtil
+}
 
 /**
  * Smart Auto-Download Worker:
@@ -30,17 +38,21 @@ import java.util.concurrent.TimeUnit
  * in the background when connected to Wi-Fi (unmetered network) and charging/battery not low.
  */
 @UnstableApi
-@HiltWorker
-class SmartAutoDownloadWorker @AssistedInject constructor(
-    @Assisted private val context: Context,
-    @Assisted params: WorkerParameters,
-    private val database: MusicDatabase,
-    private val downloadUtil: DownloadUtil,
+class SmartAutoDownloadWorker(
+    private val context: Context,
+    params: WorkerParameters,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         Timber.d("SmartAutoDownloadWorker: Starting top 20 auto-cache run")
         try {
+            val entryPoint = EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                AutoDownloadWorkerEntryPoint::class.java
+            )
+            val database = entryPoint.database()
+            val downloadUtil = entryPoint.downloadUtil()
+
             // 1. Fetch top 20 most played songs (all time)
             val topSongs = database.mostPlayedSongs(0L, 20).first()
             if (topSongs.isEmpty()) {
