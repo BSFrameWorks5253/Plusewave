@@ -744,8 +744,8 @@ object Spotify {
         }
     }
 
-    suspend fun searchTrack(query: String): Result<SpotifyTrack?> = runCatching {
-        val token = accessToken ?: throw SpotifyException(401, "Not authenticated")
+    suspend fun searchSpotifyTrack(query: String): Result<SpotifyTrack?> = runCatching {
+        val token = accessToken ?: getGuestToken().getOrNull() ?: throw SpotifyException(401, "Not authenticated")
         val response = gqlClient.get("https://api.spotify.com/v1/search") {
             header("Authorization", "Bearer $token")
             parameter("q", query)

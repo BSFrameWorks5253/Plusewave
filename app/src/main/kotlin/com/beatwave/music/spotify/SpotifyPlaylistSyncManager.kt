@@ -285,7 +285,7 @@ class SpotifyPlaylistSyncManager @Inject constructor(
             val trackUris = mutableListOf<String>()
             for (songWithMap in songsToPush) {
                 val query = "${songWithMap.song.title} ${songWithMap.song.artists.firstOrNull()?.name.orEmpty()}".trim()
-                val spotifyTrack = com.music.spotify.Spotify.searchTrack(query).getOrNull()
+                val spotifyTrack = com.music.spotify.Spotify.searchSpotifyTrack(query).getOrNull()
                 if (spotifyTrack?.uri != null) {
                     trackUris.add(spotifyTrack.uri!!)
                 } else if (spotifyTrack?.id != null) {
