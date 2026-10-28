@@ -87,9 +87,17 @@ if (-not $alreadyDownloaded) {
     Write-Host "Download complete!" -ForegroundColor Green
 }
 
-# Copy to Desktop root as PulseWave-Latest.apk for quick access
+# Copy directly to Desktop root WITH version number in the filename
+$desktopVersionFile = Join-Path $TargetDir "PulseWave-$tagName.apk"
+$desktopFullVersionFile = Join-Path $TargetDir $apkName
+
+Copy-Item -Path $destBuildFile -Destination $desktopVersionFile -Force
+Copy-Item -Path $destBuildFile -Destination $desktopFullVersionFile -Force
 Copy-Item -Path $destBuildFile -Destination $desktopLatestFile -Force
-Write-Host "Desktop shortcut/file updated: $desktopLatestFile" -ForegroundColor Green
+
+Write-Host "Desktop versioned file saved: $desktopVersionFile" -ForegroundColor Green
+Write-Host "Desktop full release file saved: $desktopFullVersionFile" -ForegroundColor Green
+Write-Host "Desktop latest pointer updated: $desktopLatestFile" -ForegroundColor Green
 
 # Also download changelog if available
 $changelogAsset = $release.assets | Where-Object { $_.name -like "*changelog*.json" } | Select-Object -First 1

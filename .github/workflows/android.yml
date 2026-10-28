@@ -91,7 +91,7 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PulseWave-release-apk
+          name: PulseWave-${{ steps.get_version.outputs.tag }}-apk
           path: app/build/outputs/apk/universalGms/release/*.apk
 
       - name: Create GitHub Release
