@@ -13,6 +13,7 @@ import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.room.Room
 import com.beatwave.music.constants.MaxSongCacheSizeKey
+import com.beatwave.music.db.DatabaseDao
 import com.beatwave.music.db.InternalDatabase
 import com.beatwave.music.db.MusicDatabase
 import com.beatwave.music.listentogether.ListenTogetherClient
