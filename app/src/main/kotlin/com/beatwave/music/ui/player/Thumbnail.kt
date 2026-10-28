@@ -18,6 +18,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectDragGestures
+import com.beatwave.music.utils.VinylScratchSynthesizer
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import com.beatwave.music.ui.utils.rememberEdgeAwareFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
@@ -665,6 +667,19 @@ private fun ThumbnailItem(
         remember { mutableFloatStateOf(0f) }
     }
 
+    val isVinyl = artworkStyle == PlayerArtworkStyle.VINYL
+    var dragRotationOffset by remember { mutableFloatStateOf(0f) }
+    var isScratching by remember { mutableStateOf(false) }
+    var lastDragAngle by remember { mutableFloatStateOf(0f) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    var centerLabelTapCount by remember { mutableIntStateOf(0) }
+    var lastLabelTapTime by remember { mutableLongStateOf(0L) }
+    val tonearmAngle by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isPlaying || isScratching) 20f else 2f,
+        animationSpec = androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessLow),
+        label = "TonearmPivot"
+    )
+
     val incrementalSeekSkipEnabled by rememberPreference(SeekExtraSeconds, defaultValue = false)
     var skipMultiplier by remember { mutableIntStateOf(1) }
     var lastTapTime by remember { mutableLongStateOf(0L) }
@@ -722,10 +737,54 @@ private fun ThumbnailItem(
             },
         contentAlignment = Alignment.Center
     ) {
+        val vinylDragModifier = if (isVinyl) {
+            Modifier.pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        isScratching = true
+                        val cx = size.width / 2f
+                        val cy = size.height / 2f
+                        lastDragAngle = Math.toDegrees(
+                            kotlin.math.atan2((offset.y - cy).toDouble(), (offset.x - cx).toDouble())
+                        ).toFloat()
+                    },
+                    onDrag = { change, _ ->
+                        change.consume()
+                        val cx = size.width / 2f
+                        val cy = size.height / 2f
+                        val currentAngle = Math.toDegrees(
+                            kotlin.math.atan2((change.position.y - cy).toDouble(), (change.position.x - cx).toDouble())
+                        ).toFloat()
+                        var delta = currentAngle - lastDragAngle
+                        if (delta > 180f) delta -= 360f
+                        if (delta < -180f) delta += 360f
+
+                        dragRotationOffset += delta
+
+                        // Play synthesized scratch audio & haptics
+                        VinylScratchSynthesizer.playScratch(delta)
+                        if (kotlin.math.abs(delta) > 5f) {
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        }
+
+                        val duration = playerConnection.player.duration
+                        if (duration > 0) {
+                            val currentPos = playerConnection.player.currentPosition
+                            val scrubMs = ((delta / 360f) * 30_000L).toLong()
+                            playerConnection.player.seekTo((currentPos + scrubMs).coerceIn(0L, duration))
+                        }
+                        lastDragAngle = currentAngle
+                    },
+                    onDragEnd = { isScratching = false },
+                    onDragCancel = { isScratching = false }
+                )
+            }
+        } else Modifier
         val artworkDensity = androidx.compose.ui.platform.LocalDensity.current
         Box(
             modifier = Modifier
                 .size(dimensions.thumbnailSize)
+                .then(vinylDragModifier)
                 // Target end of the mini-to-full cover morph, registered on the node that
                 // KNOWS the shape: a vinyl or clover is a circle for morph purposes (half
                 // its size), a card is its own corner radius. Also the copy that has to be
@@ -741,7 +800,7 @@ private fun ThumbnailItem(
                 )
                 .hideWhileMorphing()
                 .graphicsLayer {
-                    rotationZ = rotation.value
+                    rotationZ = if (isVinyl) (rotation.value + dragRotationOffset) % 360f else rotation.value
                 }
                 .clip(
                     when (artworkStyle) {
@@ -775,23 +834,57 @@ private fun ThumbnailItem(
                 Canvas(Modifier.fillMaxSize()) {
                     val r = size.minDimension / 2f
                     val c = Offset(size.width / 2f, size.height / 2f)
-                    // Black record body drawn as a ring, so the art stays visible
-                    // in the middle as the vinyl's paper label.
+                    // Deep carbon vinyl ring
                     drawCircle(
-                        color = Color.Black.copy(alpha = 0.82f),
+                        color = Color.Black.copy(alpha = 0.84f),
                         radius = r * 0.67f,
                         center = c,
                         style = Stroke(width = r * 0.66f),
                     )
-                    for (i in 1..7) {
+                    // Concentric sound grooves
+                    for (i in 1..8) {
                         drawCircle(
-                            color = Color.White.copy(alpha = 0.05f),
-                            radius = r * (0.40f + i * 0.083f),
+                            color = Color.White.copy(alpha = 0.045f),
+                            radius = r * (0.38f + i * 0.075f),
                             center = c,
                             style = Stroke(width = 1.dp.toPx()),
                         )
                     }
                     drawCircle(Color.Black, radius = r * 0.055f, center = c)
+                }
+
+                // Precision metallic tonearm stylus overlay
+                Canvas(Modifier.fillMaxSize()) {
+                    val w = size.width
+                    val h = size.height
+                    val pivotX = w * 0.88f
+                    val pivotY = h * 0.12f
+
+                    drawContext.transform.rotate(tonearmAngle, pivot = Offset(pivotX, pivotY))
+
+                    // Pivot base
+                    drawCircle(Color(0xFF2B2D3C), radius = 16.dp.toPx(), center = Offset(pivotX, pivotY))
+                    drawCircle(Color(0xFF8C92B0), radius = 16.dp.toPx(), center = Offset(pivotX, pivotY), style = Stroke(2.dp.toPx()))
+                    drawCircle(Color(0xFF14151E), radius = 6.dp.toPx(), center = Offset(pivotX, pivotY))
+
+                    // Metallic arm tube
+                    drawLine(
+                        color = Color(0xFFE0E3F2),
+                        start = Offset(pivotX, pivotY),
+                        end = Offset(w * 0.52f, h * 0.68f),
+                        strokeWidth = 4.dp.toPx(),
+                        cap = androidx.compose.ui.graphics.StrokeCap.Round
+                    )
+
+                    // Headshell / Red Cartridge
+                    drawRoundRect(
+                        color = Color(0xFFF43F5E),
+                        topLeft = Offset(w * 0.48f, h * 0.66f),
+                        size = androidx.compose.ui.geometry.Size(18.dp.toPx(), 28.dp.toPx()),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx(), 4.dp.toPx())
+                    )
+                    // Stylus Tip
+                    drawCircle(Color.White, radius = 2.5.dp.toPx(), center = Offset(w * 0.50f, h * 0.72f))
                 }
             }
 

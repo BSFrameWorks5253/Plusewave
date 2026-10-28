@@ -1,34 +1,34 @@
 {
-  "description": "Pulse Wave 6.1.12 — Smart Playlist Resume, Spotify Library Cards, Floating Vinyl Mini-Player, Interactive Widget Launcher, Admin Reports Purge & In-App Updater Fix.",
+  "description": "Pulse Wave 6.1.13 — Interactive Vinyl Turntable with Audio Scratching, Size-Oriented Turntable Widget, Smooth Library Playlist Reordering & VIP Easter Eggs.",
   "image": "",
   "changelog": [
     {
-      "title": "Smart Playback & Queue Memory",
+      "title": "Interactive Vinyl Turntable & Scratching",
       "items": [
-        "Smart Playlist Resume: When you stop playback and leave the app, PulseWave automatically remembers the exact song index for that playlist so you never get stuck listening to the first 10-15 tracks on repeat.",
-        "Floating Vinyl Mini-Player: Redesigned fluid mini-player with authentic vinyl disc styling and smooth expanded player animations.",
-        "Media Notification Icon: Restored crisp, full-color application icon in media notification bar."
+        "Scratch & Seek Vinyl Disc: Grab and spin the vinyl record in the player forward or backward to scrub through songs with real-time audio scrubbing physics.",
+        "Realistic Vinyl Scratch Sound: Synthesized needle-on-groove DJ scratch audio effect pitch-bent to your rotational drag velocity.",
+        "Animated Tonearm Stylus: Mechanical needle swings into the groove during playback and lifts away into resting stand on pause.",
+        "DJ Scratch Mode Easter Egg: Triple-tap the center vinyl label to trigger instant DJ Spinback mode!"
       ]
     },
     {
-      "title": "Library & Spotify Sync",
+      "title": "Pure Size-Oriented Turntable Widget",
       "items": [
-        "Spotify-Style Library Cards: High-definition 2-column rounded card grid with artwork collage preview and download status badges.",
-        "Bidirectional Spotify Sync: Sync tracks both ways between PulseWave and Spotify with smart deduplication and ISRC matching."
+        "Pure Turntable Platter: Clean circular vinyl deck with tonearm and ambient glow with no clutter, scaling responsively to any widget dimension.",
+        "Continuous Spin Tracking: Platter tracks live playback state directly from your home screen."
       ]
     },
     {
-      "title": "Home Screen Widget & Admin Controls",
+      "title": "Library Playlist Reordering Fix",
       "items": [
-        "Interactive Playlist Launcher Widget: Direct 1-tap playback controls right from your Android home screen.",
-        "Admin Panel Error Purge: Dedicated button in Admin Mode to instantly clear and purge stale error reports from Supabase."
+        "Silky Smooth Reordering: Swapped to 60fps in-memory list updates during drag so dragging never drops frames or gets canceled.",
+        "Atomic Drop Persistence: Preferences are saved once upon releasing the drag handle, eliminating DataStore write collisions."
       ]
     },
     {
-      "title": "Updater & Release Improvements",
+      "title": "Easter Eggs & UI Enhancements",
       "items": [
-        "In-App Updater Logic Fix: Resolved version comparison glitch where newer installations were prompted to download older versions.",
-        "Automated Desktop Records: Seamless local archiving of release APKs directly to your Desktop."
+        "PulseWave VIP Master Mode: Tap the app version in About settings 7 times to unlock the secret VIP Easter Egg!"
       ]
     }
   ]

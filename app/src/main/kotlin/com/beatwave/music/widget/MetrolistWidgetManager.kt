@@ -722,21 +722,10 @@ class vivimusicWidgetManager @Inject constructor(
         }
         canvas.drawRect(squircleRect, glassBasePaint)
 
-        // Determine vinyl disc placement based on aspect ratio
-        val isWide = width.toFloat() / height.toFloat() >= 1.25f
-        val vinylCenterX: Float
-        val vinylCenterY: Float
-        val vinylRadius: Float
-
-        if (isWide) {
-            vinylCenterY = height / 2f
-            vinylCenterX = width - (height * 0.50f)
-            vinylRadius = height * 0.41f
-        } else {
-            vinylCenterX = width / 2f
-            vinylCenterY = height * 0.50f
-            vinylRadius = minOf(width, height) * 0.38f
-        }
+        // Size-oriented pure turntable widget: Platter is centered and scales to fill the widget box
+        val vinylCenterX = width / 2f
+        val vinylCenterY = height / 2f
+        val vinylRadius = minOf(width, height) * 0.44f
 
         // 2b. Dynamic Ambient Glow Bloom behind the floating vinyl
         val bloomPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -1149,8 +1138,9 @@ class vivimusicWidgetManager @Inject constructor(
         )
         views.setImageViewBitmap(R.id.widget_turntable_album_art, turntableComposite)
 
-        views.setTextViewText(R.id.widget_turntable_title, title)
-        views.setTextViewText(R.id.widget_turntable_artist, artist)
+        // Pure size-oriented turntable widget: Only the vinyl platter and tonearm deck
+        views.setViewVisibility(R.id.widget_turntable_info_container, android.view.View.GONE)
+        views.setViewVisibility(R.id.widget_turntable_controls, android.view.View.GONE)
 
         // Audio quality / lossless badge
         if (config.showLosslessBadge && !audioQuality.isNullOrBlank()) {

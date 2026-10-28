@@ -56,6 +56,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -317,9 +318,9 @@ fun LibraryPlaylistsScreen(
         }
     }
 
-    // Hoisted: both view types de-duped the same list separately, and the scroll rail
-    // needs the resulting count too.
-    val visiblePlaylists = remember(playlists) { playlists.distinctBy { it.id } }
+    // In-memory mutable list for 60fps smooth dragging without IO DataStore write spam
+    val localPlaylists = remember(playlists) { playlists.distinctBy { it.id }.toMutableStateList() }
+    var hasDragged by remember { mutableStateOf(false) }
 
     val reorderableListState = rememberReorderableLazyListState(
         lazyListState = lazyListState,
@@ -330,7 +331,18 @@ fun LibraryPlaylistsScreen(
         if (from.index >= headerCount && to.index >= headerCount) {
             val fromIdx = from.index - headerCount
             val toIdx = to.index - headerCount
-            viewModel.reorderPlaylists(fromIdx, toIdx)
+            if (fromIdx in localPlaylists.indices && toIdx in localPlaylists.indices) {
+                localPlaylists.add(toIdx, localPlaylists.removeAt(fromIdx))
+                hasDragged = true
+            }
+        }
+    }
+
+    // Persist only on drag completion when the user drops the item
+    LaunchedEffect(reorderableListState.isAnyItemDragging) {
+        if (!reorderableListState.isAnyItemDragging && hasDragged) {
+            viewModel.setCustomPlaylistOrder(localPlaylists.map { it.id })
+            hasDragged = false
         }
     }
 
@@ -448,7 +460,7 @@ fun LibraryPlaylistsScreen(
                         }
 
                         items(
-                            items = visiblePlaylists,
+                            items = localPlaylists,
                             key = { it.id },
                             contentType = { CONTENT_TYPE_PLAYLIST },
                         ) { playlist ->
@@ -606,7 +618,7 @@ fun LibraryPlaylistsScreen(
                         }
 
                         items(
-                            items = visiblePlaylists,
+                            items = localPlaylists,
                             key = { it.id },
                             contentType = { CONTENT_TYPE_PLAYLIST },
                         ) { playlist ->

@@ -1,3 +1,5 @@
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 /**
  * Pulse Wave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
@@ -177,10 +179,27 @@ fun AboutScreen(
                     colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
                 )
 
+                var easterEggTaps by remember { mutableIntStateOf(0) }
+                var lastTapTime by remember { mutableLongStateOf(0L) }
+
                 Text(
                     text = "v${BuildConfig.VERSION_NAME} • ${stringResource(if (BuildConfig.IS_NIGHTLY) R.string.build_nightly else R.string.build_stable)}",
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable {
+                        val now = System.currentTimeMillis()
+                        if (now - lastTapTime < 800L) {
+                            easterEggTaps++
+                            if (easterEggTaps >= 7) {
+                                easterEggTaps = 0
+                                com.beatwave.music.utils.VinylScratchSynthesizer.playScratch(45f)
+                                android.widget.Toast.makeText(context, "🌟 PulseWave VIP Master Audio Mode Unlocked!", android.widget.Toast.LENGTH_LONG).show()
+                            }
+                        } else {
+                            easterEggTaps = 1
+                        }
+                        lastTapTime = now
+                    }
                 )
             }
         }

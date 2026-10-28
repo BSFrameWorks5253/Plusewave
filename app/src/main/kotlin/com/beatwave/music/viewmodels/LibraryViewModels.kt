@@ -330,6 +330,16 @@ constructor(
         }
     }
 
+    fun setCustomPlaylistOrder(orderedIds: List<String>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            context.dataStore.edit { preferences ->
+                preferences[CustomPlaylistOrderKey] = orderedIds.joinToString(",")
+                preferences[PlaylistSortTypeKey] = PlaylistSortType.CUSTOM.name
+                preferences[PlaylistSortDescendingKey] = false
+            }
+        }
+    }
+
     fun reorderPlaylists(fromIndex: Int, toIndex: Int) {
         viewModelScope.launch(Dispatchers.IO) {
             val list = allPlaylists.value.map { it.id }.toMutableList()
