@@ -38,6 +38,7 @@ import com.beatwave.music.constants.LocalOnlyModeKey
 import com.beatwave.music.constants.PlaylistSortDescendingKey
 import com.beatwave.music.constants.PlaylistSortType
 import com.beatwave.music.constants.PlaylistSortTypeKey
+import com.beatwave.music.db.entities.Playlist
 import com.beatwave.music.constants.SongFilter
 import com.beatwave.music.constants.SongFilterKey
 import com.beatwave.music.constants.SongSortDescendingKey
@@ -299,7 +300,7 @@ constructor(
                         val orderList = prefs.customOrder.split(",").filter { it.isNotBlank() }
                         val orderMap = orderList.mapIndexed { idx, id -> id to idx }.toMap()
                         val sorted = filtered.sortedWith(
-                            compareBy<Playlist> { orderMap[it.id] ?: Int.MAX_VALUE }
+                            compareBy<Playlist> { orderMap[it.playlist.id] ?: Int.MAX_VALUE }
                         )
                         if (prefs.descending) sorted.reversed() else sorted
                     } else {

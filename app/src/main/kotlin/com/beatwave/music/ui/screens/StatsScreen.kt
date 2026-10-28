@@ -299,9 +299,9 @@ fun StatsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
-                            .liquidGlass(
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                                 shape = ContinuousRoundedRectangle(percent = 28),
-                                tint = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                             )
                             .padding(20.dp),
                     ) {

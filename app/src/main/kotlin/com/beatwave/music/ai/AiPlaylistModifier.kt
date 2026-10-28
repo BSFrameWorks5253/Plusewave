@@ -13,6 +13,7 @@ import com.beatwave.music.constants.OpenRouterApiKey
 import com.beatwave.music.constants.OpenRouterBaseUrlKey
 import com.beatwave.music.constants.OpenRouterModelKey
 import com.beatwave.music.db.InternalDatabase
+import com.beatwave.music.db.MusicDatabase
 import com.beatwave.music.db.entities.PlaylistSong
 import com.beatwave.music.db.entities.PlaylistSongMap
 import com.beatwave.music.db.entities.SongEntity

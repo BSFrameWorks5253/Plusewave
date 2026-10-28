@@ -21,10 +21,10 @@ class LocalAlbumRadio(
     override val preloadItem: MediaMetadata? = albumWithSongs.songs.getOrNull(startIndex)?.toMediaMetadata(),
 ) : Queue {
 
-    private lateinit var playlistId: String
+    private lateinit var albumPlaylistId: String
     private val endpoint: WatchEndpoint
         get() = WatchEndpoint(
-            playlistId = playlistId
+            playlistId = albumPlaylistId
         )
 
     private var continuation: String? = null
@@ -42,7 +42,7 @@ class LocalAlbumRadio(
 
     override suspend fun nextPage(): List<MediaItem> = withContext(IO) {
         if (!firstTimeLoaded) {
-            playlistId = YouTube.album(albumWithSongs.album.id).getOrThrow().album.playlistId
+            albumPlaylistId = YouTube.album(albumWithSongs.album.id).getOrThrow().album.playlistId
             val nextResult = YouTube.next(endpoint, continuation).getOrThrow()
             continuation = nextResult.continuation
             firstTimeLoaded = true

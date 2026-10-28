@@ -10,6 +10,7 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import com.beatwave.music.playback.MusicService
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.drawable.Drawable

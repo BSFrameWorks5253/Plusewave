@@ -2511,7 +2511,7 @@ class MusicService :
 
         // Widget and Discord RPC updates
         if (events.containsAny(Player.EVENT_IS_PLAYING_CHANGED)) {
-            com.beatwave.music.playback.audio.AudioReactiveManager.updateSession(player.audioSessionId, player.isPlaying)
+            com.beatwave.music.playback.audio.AudioReactiveManager.updateSession(this@MusicService.player.audioSessionId, player.isPlaying)
             updateWidgetUI(player.isPlaying)
             if (player.isPlaying) {
                 startWidgetUpdates()
@@ -4104,7 +4104,7 @@ class MusicService :
                         .first()
                         .map { it.toMediaItem() }
                 } else if (playlistId == "top") {
-                    database.mostPlayedSongs(0L, 25).first().map { it.song.toMediaItem() }
+                    database.mostPlayedSongs(0L, 25).first().map { it.toMediaItem() }
                 } else if (playlistId == "downloaded") {
                     database.downloadedSongs(com.beatwave.music.constants.SongSortType.CREATE_DATE, true).first().map { it.toMediaItem() }
                 } else {

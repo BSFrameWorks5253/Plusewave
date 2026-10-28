@@ -694,6 +694,7 @@ private fun TopPlaylistHeader(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val heroUrl = songs.firstOrNull()?.thumbnailUrl
+    val topSize = songs.size
     val heroSource = rememberHeroSource(
         staticArt = heroUrl,
         songs = songs.map { it.thumbnailUrl to false },

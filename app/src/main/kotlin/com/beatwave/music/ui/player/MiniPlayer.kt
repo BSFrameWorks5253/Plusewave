@@ -219,6 +219,7 @@ private fun NewMiniPlayer(
     modifier: Modifier = Modifier
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     
     // Theme settings - these rarely change
     val pureBlack by rememberPreference(PureBlackMiniPlayerKey, defaultValue = false)
