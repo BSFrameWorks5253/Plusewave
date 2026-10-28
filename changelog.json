@@ -1,7 +1,15 @@
 {
-  "description": "Pulse Wave 6.1.15 — Direct Vinyl Play/Pause/Prev/Next Controls (In-Player & Home Widget), In-App Updater Overhaul, Fast Redirect-Safe Downloads & Size-Oriented Turntable Widget.",
+  "description": "Pulse Wave 6.1.16 — Dual V1 (JAR) & V2 APK Signing, Package Installer Compatibility Fix, Direct Vinyl Controls & In-App Updater Overhaul.",
   "image": "",
   "changelog": [
+    {
+      "title": "Dual V1 & V2 APK Signing (Fixes 'Package is invalid')",
+      "items": [
+        "Full Dual Signing: Explicitly enabled both V1 JAR signing and V2 APK Signature Scheme across all build flavors.",
+        "Universal Package Installer Compatibility: Resolves 'Package is invalid' / 'Problem parsing the package' parse errors across HyperOS, MIUI, Samsung, and Android 12+ package installers.",
+        "FileProvider Grant Permissions: Preserves full Uri read permissions for system installers."
+      ]
+    },
     {
       "title": "Direct Vinyl Play/Pause/Prev/Next Controls",
       "items": [

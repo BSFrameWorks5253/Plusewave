@@ -155,6 +155,8 @@ android {
             storePassword = "android"
             keyAlias = "androiddebugkey"
             keyPassword = "android"
+            enableV1Signing = true
+            enableV2Signing = true
         }
         create("release") {
             // Signing material comes from the environment only. Never hardcode a
@@ -167,11 +169,15 @@ android {
             storePassword = localProperties.getProperty("STORE_PASSWORD") ?: System.getenv("STORE_PASSWORD")
             keyAlias = localProperties.getProperty("KEY_ALIAS") ?: System.getenv("KEY_ALIAS")
             keyPassword = localProperties.getProperty("KEY_PASSWORD") ?: System.getenv("KEY_PASSWORD")
+            enableV1Signing = true
+            enableV2Signing = true
         }
         getByName("debug") {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
             storePassword = "android"
+            enableV1Signing = true
+            enableV2Signing = true
             storeFile = if (file("persistent-debug.keystore").exists()) {
                 file("persistent-debug.keystore")
             } else {
