@@ -44,7 +44,7 @@ object AppModule {
     @Provides
     fun provideDao(
         database: InternalDatabase,
-    ) = database.dao
+    ): DatabaseDao = database.dao
 
     // Both of these come from InternalDatabase.newInstance, which is the ONLY
     // place the builder is configured. This provider used to run its own bare

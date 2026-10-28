@@ -289,6 +289,7 @@ protobuf {
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
+    arg("room.incremental", "false")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
