@@ -15,11 +15,12 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.withContext
 
 class YouTubePlaylistQueue(
-    private val playlistId: String,
+    override val playlistId: String,
     private val playlistTitle: String? = null,
     private val initialSongs: List<SongItem> = emptyList(),
     private val initialContinuation: String? = null,
     private val startIndex: Int = 0,
+    private val position: Long = 0L,
     override val preloadItem: MediaMetadata? = initialSongs.getOrNull(startIndex)?.toMediaMetadata(),
 ) : Queue {
     private var continuation: String? = initialContinuation
@@ -33,6 +34,7 @@ class YouTubePlaylistQueue(
                     title = playlistTitle,
                     items = initialSongs.map { it.toMediaItem() },
                     mediaItemIndex = startIndex,
+                    position = position,
                 )
             } else {
                 val playlistPage = YouTube.playlist(playlistId).getOrThrow()
@@ -41,6 +43,7 @@ class YouTubePlaylistQueue(
                     title = playlistPage.playlist.title,
                     items = playlistPage.songs.map { it.toMediaItem() },
                     mediaItemIndex = startIndex,
+                    position = position,
                 )
             }
         }

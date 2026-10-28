@@ -256,6 +256,44 @@ fun SuggestionsTab(bottomPadding: androidx.compose.ui.unit.Dp = 0.dp) {
         }
     }
 
+    var showClearAllDialog by remember { mutableStateOf(false) }
+
+    if (showClearAllDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showClearAllDialog = false },
+            title = { Text("Purge All Suggestions?") },
+            text = { Text("This will permanently delete all user suggestions from the database. This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showClearAllDialog = false
+                        isFetching = true
+                        coroutineScope.launch(Dispatchers.IO) {
+                            val res = SupabaseService.clearAllSuggestions()
+                            withContext(Dispatchers.Main) {
+                                isFetching = false
+                                if (res.isSuccess) {
+                                    Toast.makeText(context, "All suggestions purged", Toast.LENGTH_SHORT).show()
+                                    refreshSuggestions()
+                                } else {
+                                    Toast.makeText(context, "Failed to purge suggestions: ${res.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Purge All")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearAllDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     if (isFetching) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
@@ -287,17 +325,36 @@ fun SuggestionsTab(bottomPadding: androidx.compose.ui.unit.Dp = 0.dp) {
                     }
                 )
 
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(statusOptions) { status ->
-                        val count = if (status == "All") suggestions.size else suggestions.count { it.status.equals(status, ignoreCase = true) }
-                        FilterChip(
-                            selected = selectedStatus == status,
-                            onClick = { selectedStatus = status },
-                            label = { Text("$status ($count)") }
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        items(statusOptions) { status ->
+                            val count = if (status == "All") suggestions.size else suggestions.count { it.status.equals(status, ignoreCase = true) }
+                            FilterChip(
+                                selected = selectedStatus == status,
+                                onClick = { selectedStatus = status },
+                                label = { Text("$status ($count)") }
+                            )
+                        }
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        onClick = { showClearAllDialog = true },
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
                         )
+                    ) {
+                        Icon(painterResource(R.drawable.delete), contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Purge")
                     }
                 }
             }

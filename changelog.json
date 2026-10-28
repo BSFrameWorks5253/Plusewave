@@ -1,35 +1,34 @@
 {
-  "description": "Pulse Wave 6.1.11 — Flagship Upgrade: DJ Crossfade Transitions, Smart Sleep Timer 60s Fade-Out, Lossless Audio Badges, Pulse Connect Remote Control, One-Tap Smart Cache, and Vinyl Turntable Widgets.",
+  "description": "Pulse Wave 6.1.12 — Smart Playlist Resume, Spotify Library Cards, Floating Vinyl Mini-Player, Interactive Widget Launcher, Admin Reports Purge & In-App Updater Fix.",
   "image": "",
   "changelog": [
     {
-      "title": "Audiophile & Playback Polish",
+      "title": "Smart Playback & Queue Memory",
       "items": [
-        "DJ Blend Crossfade: Enabled by default with smooth 4s gapless transitions between tracks for continuous Spotify and Apple Music style flow.",
-        "Smart Sleep Timer Gentle Fade-Out: Over the final 60 seconds (or half remaining time), music volume smoothly dims across 30 micro-steps from 100% to silent before pausing, ensuring peaceful sleep.",
-        "Audio Stream & Codec Badges: Lossless FLAC, 320k Opus, and AAC badges displayed cleanly alongside sleep timer countdown with instant access to full stream metadata."
+        "Smart Playlist Resume: When you stop playback and leave the app, PulseWave automatically remembers the exact song index for that playlist so you never get stuck listening to the first 10-15 tracks on repeat.",
+        "Floating Vinyl Mini-Player: Redesigned fluid mini-player with authentic vinyl disc styling and smooth expanded player animations.",
+        "Media Notification Icon: Restored crisp, full-color application icon in media notification bar."
       ]
     },
     {
-      "title": "Pulse Connect & Listening Delights",
+      "title": "Library & Spotify Sync",
       "items": [
-        "Pulse Connect Remote Control: Control your PulseWave Desktop PC app right from your phone over local Wi-Fi (Play/Pause, Skip Next/Prev, and live Volume slider).",
-        "Pulse Wrapped & Stats: Reconnected in-app listening statistics route to review your top artists, tracks, and listening milestones.",
-        "Apple Music Syllable Karaoke Lyrics: Kinetic word-by-word active glow and smooth gradient animations active out-of-the-box."
+        "Spotify-Style Library Cards: High-definition 2-column rounded card grid with artwork collage preview and download status badges.",
+        "Bidirectional Spotify Sync: Sync tracks both ways between PulseWave and Spotify with smart deduplication and ISRC matching."
       ]
     },
     {
-      "title": "Smart Offline & Data Saving",
+      "title": "Home Screen Widget & Admin Controls",
       "items": [
-        "One-Tap Smart Cache: Instant one-tap button in Storage Settings to pre-cache all your liked songs in the background for offline listening.",
-        "Visual Storage Breakdown: Monitor exact space occupied by downloaded songs, streaming audio cache, and album art."
+        "Interactive Playlist Launcher Widget: Direct 1-tap playback controls right from your Android home screen.",
+        "Admin Panel Error Purge: Dedicated button in Admin Mode to instantly clear and purge stale error reports from Supabase."
       ]
     },
     {
-      "title": "Android Home Screen Widgets",
+      "title": "Updater & Release Improvements",
       "items": [
-        "Vinyl Record Turntable Widget: Authentic high-fidelity turntable with album art label, vinyl rim, concentric audio grooves, and center spindle hole.",
-        "Status Bar Waveform Visualizer: Razor-sharp audio frequency pulse wave in notifications."
+        "In-App Updater Logic Fix: Resolved version comparison glitch where newer installations were prompted to download older versions.",
+        "Automated Desktop Records: Seamless local archiving of release APKs directly to your Desktop."
       ]
     }
   ]

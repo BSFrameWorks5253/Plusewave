@@ -2,6 +2,11 @@ name: Build Android Release APK
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Custom release version tag (e.g. 6.1.12, leave blank to use version.properties)'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -13,6 +18,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -42,12 +49,38 @@ jobs:
           LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
 
+      - name: Extract Dynamic Version
+        id: get_version
+        run: |
+          # 1. Read from input or version.properties
+          INPUT_VER="${{ inputs.version }}"
+          if [ -n "$INPUT_VER" ]; then
+            VERSION=$(echo "$INPUT_VER" | sed 's/^v//')
+          else
+            MAJOR=$(grep 'VERSION_MAJOR' version.properties | cut -d'=' -f2 | tr -d ' \r\n')
+            MINOR=$(grep 'VERSION_MINOR' version.properties | cut -d'=' -f2 | tr -d ' \r\n')
+            PATCH=$(grep 'VERSION_PATCH' version.properties | cut -d'=' -f2 | tr -d ' \r\n')
+            VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          fi
+
+          # 2. Check for tag collision on remote to ensure a brand-new release is always created
+          TAG="v${VERSION}"
+          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "${TAG}"; then
+            echo "Warning: Tag ${TAG} already exists on remote. Auto-incrementing patch version to guarantee a fresh release!"
+            MAJOR_PART=$(echo "$VERSION" | cut -d'.' -f1)
+            MINOR_PART=$(echo "$VERSION" | cut -d'.' -f2)
+            PATCH_PART=$(echo "$VERSION" | cut -d'.' -f3)
+            PATCH_PART=$((PATCH_PART + 1))
+            VERSION="${MAJOR_PART}.${MINOR_PART}.${PATCH_PART}"
+            echo "Auto-bumped version to: ${VERSION}"
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+
       - name: Rename Release APK with App Name and Version
         run: |
-          MAJOR=$(grep 'VERSION_MAJOR' version.properties | cut -d'=' -f2 | tr -d ' \r\n')
-          MINOR=$(grep 'VERSION_MINOR' version.properties | cut -d'=' -f2 | tr -d ' \r\n')
-          PATCH=$(grep 'VERSION_PATCH' version.properties | cut -d'=' -f2 | tr -d ' \r\n')
-          VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+          VERSION="${{ steps.get_version.outputs.tag }}"
           for f in app/build/outputs/apk/universalGms/release/*.apk; do
             if [ -f "$f" ]; then
               mv "$f" "app/build/outputs/apk/universalGms/release/PulseWave-${VERSION}-universal-release.apk"
@@ -61,26 +94,18 @@ jobs:
           name: PulseWave-release-apk
           path: app/build/outputs/apk/universalGms/release/*.apk
 
-      - name: Extract Dynamic Version
-        id: get_version
-        run: |
-          MAJOR=$(grep 'VERSION_MAJOR' version.properties | cut -d'=' -f2 | tr -d ' \r\n')
-          MINOR=$(grep 'VERSION_MINOR' version.properties | cut -d'=' -f2 | tr -d ' \r\n')
-          PATCH=$(grep 'VERSION_PATCH' version.properties | cut -d'=' -f2 | tr -d ' \r\n')
-          VERSION="${MAJOR}.${MINOR}.${PATCH}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
       - name: Create GitHub Release
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           files: |
             app/build/outputs/apk/universalGms/release/*.apk
             changelog.json
-          tag_name: v${{ steps.get_version.outputs.version }}
-          name: Pulse Wave v${{ steps.get_version.outputs.version }} (Universal Release)
+          tag_name: ${{ steps.get_version.outputs.tag }}
+          name: Pulse Wave ${{ steps.get_version.outputs.tag }} (Universal Release)
           draft: false
           prerelease: false
+          make_latest: true
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

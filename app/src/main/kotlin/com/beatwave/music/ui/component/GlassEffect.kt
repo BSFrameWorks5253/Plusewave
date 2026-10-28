@@ -420,10 +420,13 @@ fun Modifier.liquidGlass(
     // Pixel-sized effect parameters operate on the backdrop layer at its recorded
     // resolution, so they are pre-multiplied by the resolution scale to keep the
     // same visual size.
+    val bassEnergy = com.beatwave.music.playback.audio.LocalBassEnergy.current
+    val reactiveHeight = config.lensHeight * (1f + 0.30f * bassEnergy)
+    val reactiveAmount = config.lensAmount * (1f + 0.40f * bassEnergy)
     val blurPx = with(density) { blurRadiusDp.dp.toPx() } * resolutionScale
     val saturation = glassSaturation(config.vibrancy)
-    val lensHeightPx = with(density) { (config.lensHeight * LENS_MAX_DP).dp.toPx() } * resolutionScale
-    val lensAmountPx = with(density) { (config.lensAmount * LENS_MAX_DP).dp.toPx() } * resolutionScale
+    val lensHeightPx = with(density) { (reactiveHeight * LENS_MAX_DP).dp.toPx() } * resolutionScale
+    val lensAmountPx = with(density) { (reactiveAmount * LENS_MAX_DP).dp.toPx() } * resolutionScale
 
     val animatedHighlightAngle = HighlightAngleFrozen
     val shapeBlock: () -> Shape = remember(shape) { { shape } }

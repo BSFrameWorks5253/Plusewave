@@ -137,6 +137,11 @@ class App : Application(), SingletonImageLoader.Factory {
         applicationScope.launch(Dispatchers.IO) {
             runCatching { downloadUtilProvider.get() }
                 .onFailure { Timber.e(it, "Cache warm-up failed") }
+
+            runCatching {
+                com.beatwave.music.spotify.SpotifySyncWorker.schedule(this@App)
+                com.beatwave.music.playback.SmartAutoDownloadWorker.schedule(this@App)
+            }.onFailure { Timber.w(it, "Failed to schedule background workers") }
         }
 
         // Initialize application settings on launch safely

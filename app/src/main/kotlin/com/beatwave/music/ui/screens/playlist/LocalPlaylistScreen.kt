@@ -1555,6 +1555,11 @@ fun LocalPlaylistHeader(
                         } else {
                             val songIds = songs.map { it.song.id }
                             val (startIndex, positionMs) = com.beatwave.music.playback.PlaylistPlaybackTracker.resolveStartProgress(context, playlist.id, songIds)
+                            if (startIndex > 0) {
+                                val songTitle = songs.getOrNull(startIndex)?.song?.title
+                                val msg = if (!songTitle.isNullOrBlank()) "Resuming from track #${startIndex + 1}: $songTitle" else "Resuming from track #${startIndex + 1}"
+                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                            }
                             playerConnection.playQueue(
                                 ListQueue(
                                     title = playlist.playlist.name,

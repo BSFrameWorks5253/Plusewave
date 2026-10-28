@@ -325,6 +325,16 @@ private fun NewMiniPlayer(
     val isDynamicBackground = miniPlayerBackground != PlayerBackgroundStyle.DEFAULT
 
     val glassConfig = LocalGlassEffectConfig.current
+    val dominantColor = gradientColors.firstOrNull()
+    val adaptiveGlassConfig = remember(glassConfig, dominantColor) {
+        if (dominantColor != null && dominantColor != Color.Unspecified) {
+            glassConfig.copy(
+                surfaceTintColor = dominantColor.copy(alpha = 0.35f)
+            )
+        } else {
+            glassConfig
+        }
+    }
     val dynamicContentColor = if (
         glassConfig.isEnabledFor(GlassComponent.MINI_PLAYER) &&
         isGlassAllowed()
@@ -398,6 +408,7 @@ private fun NewMiniPlayer(
                                     (velocity > 0.55f && dragged > autoSwipeThreshold * 0.25f)
 
                                 if (shouldChangeSong) {
+                                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                                     // Through the connection, not player directly: the wrapper
                                     // is what routes to Cast when casting, re-prepares a player
                                     // sitting in ENDED/IDLE, and fires the skip callbacks. The
@@ -417,14 +428,26 @@ private fun NewMiniPlayer(
                 } else baseModifier
             }
     ) {
+        val pillShape = remember { RoundedCornerShape(32.dp) }
         Box(
             modifier = Modifier
                 .then(if (isTablet) Modifier.width(500.dp).align(Alignment.Center) else Modifier.fillMaxWidth())
                 .height(64.dp)
                 .offset { IntOffset(offsetXAnimatable.value.roundToInt(), 0) }
-                .clip(RoundedCornerShape(32.dp))
-                .background(color = backgroundColor)
-                .border(1.dp, outlineColor.copy(alpha = 0.3f), RoundedCornerShape(32.dp))
+                .then(
+                    if (usesGlassSurface) {
+                        Modifier.liquidGlass(
+                            config = adaptiveGlassConfig,
+                            shape = pillShape,
+                            highlightAlpha = 0.25f,
+                        )
+                    } else {
+                        Modifier
+                            .clip(pillShape)
+                            .background(color = backgroundColor)
+                            .border(1.dp, outlineColor.copy(alpha = 0.3f), pillShape)
+                    }
+                )
                 .then(interactiveHighlight.modifier)
                 .then(interactiveHighlight.gestureModifier)
         ) {
@@ -1330,14 +1353,17 @@ internal fun MiniPlayerColorExtractor(
 ) {
     val context = LocalContext.current
     val fallbackColor = MaterialTheme.colorScheme.surfaceContainer.toArgb()
+    val glassConfig = LocalGlassEffectConfig.current
+    val usesGlassSurface = glassConfig.isEnabledFor(GlassComponent.MINI_PLAYER) && isGlassAllowed()
 
-    LaunchedEffect(mediaMetadata?.id, miniPlayerBackground) {
-        if (miniPlayerBackground == PlayerBackgroundStyle.GRADIENT || miniPlayerBackground == PlayerBackgroundStyle.GLOW_ANIMATED) {
+    LaunchedEffect(mediaMetadata?.id, miniPlayerBackground, usesGlassSurface) {
+        if (usesGlassSurface || miniPlayerBackground == PlayerBackgroundStyle.GRADIENT || miniPlayerBackground == PlayerBackgroundStyle.GLOW_ANIMATED) {
             val currentMetadata = mediaMetadata
             if (currentMetadata?.thumbnailUrl != null) {
-                // Keyed on id + style: the two styles extract different color sets,
+                // Keyed on id + style: the styles extract different color sets,
                 // so the same song must cache one entry per style.
-                val cacheKey = "${currentMetadata.id}_$miniPlayerBackground"
+                val styleKey = if (usesGlassSurface && miniPlayerBackground == PlayerBackgroundStyle.DEFAULT) "GLASS_SURFACE" else miniPlayerBackground.name
+                val cacheKey = "${currentMetadata.id}_$styleKey"
                 miniPlayerGradientCache.get(cacheKey)?.let {
                     onGradientColorsChange(it)
                     return@LaunchedEffect

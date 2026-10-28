@@ -1,0 +1,6 @@
+there is an error in the update logic of the app 
+it is not getting updated version for update i am on the newer version of the app then to it is showing to update of the older version it is glitched 
+also in the wiget there should be somethinbg like i can start playing a playlist 
+also add a option in the admin mode to clear all the pervious report also in the app make it like the library will show the playlist thumnail/ card like spotify 
+in this add one more thing that when the user stops a olaying music in the app from a playlist and remove the app from the background the app will remober where the user stoped on which song for next time playing that playlist 
+soo he doesnt listen to the first 10 to 15 songs from that playlist of 100+songs 

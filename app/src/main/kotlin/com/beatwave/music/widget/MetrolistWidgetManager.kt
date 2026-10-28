@@ -1991,6 +1991,19 @@ class vivimusicWidgetManager @Inject constructor(
             R.id.widget_playlist_play_container,
             getPlayPlaylistIntent(playlistId),
         )
+        // Speed-Dial Quick Playlist Launcher Chips
+        views.setOnClickPendingIntent(
+            R.id.widget_playlist_chip_liked,
+            getPlayPlaylistIntent("favorites"),
+        )
+        views.setOnClickPendingIntent(
+            R.id.widget_playlist_chip_top,
+            getPlayPlaylistIntent("top"),
+        )
+        views.setOnClickPendingIntent(
+            R.id.widget_playlist_chip_cached,
+            getPlayPlaylistIntent("downloaded"),
+        )
         // Background click opens main app
         views.setOnClickPendingIntent(R.id.widget_playlist_bg, getOpenAppIntent())
 
@@ -2002,6 +2015,9 @@ class vivimusicWidgetManager @Inject constructor(
                 R.id.widget_playlist_title,
                 R.id.widget_playlist_subtitle,
                 R.id.widget_playlist_play_text,
+                R.id.widget_playlist_chip_liked,
+                R.id.widget_playlist_chip_top,
+                R.id.widget_playlist_chip_cached,
             ),
             icons = listOf(
                 R.id.widget_playlist_play_icon,

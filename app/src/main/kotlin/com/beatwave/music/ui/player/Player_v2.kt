@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -181,6 +182,7 @@ fun PlayerV2(
     var position by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
     var sliderPosition by remember { mutableStateOf<Long?>(null) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     val audioManager = remember { context.getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager }
     val maxSystemVolume = remember { audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC).toFloat() }
@@ -226,6 +228,62 @@ fun PlayerV2(
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
+
+    // Gyroscopic 3D Parallax Tilt for Album Artwork
+    val sensorManager = remember { context.getSystemService(android.content.Context.SENSOR_SERVICE) as? android.hardware.SensorManager }
+    var rawPitch by remember { mutableFloatStateOf(0f) }
+    var rawRoll by remember { mutableFloatStateOf(0f) }
+
+    DisposableEffect(sensorManager, lifecycleOwner) {
+        if (sensorManager == null) return@DisposableEffect onDispose {}
+        val sensor = sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_ROTATION_VECTOR)
+            ?: sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER)
+
+        val listener = object : android.hardware.SensorEventListener {
+            override fun onSensorChanged(event: android.hardware.SensorEvent?) {
+                if (event == null) return
+                if (event.sensor.type == android.hardware.Sensor.TYPE_ROTATION_VECTOR) {
+                    val rotationMatrix = FloatArray(9)
+                    android.hardware.SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
+                    val orientation = FloatArray(3)
+                    android.hardware.SensorManager.getOrientation(rotationMatrix, orientation)
+                    val pitchDeg = (Math.toDegrees(orientation[1].toDouble()).toFloat()).coerceIn(-12f, 12f)
+                    val rollDeg = (Math.toDegrees(orientation[2].toDouble()).toFloat()).coerceIn(-12f, 12f)
+                    rawPitch = pitchDeg
+                    rawRoll = rollDeg
+                } else if (event.sensor.type == android.hardware.Sensor.TYPE_ACCELEROMETER) {
+                    val ax = event.values[0]
+                    val ay = event.values[1]
+                    rawRoll = (-ax * 1.5f).coerceIn(-12f, 12f)
+                    rawPitch = (ay * 1.5f).coerceIn(-12f, 12f)
+                }
+            }
+
+            override fun onAccuracyChanged(s: android.hardware.Sensor?, accuracy: Int) {}
+        }
+
+        sensorManager.registerListener(listener, sensor, android.hardware.SensorManager.SENSOR_DELAY_UI)
+        onDispose {
+            sensorManager.unregisterListener(listener)
+        }
+    }
+
+    val animatedPitch by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = rawPitch,
+        animationSpec = androidx.compose.animation.core.spring(
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow,
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioLowBouncy
+        ),
+        label = "gyroPitch"
+    )
+    val animatedRoll by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = rawRoll,
+        animationSpec = androidx.compose.animation.core.spring(
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow,
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioLowBouncy
+        ),
+        label = "gyroRoll"
+    )
 
     val storedPlayerBackground by rememberEnumPreference(
         key = PlayerBackgroundStyleKey,
@@ -644,6 +702,11 @@ fun PlayerV2(
                                         // flight; without this both are on screen from
                                         // the handoff onward.
                                         .hideWhileMorphing()
+                                        .graphicsLayer {
+                                            rotationX = -animatedPitch
+                                            rotationY = animatedRoll
+                                            cameraDistance = 16f * density
+                                        }
                                         .customSoftShadow(
                                             elevation = playerThumbnailShadowElevation.dp, 
                                             cornerRadius = 16.dp, 
@@ -1100,12 +1163,18 @@ fun PlayerV2(
                         valueRange = 0f..(if (duration == androidx.media3.common.C.TIME_UNSET) 0f else duration.toFloat()),
                         onValueChange = { value ->
                             if (!isListenTogetherGuest) {
-                                sliderPosition = value.toLong()
+                                val oldPos = sliderPosition ?: currentPos
+                                val newPos = value.toLong()
+                                if (kotlin.math.abs(newPos - oldPos) >= 5000L) {
+                                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                                }
+                                sliderPosition = newPos
                             }
                         },
                         onValueChangeFinished = {
                             if (!isListenTogetherGuest) {
                                 sliderPosition?.let { pos ->
+                                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                                     playerConnection.player.seekTo(pos)
                                     position = pos
                                     sliderPosition = null
@@ -1239,9 +1308,13 @@ fun PlayerV2(
                         Slider(
                             value = if (isVolActive) systemVolume else animatedVolume,
                             onValueChange = { newValue ->
+                                val oldVol = (systemVolume * maxSystemVolume).toInt()
+                                val newVol = (newValue * maxSystemVolume).toInt()
+                                if (oldVol != newVol) {
+                                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                                }
                                 systemVolume = newValue
-                                val targetVolume = (newValue * maxSystemVolume).toInt()
-                                audioManager.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, targetVolume, 0)
+                                audioManager.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, newVol, 0)
                             },
                             interactionSource = volumeInteractionSource,
                             thumb = { Spacer(modifier = Modifier.size(0.dp)) },

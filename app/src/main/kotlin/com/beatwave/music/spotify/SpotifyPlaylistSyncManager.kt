@@ -254,6 +254,69 @@ class SpotifyPlaylistSyncManager @Inject constructor(
         return null
     }
 
+    /**
+     * Pushes any local songs added in Pulse Wave up to the remote Spotify playlist.
+     * Searches for matching Spotify track IDs and calls Spotify.addTracksToPlaylist.
+     */
+    suspend fun pushLocalSongsToSpotify(playlistId: String, rawSpotifyId: String): Result<Int> = withContext(Dispatchers.IO) {
+        runCatching {
+            val cleanId = rawSpotifyId.trim().removePrefix("spotify:playlist:")
+            if (cleanId.isBlank()) return@runCatching 0
+
+            // 1. Fetch remote tracks to find what is already on Spotify
+            val remoteUrl = "https://open.spotify.com/playlist/$cleanId"
+            val remotePlaylist = UniversalPlaylistImporter.parse(remoteUrl)
+            val remoteSignatures = remotePlaylist.songs.map {
+                normalizeSignature(it.title, it.artists.firstOrNull()?.name)
+            }.toSet()
+
+            // 2. Fetch local playlist songs
+            val localSongs = database.playlistSongs(playlistId).first()
+            val songsToPush = localSongs.filter { songWithMap ->
+                val sig = normalizeSignature(songWithMap.song.title, songWithMap.song.artists.firstOrNull()?.name)
+                sig !in remoteSignatures
+            }
+
+            if (songsToPush.isEmpty()) {
+                Timber.d("SpotifyPlaylistSync: No local songs to push to Spotify ($cleanId)")
+                return@runCatching 0
+            }
+
+            val trackUris = mutableListOf<String>()
+            for (songWithMap in songsToPush) {
+                val query = "${songWithMap.song.title} ${songWithMap.song.artists.firstOrNull()?.name.orEmpty()}".trim()
+                val spotifyTrack = com.music.spotify.Spotify.searchTrack(query).getOrNull()
+                if (spotifyTrack?.uri != null) {
+                    trackUris.add(spotifyTrack.uri!!)
+                } else if (spotifyTrack?.id != null) {
+                    trackUris.add("spotify:track:${spotifyTrack.id}")
+                }
+            }
+
+            if (trackUris.isNotEmpty()) {
+                val success = com.music.spotify.Spotify.addTracksToPlaylist(cleanId, trackUris).getOrDefault(false)
+                if (success) {
+                    Timber.i("SpotifyPlaylistSync: Pushed ${trackUris.size} song(s) to Spotify ($cleanId)")
+                    return@runCatching trackUris.size
+                }
+            }
+            0
+        }
+    }
+
+    /**
+     * Executes two-way synchronization:
+     * 1. Pulls newly added Spotify tracks down into Pulse Wave.
+     * 2. Pushes newly added Pulse Wave tracks up into Spotify.
+     */
+    suspend fun syncTwoWay(playlistId: String, rawSpotifyId: String): Result<Pair<Int, Int>> = withContext(Dispatchers.IO) {
+        runCatching {
+            val pulled = syncPlaylist(playlistId, rawSpotifyId).getOrDefault(0)
+            val pushed = pushLocalSongsToSpotify(playlistId, rawSpotifyId).getOrDefault(0)
+            pulled to pushed
+        }
+    }
+
     private fun normalizeSignature(title: String, artist: String?): String {
         val cleanTitle = title.trim().lowercase()
             .replace(Regex("""\s*\(.*?\)\s*"""), " ")

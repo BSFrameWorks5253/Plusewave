@@ -743,4 +743,50 @@ object Spotify {
             emptyList()
         }
     }
+
+    suspend fun searchTrack(query: String): Result<SpotifyTrack?> = runCatching {
+        val token = accessToken ?: throw SpotifyException(401, "Not authenticated")
+        val response = gqlClient.get("https://api.spotify.com/v1/search") {
+            header("Authorization", "Bearer $token")
+            parameter("q", query)
+            parameter("type", "track")
+            parameter("limit", 1)
+        }
+        if (response.status == HttpStatusCode.OK) {
+            val root = json.parseToJsonElement(response.bodyAsText()).jsonObject
+            val items = root.obj("tracks")?.arr("items")
+            val firstItem = items?.firstOrNull()?.jsonObject
+            if (firstItem != null) {
+                val trackId = firstItem.str("id") ?: return@runCatching null
+                val trackName = firstItem.str("name") ?: ""
+                val durationMs = firstItem.int("duration_ms") ?: 0
+                val uri = firstItem.str("uri") ?: "spotify:track:$trackId"
+                SpotifyTrack(
+                    id = trackId,
+                    name = trackName,
+                    durationMs = durationMs,
+                    uri = uri,
+                    artists = emptyList(),
+                )
+            } else null
+        } else null
+    }
+
+    suspend fun addTracksToPlaylist(playlistId: String, trackUris: List<String>): Result<Boolean> = runCatching {
+        val token = accessToken ?: throw SpotifyException(401, "Not authenticated")
+        if (trackUris.isEmpty()) return@runCatching true
+        val cleanId = playlistId.removePrefix("spotify:playlist:")
+        val response = gqlClient.post("https://api.spotify.com/v1/playlists/$cleanId/tracks") {
+            header("Authorization", "Bearer $token")
+            header("Content-Type", "application/json")
+            setBody(
+                buildJsonObject {
+                    putJsonArray("uris") {
+                        trackUris.forEach { add(it) }
+                    }
+                }.toString()
+            )
+        }
+        response.status == HttpStatusCode.OK || response.status == HttpStatusCode.Created
+    }
 }

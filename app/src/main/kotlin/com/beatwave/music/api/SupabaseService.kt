@@ -404,6 +404,28 @@ object SupabaseService {
         }
     }
 
+    suspend fun clearAllSuggestions(): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val request = Request.Builder()
+                .url("${SupabaseConfig.URL}/rest/v1/suggestions?id=gt.0")
+                .delete()
+                .header("apikey", SupabaseConfig.SECRET_KEY)
+                .header("Authorization", "Bearer ${SupabaseConfig.SECRET_KEY}")
+                .build()
+
+            client.newCall(request).execute().use { response ->
+                if (response.isSuccessful) {
+                    Result.success(Unit)
+                } else {
+                    val errorBody = response.body?.string() ?: ""
+                    Result.failure(Exception("HTTP error: ${response.code} ${response.message} - $errorBody"))
+                }
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun publishNews(news: NewsUpdateRow): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val bodyStr = json.encodeToString(news)

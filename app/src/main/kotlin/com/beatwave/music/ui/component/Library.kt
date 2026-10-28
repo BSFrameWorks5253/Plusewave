@@ -299,6 +299,11 @@ fun LibraryPlaylistGridItem(
                             songs.map { it.id }
                         )
                         withContext(Dispatchers.Main) {
+                            if (startIndex > 0) {
+                                val songTitle = songs.getOrNull(startIndex)?.title
+                                val msg = if (!songTitle.isNullOrBlank()) "Resuming from track #${startIndex + 1}: $songTitle" else "Resuming from track #${startIndex + 1}"
+                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                            }
                             playerConnection?.playQueue(
                                 ListQueue(
                                     title = playlist.playlist.name,

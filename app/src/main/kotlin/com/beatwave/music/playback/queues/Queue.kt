@@ -11,6 +11,8 @@ import com.beatwave.music.models.MediaMetadata
 
 interface Queue {
     val preloadItem: MediaMetadata?
+    val playlistId: String?
+        get() = null
 
     suspend fun getInitialStatus(): Status
 

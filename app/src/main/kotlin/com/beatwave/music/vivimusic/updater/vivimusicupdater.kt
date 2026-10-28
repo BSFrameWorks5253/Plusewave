@@ -198,8 +198,9 @@ fun UpdateScreen(navController: NavHostController) {
                 context = context,
                 onSuccess = { tag, isAvailable, changelog, size, date, description, imageUrl, apkUrl ->
                     saveLastCheckedTime(context, LocalDateTime.now().format(DateTimeFormatter.ofPattern("d MMMM yyyy, h:mm a")))
-                    saveUpdateAvailableState(context, isAvailable)
-                    status = if (isAvailable) {
+                    val strictlyAvailable = isAvailable && isNewerVersion(tag, BuildConfig.VERSION_NAME)
+                    saveUpdateAvailableState(context, strictlyAvailable)
+                    status = if (strictlyAvailable) {
                         ViviUpdateStatus.Available(
                             version = tag,
                             changelog = changelog,
@@ -210,7 +211,7 @@ fun UpdateScreen(navController: NavHostController) {
                             apkUrl = apkUrl
                         )
                     } else {
-                        ViviUpdateStatus.NoUpdate(tag)
+                        ViviUpdateStatus.NoUpdate(BuildConfig.VERSION_NAME)
                     }
                 },
                 onError = {
@@ -627,13 +628,21 @@ data class SemanticVersion(
     val major: Int = 0,
     val minor: Int = 0,
     val patch: Int = 0,
-    val isBeta: Boolean = false
+    val isBeta: Boolean = false,
+    val isNightly: Boolean = false,
+    val nightlyRun: Int = 0
 ) : Comparable<SemanticVersion> {
+    val versionCode: Int
+        get() = major * 10_000 + minor * 100 + patch
+
     override fun compareTo(other: SemanticVersion): Int {
+        if (isNightly && other.isNightly) {
+            return nightlyRun.compareTo(other.nightlyRun)
+        }
         if (major != other.major) return major.compareTo(other.major)
         if (minor != other.minor) return minor.compareTo(other.minor)
         if (patch != other.patch) return patch.compareTo(other.patch)
-        // If numbers match, stable is newer than beta
+        // If numbers match, stable is strictly newer than beta
         if (!isBeta && other.isBeta) return 1
         if (isBeta && !other.isBeta) return -1
         return 0
@@ -641,11 +650,38 @@ data class SemanticVersion(
 }
 
 fun parseSemanticVersion(version: String): SemanticVersion {
-    // Only detect beta if explicitly designated (e.g. -beta, .beta, beta tag, or 'b' directly attached to digit)
-    val isBeta = version.contains("beta", ignoreCase = true) || 
-                 Regex("""(^|[^a-zA-Z])b\d+""", RegexOption.IGNORE_CASE).containsMatchIn(version)
-    val matches = Regex("""\d+""").findAll(version)
-    val nums = matches.mapNotNull { it.value.toIntOrNull() }.toList()
+    val trimmed = version.trim()
+    val nightlyMatch = Regex("""nightly[-_]?r?(\d+)""", RegexOption.IGNORE_CASE).find(trimmed)
+    if (nightlyMatch != null) {
+        val run = nightlyMatch.groupValues[1].toIntOrNull() ?: 0
+        return SemanticVersion(
+            major = 0,
+            minor = 0,
+            patch = 0,
+            isBeta = true,
+            isNightly = true,
+            nightlyRun = run
+        )
+    }
+
+    val isBeta = trimmed.contains("beta", ignoreCase = true) || 
+                 Regex("""(^|[^a-zA-Z])b\d+""", RegexOption.IGNORE_CASE).containsMatchIn(trimmed)
+
+    val semVerRegex = Regex("""(?:v|b)?(\d+)\.(\d+)(?:\.(\d+))?""", RegexOption.IGNORE_CASE)
+    val match = semVerRegex.find(trimmed)
+    if (match != null) {
+        val maj = match.groupValues[1].toIntOrNull() ?: 0
+        val min = match.groupValues[2].toIntOrNull() ?: 0
+        val pat = match.groupValues.getOrNull(3)?.toIntOrNull() ?: 0
+        return SemanticVersion(
+            major = maj,
+            minor = min,
+            patch = pat,
+            isBeta = isBeta
+        )
+    }
+
+    val nums = Regex("""\d+""").findAll(trimmed).mapNotNull { it.value.toIntOrNull() }.toList()
     return SemanticVersion(
         major = nums.getOrElse(0) { 0 },
         minor = nums.getOrElse(1) { 0 },
@@ -664,6 +700,9 @@ fun parseVersionNumbers(version: String): List<Int> {
 fun isNewerVersion(latestVersion: String, currentVersion: String): Boolean {
     val latest = parseSemanticVersion(latestVersion)
     val current = parseSemanticVersion(currentVersion)
+    if (latest.isNightly && !current.isNightly) {
+        return false
+    }
     return latest > current
 }
 
@@ -773,8 +812,10 @@ suspend fun checkForUpdate(
             if (releases != null) {
                 for (i in 0 until releases.length()) {
                     val release = releases.getJSONObject(i)
+                    if (release.optBoolean("draft", false)) continue
                     val tagName = release.getString("tag_name")
-                    val isBeta = tagName.startsWith("b") || tagName.contains("beta", ignoreCase = true)
+                    val isPrerelease = release.optBoolean("prerelease", false)
+                    val isBeta = isPrerelease || tagName.startsWith("b") || tagName.contains("beta", ignoreCase = true)
                     
                     // Track best stable
                     if (!isBeta) {

@@ -1765,6 +1765,8 @@ class MainActivity : ComponentActivity() {
                     focusRequester = searchFocusRequester,
                 )
 
+                val liveBassEnergy by com.beatwave.music.playback.audio.AudioReactiveManager.bassEnergy.collectAsStateWithLifecycle()
+
                 CompositionLocalProvider(
                     LocalOverscrollFactory provides
                         if (iosOverscroll) iosOverscrollFactory else LocalOverscrollFactory.current,
@@ -1784,6 +1786,7 @@ class MainActivity : ComponentActivity() {
                     // already has a null-manager fallback, so this alone turns the whole feature off.
                     LocalListenTogetherManager provides listenTogetherManager,
                     LocalGlassEffectConfig provides glassEffectConfig,
+                    com.beatwave.music.playback.audio.LocalBassEnergy provides liveBassEnergy,
                     LocalTabView provides showRail,
                     LocalAppBackdrop provides appBackdrop,
                     LocalAppleMusicUi provides appleMusicUi,

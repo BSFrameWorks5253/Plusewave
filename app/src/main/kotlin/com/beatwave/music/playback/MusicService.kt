@@ -1730,8 +1730,10 @@ class MusicService :
         }
 
         currentQueue = queue
-        val playlistIdToTrack = (queue as? com.beatwave.music.playback.queues.ListQueue)?.playlistId
-        PlaylistPlaybackTracker.saveActivePlaylist(this, playlistIdToTrack)
+        val playlistIdToTrack = queue.playlistId
+        if (playlistIdToTrack != null) {
+            PlaylistPlaybackTracker.saveActivePlaylist(this, playlistIdToTrack)
+        }
         queueTitle = null
         val persistShuffleAcrossQueues = dataStore.get(PersistentShuffleAcrossQueuesKey, false)
         val previousShuffleEnabled = player.shuffleModeEnabled
@@ -1741,7 +1743,8 @@ class MusicService :
         // Reset original queue size when starting a new queue
         originalQueueSize = 0
         if (queue.preloadItem != null) {
-            val startPos = (queue as? com.beatwave.music.playback.queues.ListQueue)?.position ?: 0L
+            val startPos = (queue as? com.beatwave.music.playback.queues.ListQueue)?.position
+                ?: (queue.playlistId?.let { pid -> PlaylistPlaybackTracker.getLastPlayedPosition(this, pid) } ?: 0L)
             if (startPos > 0L) {
                 player.setMediaItem(queue.preloadItem!!.toMediaItem(), startPos)
             } else {
@@ -2250,6 +2253,7 @@ class MusicService :
         if (isAudioEffectSessionOpened) return
         isAudioEffectSessionOpened = true
         setupLoudnessEnhancer()
+        com.beatwave.music.playback.audio.AudioReactiveManager.updateSession(player.audioSessionId, player.playWhenReady)
         sendBroadcast(
             Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION).apply {
                 putExtra(AudioEffect.EXTRA_AUDIO_SESSION, player.audioSessionId)
@@ -2263,6 +2267,7 @@ class MusicService :
         if (!isAudioEffectSessionOpened) return
         isAudioEffectSessionOpened = false
         releaseLoudnessEnhancer()
+        com.beatwave.music.playback.audio.AudioReactiveManager.releaseVisualizer()
         sendBroadcast(
             Intent(AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION).apply {
                 putExtra(AudioEffect.EXTRA_AUDIO_SESSION, player.audioSessionId)
@@ -2382,7 +2387,7 @@ class MusicService :
     }
 
     fun updateActivePlaylistProgress(specifiedMediaItem: androidx.media3.common.MediaItem? = null) {
-        val activePid = (currentQueue as? com.beatwave.music.playback.queues.ListQueue)?.playlistId
+        val activePid = currentQueue?.playlistId
             ?: PlaylistPlaybackTracker.getActivePlaylist(this)
         val curItem = specifiedMediaItem ?: player.currentMediaItem
         if (activePid != null && curItem != null) {
@@ -2506,6 +2511,7 @@ class MusicService :
 
         // Widget and Discord RPC updates
         if (events.containsAny(Player.EVENT_IS_PLAYING_CHANGED)) {
+            com.beatwave.music.playback.audio.AudioReactiveManager.updateSession(player.audioSessionId, player.isPlaying)
             updateWidgetUI(player.isPlaying)
             if (player.isPlaying) {
                 startWidgetUpdates()
@@ -4097,6 +4103,10 @@ class MusicService :
                     database.likedSongs(com.beatwave.music.constants.SongSortType.CREATE_DATE, true)
                         .first()
                         .map { it.toMediaItem() }
+                } else if (playlistId == "top") {
+                    database.mostPlayedSongs(0L, 25).first().map { it.song.toMediaItem() }
+                } else if (playlistId == "downloaded") {
+                    database.downloadedSongs(com.beatwave.music.constants.SongSortType.CREATE_DATE, true).first().map { it.toMediaItem() }
                 } else {
                     database.playlistSongs(playlistId)
                         .first()
@@ -4106,10 +4116,16 @@ class MusicService :
                 if (mediaItems.isNotEmpty()) {
                     val songIds = mediaItems.map { it.mediaId }
                     val (startIndex, positionMs) = PlaylistPlaybackTracker.resolveStartProgress(this@MusicService, playlistId, songIds)
+                    val resolvedTitle = when (playlistId) {
+                        "favorites", "liked" -> getString(R.string.liked_songs)
+                        "top" -> "Top 25"
+                        "downloaded" -> "Offline Downloads"
+                        else -> null
+                    }
                     withContext(Dispatchers.Main) {
                         playQueue(
                             com.beatwave.music.playback.queues.ListQueue(
-                                title = if (playlistId == "favorites" || playlistId == "liked") getString(R.string.liked_songs) else null,
+                                title = resolvedTitle,
                                 items = mediaItems,
                                 startIndex = startIndex,
                                 position = positionMs,
