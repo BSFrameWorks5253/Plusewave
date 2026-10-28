@@ -1,7 +1,17 @@
 {
-  "description": "Pulse Wave 6.1.13 — Interactive Vinyl Turntable with Audio Scratching, Size-Oriented Turntable Widget, Smooth Library Playlist Reordering & VIP Easter Eggs.",
+  "description": "Pulse Wave 6.1.14 — In-App Updater Overhaul, Fast Redirect-Safe Downloads, FileProvider Fix, Interactive Vinyl Turntable & Scratching, Size-Oriented Turntable Widget & Library Reordering.",
   "image": "",
   "changelog": [
+    {
+      "title": "In-App Updater Overhaul & Installation Fix",
+      "items": [
+        "OkHttp Multi-Hop Redirect Engine: Swapped out legacy connection with OkHttp supporting 302 GitHub redirect asset streams and proper user-agent headers.",
+        "Internal Cache Storage: Moved update staging to internal app cache to bypass Android 11+ / HyperOS Scoped Storage file blocks.",
+        "Full FileProvider Permissions: Added missing XML roots and granted explicit read URI permissions to system package installers (MIUI, Samsung, Google).",
+        "Direct Browser Download Fallback: Added an instant 'Browser' download action directly inside the update alert dialog.",
+        "Auto-Install Trigger: Automatically launches the package installer prompt as soon as the APK download finishes."
+      ]
+    },
     {
       "title": "Interactive Vinyl Turntable & Scratching",
       "items": [
@@ -23,12 +33,6 @@
       "items": [
         "Silky Smooth Reordering: Swapped to 60fps in-memory list updates during drag so dragging never drops frames or gets canceled.",
         "Atomic Drop Persistence: Preferences are saved once upon releasing the drag handle, eliminating DataStore write collisions."
-      ]
-    },
-    {
-      "title": "Easter Eggs & UI Enhancements",
-      "items": [
-        "PulseWave VIP Master Mode: Tap the app version in About settings 7 times to unlock the secret VIP Easter Egg!"
       ]
     }
   ]

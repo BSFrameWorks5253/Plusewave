@@ -160,7 +160,16 @@ fun UpdateScreen(navController: NavHostController) {
                         isDownloadComplete = true
                         val filePath = workInfo.outputData.getString("file_path")
                         if (filePath != null) {
-                            downloadedFile = File(filePath)
+                            val f = File(filePath)
+                            downloadedFile = f
+                            if (f.exists()) {
+                                try {
+                                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || context.packageManager.canRequestPackageInstalls()) {
+                                        val installIntent = DownloadNotificationManager.buildInstallIntent(context, f.absolutePath)
+                                        context.startActivity(installIntent)
+                                    }
+                                } catch (_: Exception) {}
+                            }
                         }
                     }
                     WorkInfo.State.FAILED -> {
@@ -222,9 +231,7 @@ fun UpdateScreen(navController: NavHostController) {
     }
 
     LaunchedEffect(Unit) {
-        if (autoUpdateCheckEnabled) {
-            triggerUpdateCheck()
-        }
+        triggerUpdateCheck()
     }
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -319,18 +326,19 @@ fun UpdateScreen(navController: NavHostController) {
                                                     if (!context.packageManager.canRequestPackageInstalls()) {
                                                         val intent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
                                                             data = Uri.parse("package:${context.packageName}")
+                                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                                         }
                                                         context.startActivity(intent)
+                                                        android.widget.Toast.makeText(context, "Please allow PulseWave to install updates, then tap Install", android.widget.Toast.LENGTH_LONG).show()
                                                         return@let
                                                     }
                                                 }
-                                                val uri = FileProvider.getUriForFile(context, "${context.packageName}.FileProvider", file)
-                                                val installIntent = Intent(Intent.ACTION_VIEW).apply {
-                                                    setDataAndType(uri, "application/vnd.android.package-archive")
-                                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                try {
+                                                    val installIntent = DownloadNotificationManager.buildInstallIntent(context, f.absolutePath)
+                                                    context.startActivity(installIntent)
+                                                } catch (e: Exception) {
+                                                    android.widget.Toast.makeText(context, "Could not open installer: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
                                                 }
-                                                ContextCompat.startActivity(context, installIntent, null)
                                             }
                                         } else {
                                             val urlToDownload = currentStatus.apkUrl ?: "https://github.com/BSFrameworks5253/Plusewave/releases/download/${currentStatus.version}/pulsewave-${currentStatus.version}.apk"

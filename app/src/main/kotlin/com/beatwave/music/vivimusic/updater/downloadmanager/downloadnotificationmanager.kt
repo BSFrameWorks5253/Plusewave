@@ -96,6 +96,36 @@ object DownloadNotificationManager {
     /**
      * Cancel/dismiss the notification
      */
+    fun buildInstallIntent(context: Context, filePath: String): Intent {
+        val file = java.io.File(filePath)
+        val uri = androidx.core.content.FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.FileProvider",
+            file
+        )
+        val installIntent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "application/vnd.android.package-archive")
+            clipData = android.content.ClipData.newRawUri("PulseWave APK", uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+
+        val resInfoList = context.packageManager.queryIntentActivities(installIntent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+        for (resolveInfo in resInfoList) {
+            try {
+                context.grantUriPermission(resolveInfo.activityInfo.packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (_: Exception) {}
+        }
+        for (installer in listOf("com.google.android.packageinstaller", "com.android.packageinstaller", "com.miui.packageinstaller")) {
+            try {
+                context.grantUriPermission(installer, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (_: Exception) {}
+        }
+        return installIntent
+    }
+
     fun cancelNotification() {
         notificationManager.cancel(NOTIFICATION_ID)
     }
@@ -177,18 +207,7 @@ object DownloadNotificationManager {
 
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
     private fun showDownloadCompleteModern(version: String, filePath: String) {
-        val installIntent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(
-                androidx.core.content.FileProvider.getUriForFile(
-                    appContext,
-                    "${appContext.packageName}.FileProvider",
-                    java.io.File(filePath)
-                ),
-                "application/vnd.android.package-archive"
-            )
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val installIntent = buildInstallIntent(appContext, filePath)
 
         val pendingIntent = PendingIntent.getActivity(
             appContext,
@@ -291,18 +310,7 @@ object DownloadNotificationManager {
     }
 
     private fun showDownloadCompleteLegacy(version: String, filePath: String) {
-        val installIntent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(
-                androidx.core.content.FileProvider.getUriForFile(
-                    appContext,
-                    "${appContext.packageName}.FileProvider",
-                    java.io.File(filePath)
-                ),
-                "application/vnd.android.package-archive"
-            )
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val installIntent = buildInstallIntent(appContext, filePath)
 
         val pendingIntent = PendingIntent.getActivity(
             appContext,

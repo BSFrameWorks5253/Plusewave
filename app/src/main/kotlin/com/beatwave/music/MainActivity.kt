@@ -2724,6 +2724,12 @@ class MainActivity : ComponentActivity() {
                                 Button(
                                     onClick = {
                                         update.apk_url?.let { url ->
+                                            val downloadRequest = androidx.work.OneTimeWorkRequestBuilder<com.beatwave.music.vivimusic.updater.downloadmanager.UpdateDownloadWorker>()
+                                                .setInputData(androidx.work.workDataOf("apk_url" to url, "version" to update.version, "file_size" to ""))
+                                                .addTag("update_download")
+                                                .build()
+                                            androidx.work.WorkManager.getInstance(context).enqueueUniqueWork("update_download", androidx.work.ExistingWorkPolicy.REPLACE, downloadRequest)
+
                                             try {
                                                 navController.navigate("update")
                                             } catch (_: Exception) {
@@ -2741,9 +2747,20 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             dismissButton = {
-                                if (update.update_type != "force") {
-                                    TextButton(onClick = { pendingUpdate = null }) {
-                                        Text("Later")
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    update.apk_url?.let { url ->
+                                        TextButton(onClick = {
+                                            try {
+                                                uriHandler.openUri(url)
+                                            } catch (_: Exception) {}
+                                        }) {
+                                            Text("Browser")
+                                        }
+                                    }
+                                    if (update.update_type != "force") {
+                                        TextButton(onClick = { pendingUpdate = null }) {
+                                            Text("Later")
+                                        }
                                     }
                                 }
                             }
