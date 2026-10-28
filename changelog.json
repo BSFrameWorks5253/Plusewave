@@ -1,7 +1,16 @@
 {
-  "description": "Pulse Wave 6.1.14 — In-App Updater Overhaul, Fast Redirect-Safe Downloads, FileProvider Fix, Interactive Vinyl Turntable & Scratching, Size-Oriented Turntable Widget & Library Reordering.",
+  "description": "Pulse Wave 6.1.15 — Direct Vinyl Play/Pause/Prev/Next Controls (In-Player & Home Widget), In-App Updater Overhaul, Fast Redirect-Safe Downloads & Size-Oriented Turntable Widget.",
   "image": "",
   "changelog": [
+    {
+      "title": "Direct Vinyl Play/Pause/Prev/Next Controls",
+      "items": [
+        "Platter Tap Controls (Player & Widget): Tap the center of the vinyl record to toggle Play / Pause instantly with tactile haptic feedback.",
+        "Edge Skip Controls: Tap the left edge of the vinyl disc to skip to the Previous song, or tap the right edge to skip to the Next song.",
+        "Double-Tap Quick Skip: Double-tap either side of the vinyl disc in the player for rapid track navigation.",
+        "Turntable Widget Platter Touch: Control music directly from the home screen turntable disc even in pure size-oriented layout."
+      ]
+    },
     {
       "title": "In-App Updater Overhaul & Installation Fix",
       "items": [

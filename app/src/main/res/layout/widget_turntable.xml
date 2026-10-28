@@ -16,6 +16,36 @@
         android:src="@drawable/widget_turntable_default_art"
         android:contentDescription="@string/album_art" />
 
+    <!-- Interactive Vinyl Platter Touch Controls: Left 30% = Previous, Center 40% = Play/Pause, Right 30% = Next -->
+    <LinearLayout
+        android:id="@+id/widget_turntable_touch_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:weightSum="100">
+
+        <View
+            android:id="@+id/widget_turntable_touch_prev"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="30"
+            android:contentDescription="@string/previous" />
+
+        <View
+            android:id="@+id/widget_turntable_touch_play_pause"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="40"
+            android:contentDescription="@string/play_pause" />
+
+        <View
+            android:id="@+id/widget_turntable_touch_next"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="30"
+            android:contentDescription="@string/next" />
+    </LinearLayout>
+
     <!-- Top Left: Song Title, Artist & Audio Quality pill -->
     <LinearLayout
         android:id="@+id/widget_turntable_info_container"

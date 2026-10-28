@@ -1176,6 +1176,10 @@ class vivimusicWidgetManager @Inject constructor(
         views.setOnClickPendingIntent(R.id.widget_turntable_prev_button, getTurntablePreviousIntent())
         views.setOnClickPendingIntent(R.id.widget_turntable_next_button, getTurntableNextIntent())
         views.setOnClickPendingIntent(R.id.widget_turntable_like_button, getTurntableLikeIntent())
+        // Platter direct touch hotspots: Left = Prev, Center = Play/Pause, Right = Next
+        views.setOnClickPendingIntent(R.id.widget_turntable_touch_prev, getTurntablePreviousIntent())
+        views.setOnClickPendingIntent(R.id.widget_turntable_touch_play_pause, getTurntablePlayPauseIntent())
+        views.setOnClickPendingIntent(R.id.widget_turntable_touch_next, getTurntableNextIntent())
 
         return views
     }

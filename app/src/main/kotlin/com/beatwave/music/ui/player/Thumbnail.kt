@@ -704,81 +704,119 @@ private fun ThumbnailItem(
                 // Render entire thumbnail item on separate hardware layer for smooth animations
                 // Offscreen compositing removed to prevent interference with AndroidView
             }
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onDoubleTap = { offset ->
-                        if (isListenTogetherGuest) return@detectTapGestures
+            .then(
+                if (!isVinyl) {
+                    Modifier.pointerInput(Unit) {
+                        detectTapGestures(
+                            onDoubleTap = { offset ->
+                                if (isListenTogetherGuest) return@detectTapGestures
 
-                        val currentPosition = playerConnection.player.currentPosition
-                        val duration = playerConnection.player.duration
+                                val currentPosition = playerConnection.player.currentPosition
+                                val duration = playerConnection.player.duration
 
-                        val now = System.currentTimeMillis()
-                        if (incrementalSeekSkipEnabled && now - lastTapTime < 1000) {
-                            skipMultiplier++
-                        } else {
-                            skipMultiplier = 1
-                        }
-                        lastTapTime = now
+                                val now = System.currentTimeMillis()
+                                if (incrementalSeekSkipEnabled && now - lastTapTime < 1000) {
+                                    skipMultiplier++
+                                } else {
+                                    skipMultiplier = 1
+                                }
+                                lastTapTime = now
 
-                        val skipAmount = 5000 * skipMultiplier
+                                val skipAmount = 5000 * skipMultiplier
 
-                        val isLeftSide = (layoutDirection == LayoutDirection.Ltr && offset.x < size.width / 2) ||
-                                (layoutDirection == LayoutDirection.Rtl && offset.x > size.width / 2)
+                                val isLeftSide = (layoutDirection == LayoutDirection.Ltr && offset.x < size.width / 2) ||
+                                        (layoutDirection == LayoutDirection.Rtl && offset.x > size.width / 2)
 
-                        if (isLeftSide) {
-                            playerConnection.player.seekTo((currentPosition - skipAmount).coerceAtLeast(0))
-                            onSeek(context.getString(R.string.seek_backward_dynamic, skipAmount / 1000), true)
-                        } else {
-                            playerConnection.player.seekTo((currentPosition + skipAmount).coerceAtMost(duration))
-                            onSeek(context.getString(R.string.seek_forward_dynamic, skipAmount / 1000), true)
-                        }
+                                if (isLeftSide) {
+                                    playerConnection.player.seekTo((currentPosition - skipAmount).coerceAtLeast(0))
+                                    onSeek(context.getString(R.string.seek_backward_dynamic, skipAmount / 1000), true)
+                                } else {
+                                    playerConnection.player.seekTo((currentPosition + skipAmount).coerceAtMost(duration))
+                                    onSeek(context.getString(R.string.seek_forward_dynamic, skipAmount / 1000), true)
+                                }
+                            }
+                        )
                     }
-                )
-            },
+                } else Modifier
+            ),
         contentAlignment = Alignment.Center
     ) {
         val vinylDragModifier = if (isVinyl) {
-            Modifier.pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        isScratching = true
-                        val cx = size.width / 2f
-                        val cy = size.height / 2f
-                        lastDragAngle = Math.toDegrees(
-                            kotlin.math.atan2((offset.y - cy).toDouble(), (offset.x - cx).toDouble())
-                        ).toFloat()
-                    },
-                    onDrag = { change, _ ->
-                        change.consume()
-                        val cx = size.width / 2f
-                        val cy = size.height / 2f
-                        val currentAngle = Math.toDegrees(
-                            kotlin.math.atan2((change.position.y - cy).toDouble(), (change.position.x - cx).toDouble())
-                        ).toFloat()
-                        var delta = currentAngle - lastDragAngle
-                        if (delta > 180f) delta -= 360f
-                        if (delta < -180f) delta += 360f
-
-                        dragRotationOffset += delta
-
-                        // Play synthesized scratch audio & haptics
-                        VinylScratchSynthesizer.playScratch(delta)
-                        if (kotlin.math.abs(delta) > 5f) {
+            Modifier
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = { offset ->
+                            if (isListenTogetherGuest) return@detectTapGestures
+                            val w = size.width
+                            if (offset.x < w * 0.28f) {
+                                // Tap left edge (28%): Previous song
+                                playerConnection.seekToPrevious()
+                                onSeek(context.getString(R.string.previous), false)
+                            } else if (offset.x > w * 0.72f) {
+                                // Tap right edge (28%): Next song
+                                playerConnection.seekToNext()
+                                onSeek(context.getString(R.string.next), false)
+                            } else {
+                                // Tap center disc (44%): Play / Pause toggle
+                                playerConnection.togglePlayPause()
+                            }
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        },
+                        onDoubleTap = { offset ->
+                            if (isListenTogetherGuest) return@detectTapGestures
+                            val cx = size.width / 2f
+                            if (offset.x < cx) {
+                                playerConnection.seekToPrevious()
+                                onSeek(context.getString(R.string.previous), false)
+                            } else {
+                                playerConnection.seekToNext()
+                                onSeek(context.getString(R.string.next), false)
+                            }
                             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                         }
+                    )
+                }
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            isScratching = true
+                            val cx = size.width / 2f
+                            val cy = size.height / 2f
+                            lastDragAngle = Math.toDegrees(
+                                kotlin.math.atan2((offset.y - cy).toDouble(), (offset.x - cx).toDouble())
+                            ).toFloat()
+                        },
+                        onDrag = { change, _ ->
+                            change.consume()
+                            val cx = size.width / 2f
+                            val cy = size.height / 2f
+                            val currentAngle = Math.toDegrees(
+                                kotlin.math.atan2((change.position.y - cy).toDouble(), (change.position.x - cx).toDouble())
+                            ).toFloat()
+                            var delta = currentAngle - lastDragAngle
+                            if (delta > 180f) delta -= 360f
+                            if (delta < -180f) delta += 360f
 
-                        val duration = playerConnection.player.duration
-                        if (duration > 0) {
-                            val currentPos = playerConnection.player.currentPosition
-                            val scrubMs = ((delta / 360f) * 30_000L).toLong()
-                            playerConnection.player.seekTo((currentPos + scrubMs).coerceIn(0L, duration))
-                        }
-                        lastDragAngle = currentAngle
-                    },
-                    onDragEnd = { isScratching = false },
-                    onDragCancel = { isScratching = false }
-                )
-            }
+                            dragRotationOffset += delta
+
+                            // Play synthesized scratch audio & haptics
+                            VinylScratchSynthesizer.playScratch(delta)
+                            if (kotlin.math.abs(delta) > 5f) {
+                                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                            }
+
+                            val duration = playerConnection.player.duration
+                            if (duration > 0) {
+                                val currentPos = playerConnection.player.currentPosition
+                                val scrubMs = ((delta / 360f) * 30_000L).toLong()
+                                playerConnection.player.seekTo((currentPos + scrubMs).coerceIn(0L, duration))
+                            }
+                            lastDragAngle = currentAngle
+                        },
+                        onDragEnd = { isScratching = false },
+                        onDragCancel = { isScratching = false }
+                    )
+                }
         } else Modifier
         val artworkDensity = androidx.compose.ui.platform.LocalDensity.current
         Box(
