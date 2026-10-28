@@ -1,6 +1,13 @@
 name: Build Android Release APK
 
 on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - 'Download-Latest-APK.bat'
   workflow_dispatch:
     inputs:
       version:
