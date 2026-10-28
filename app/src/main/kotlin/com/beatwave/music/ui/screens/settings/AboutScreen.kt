@@ -1,11 +1,14 @@
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 /**
  * Pulse Wave Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 
 package com.beatwave.music.ui.screens.settings
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
