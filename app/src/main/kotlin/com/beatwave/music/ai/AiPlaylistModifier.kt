@@ -37,7 +37,7 @@ object AiPlaylistModifier {
         userPrompt: String,
         onLog: suspend (String) -> Unit
     ) = withContext(Dispatchers.IO) {
-        val database = InternalDatabase.newInstance(context)
+        val database = MusicDatabase.newInstance(context)
 
         onLog("Connecting to AI Provider...")
 

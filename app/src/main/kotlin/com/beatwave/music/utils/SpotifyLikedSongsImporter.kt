@@ -29,7 +29,7 @@ object SpotifyLikedSongsImporter {
 
     suspend fun importLikedSongs(
         context: Context,
-        database: MusicDatabase = InternalDatabase.newInstance(context),
+        database: MusicDatabase = MusicDatabase.newInstance(context),
         onProgress: ((done: Int, total: Int) -> Unit)? = null,
     ): Result<Int> = withContext(Dispatchers.IO) {
         runCatching {

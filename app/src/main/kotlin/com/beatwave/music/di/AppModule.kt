@@ -57,7 +57,7 @@ object AppModule {
     @Provides
     fun provideDatabase(
         @ApplicationContext context: Context,
-    ): MusicDatabase = InternalDatabase.newInstance(context)
+    ): MusicDatabase = MusicDatabase.newInstance(context)
 
     @Singleton
     @Provides

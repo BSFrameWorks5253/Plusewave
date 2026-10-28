@@ -90,6 +90,76 @@ class MusicDatabase(
         }
 
     fun close() = delegate.close()
+
+    companion object {
+        const val DB_NAME = InternalDatabase.DB_NAME
+
+        fun newInstance(context: Context): MusicDatabase {
+            // Safety backup: Take an automatic snapshot of song.db before opening/migrating
+            // so user music, playlists, and stats can NEVER be lost during app version updates!
+            try {
+                val dbFile = context.getDatabasePath(DB_NAME)
+                if (dbFile.exists() && dbFile.length() > 0) {
+                    val backupDir = File(context.filesDir, "db_backups")
+                    if (!backupDir.exists()) backupDir.mkdirs()
+                    val backupFile = File(backupDir, "song_latest.db.bak")
+                    if (!backupFile.exists() || System.currentTimeMillis() - backupFile.lastModified() > 1800_000L) {
+                        dbFile.copyTo(backupFile, overwrite = true)
+                        Timber.tag("MusicDatabase").d("Safety backup of database updated successfully (${dbFile.length()} bytes)")
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.tag("MusicDatabase").w(e, "Failed to create safety backup of song.db")
+            }
+
+            return MusicDatabase(
+                delegate =
+                Room
+                    .databaseBuilder(context, InternalDatabase::class.java, DB_NAME)
+                    .addMigrations(
+                        MIGRATION_1_2,
+                        MIGRATION_21_24,
+                        MIGRATION_22_24,
+                        MIGRATION_24_25,
+                        MIGRATION_35_36,
+                    )
+                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+                    .setTransactionExecutor(java.util.concurrent.Executors.newFixedThreadPool(4))
+                    .setQueryExecutor(java.util.concurrent.Executors.newFixedThreadPool(4))
+                    .addCallback(object : RoomDatabase.Callback() {
+                        override fun onOpen(db: SupportSQLiteDatabase) {
+                            super.onOpen(db)
+                            try {
+                                db.query("PRAGMA busy_timeout = 60000").close()
+                                db.query("PRAGMA cache_size = -16000").close()
+                                db.query("PRAGMA wal_autocheckpoint = 1000").close()
+                                db.query("PRAGMA synchronous = NORMAL").close()
+                            } catch (e: Exception) {
+                                Timber.tag("MusicDatabase").e(e, "Failed to set PRAGMA settings")
+                            }
+                            try {
+                                db.execSQL(
+                                    """
+                                    DELETE FROM event 
+                                    WHERE id IN (
+                                        SELECT e1.id 
+                                        FROM event e1 
+                                        JOIN event e2 ON e1.songId = e2.songId 
+                                            AND e2.id > e1.id 
+                                            AND (e2.timestamp - e1.timestamp) BETWEEN 1 AND 25000
+                                    )
+                                    """.trimIndent()
+                                )
+                            } catch (e: Exception) {
+                                Timber.tag("MusicDatabase").w(e, "Failed to deduplicate historical event records")
+                            }
+                        }
+                    })
+                    .build(),
+            )
+        }
+    }
 }
 
 @Database(
@@ -164,71 +234,6 @@ abstract class InternalDatabase : RoomDatabase() {
 
     companion object {
         const val DB_NAME = "song.db"
-
-        fun newInstance(context: Context): MusicDatabase {
-            // Safety backup: Take an automatic snapshot of song.db before opening/migrating
-            // so user music, playlists, and stats can NEVER be lost during app version updates!
-            try {
-                val dbFile = context.getDatabasePath(DB_NAME)
-                if (dbFile.exists() && dbFile.length() > 0) {
-                    val backupDir = File(context.filesDir, "db_backups")
-                    if (!backupDir.exists()) backupDir.mkdirs()
-                    val backupFile = File(backupDir, "song_latest.db.bak")
-                    if (!backupFile.exists() || System.currentTimeMillis() - backupFile.lastModified() > 1800_000L) {
-                        dbFile.copyTo(backupFile, overwrite = true)
-                        Timber.tag("MusicDatabase").d("Safety backup of database updated successfully (${dbFile.length()} bytes)")
-                    }
-                }
-            } catch (e: Exception) {
-                Timber.tag("MusicDatabase").w(e, "Failed to create safety backup of song.db")
-            }
-
-            return MusicDatabase(
-                delegate =
-                Room
-                    .databaseBuilder(context, InternalDatabase::class.java, DB_NAME)
-                    .addMigrations(
-                        MIGRATION_1_2,
-                        MIGRATION_21_24,
-                        MIGRATION_22_24,
-                        MIGRATION_24_25,
-                        MIGRATION_35_36,
-                    )
-                    .fallbackToDestructiveMigration(dropAllTables = true)
-                    .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-                    .setTransactionExecutor(java.util.concurrent.Executors.newFixedThreadPool(4))
-                    .setQueryExecutor(java.util.concurrent.Executors.newFixedThreadPool(4))
-                    .addCallback(object : RoomDatabase.Callback() {
-                        override fun onOpen(db: SupportSQLiteDatabase) {
-                            super.onOpen(db)
-                            try {
-                                db.query("PRAGMA busy_timeout = 60000").close()
-                                db.query("PRAGMA cache_size = -16000").close()
-                                db.query("PRAGMA wal_autocheckpoint = 1000").close()
-                                db.query("PRAGMA synchronous = NORMAL").close()
-                            } catch (e: Exception) {
-                                Timber.tag("MusicDatabase").e(e, "Failed to set PRAGMA settings")
-                            }
-                            try {
-                                db.execSQL(
-                                    """
-                                    DELETE FROM event 
-                                    WHERE id IN (
-                                        SELECT e1.id 
-                                        FROM event e1 
-                                        JOIN event e2 ON e1.songId = e2.songId 
-                                            AND e2.id > e1.id 
-                                            AND (e2.timestamp - e1.timestamp) BETWEEN 1 AND 25000
-                                    )
-                                    """.trimIndent()
-                                )
-                            } catch (e: Exception) {
-                                Timber.tag("MusicDatabase").w(e, "Failed to deduplicate historical event records")
-                            }
-                        }
-                    })
-                    .build(),
-            )
     }
 }
 
