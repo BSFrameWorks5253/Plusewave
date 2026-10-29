@@ -24,25 +24,28 @@
         android:orientation="horizontal"
         android:weightSum="100">
 
-        <View
+        <ImageView
             android:id="@+id/widget_turntable_touch_prev"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="30"
+            android:src="@android:color/transparent"
             android:contentDescription="@string/previous" />
 
-        <View
+        <ImageView
             android:id="@+id/widget_turntable_touch_play_pause"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="40"
+            android:src="@android:color/transparent"
             android:contentDescription="@string/play_pause" />
 
-        <View
+        <ImageView
             android:id="@+id/widget_turntable_touch_next"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="30"
+            android:src="@android:color/transparent"
             android:contentDescription="@string/next" />
     </LinearLayout>
 

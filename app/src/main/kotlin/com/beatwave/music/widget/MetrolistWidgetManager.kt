@@ -684,10 +684,11 @@ class vivimusicWidgetManager @Inject constructor(
         duration: Long = 0L,
         currentPosition: Long = 0L
     ): Bitmap {
-        val scaleFactor = maxOf(1f, 540f / minOf(card.width, card.height).toFloat())
-        val width = (card.width * scaleFactor).toInt().coerceIn(360, 1600)
-        val height = (card.height * scaleFactor).toInt().coerceIn(360, 1600)
-        val cornerPx = card.cornerPx * scaleFactor
+        val maxTurntableDim = 380
+        val aspect = if (card.width > 0) card.height.toFloat() / card.width.toFloat() else 1f
+        val width = maxTurntableDim
+        val height = (maxTurntableDim * aspect).toInt().coerceIn(240, maxTurntableDim)
+        val cornerPx = card.cornerPx * (width.toFloat() / card.width.coerceAtLeast(1).toFloat())
 
         val output = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
@@ -989,7 +990,7 @@ class vivimusicWidgetManager @Inject constructor(
     }
 
     private fun createTurntableVinylRecord(source: Bitmap, isPlaying: Boolean): Bitmap {
-        val defaultCard = CardSize(width = 600, height = 600, cornerPx = 48f)
+        val defaultCard = CardSize(width = 380, height = 380, cornerPx = 32f)
         return createTurntableVinylRecord(defaultCard, source, isPlaying)
     }
 
@@ -1330,8 +1331,17 @@ class vivimusicWidgetManager @Inject constructor(
             if (portrait) AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT
             else AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT
         )
-        val width = ((if (widthDp > 0) widthDp else 250) * density).toInt().coerceIn(1, 1600)
-        val height = ((if (heightDp > 0) heightDp else 110) * density).toInt().coerceIn(1, 1600)
+        // Cap to safe dimensions (max 400px) so RemoteViews never exceeds the 1MB Binder limit
+        val maxDim = 400
+        val rawWidth = ((if (widthDp > 0) widthDp else 250) * density).toInt()
+        val rawHeight = ((if (heightDp > 0) heightDp else 110) * density).toInt()
+        val scale = if (maxOf(rawWidth, rawHeight) > maxDim) {
+            maxDim.toFloat() / maxOf(rawWidth, rawHeight)
+        } else {
+            1f
+        }
+        val width = (rawWidth * scale).toInt().coerceIn(100, maxDim)
+        val height = (rawHeight * scale).toInt().coerceIn(60, maxDim)
 
         val radiusDp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             runCatching {
@@ -1341,7 +1351,7 @@ class vivimusicWidgetManager @Inject constructor(
         } else {
             CARD_CORNER_DP
         }
-        return CardSize(width, height, radiusDp.coerceIn(8f, 28f) * density)
+        return CardSize(width, height, radiusDp.coerceIn(8f, 28f) * density * scale)
     }
 
     private fun gradientColorsFor(config: WidgetConfig, albumArt: Bitmap?): Pair<Int, Int> {

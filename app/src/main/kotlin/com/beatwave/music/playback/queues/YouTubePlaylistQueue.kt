@@ -21,7 +21,7 @@ class YouTubePlaylistQueue(
     private val initialContinuation: String? = null,
     private val startIndex: Int = 0,
     private val position: Long = 0L,
-    override val preloadItem: MediaMetadata? = initialSongs.getOrNull(startIndex)?.toMediaMetadata(),
+    override val preloadItem: MediaMetadata? = null,
 ) : Queue {
     private var continuation: String? = initialContinuation
     private var retryCount = 0

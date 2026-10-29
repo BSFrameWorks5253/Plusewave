@@ -1743,8 +1743,7 @@ class MusicService :
         // Reset original queue size when starting a new queue
         originalQueueSize = 0
         if (queue.preloadItem != null) {
-            val startPos = (queue as? com.beatwave.music.playback.queues.ListQueue)?.position
-                ?: (queue.playlistId?.let { pid -> PlaylistPlaybackTracker.getLastPlayedPosition(this, pid) } ?: 0L)
+            val startPos = (queue as? com.beatwave.music.playback.queues.ListQueue)?.position ?: 0L
             if (startPos > 0L) {
                 player.setMediaItem(queue.preloadItem!!.toMediaItem(), startPos)
             } else {
@@ -1760,37 +1759,25 @@ class MusicService :
                         .filterExplicit(dataStore.get(HideExplicitKey, false))
                         .filterVideoSongs(dataStore.get(HideVideoSongsKey, false) || dataStore.get(DataSaverEnabledKey, false))
                 }
-            if (queue.preloadItem != null && player.playbackState == STATE_IDLE) return@launch
             if (initialStatus.title != null) {
                 queueTitle = initialStatus.title
             }
             if (initialStatus.items.isEmpty()) return@launch
             // Track original queue size for shuffle playlist first feature
             originalQueueSize = initialStatus.items.size
+            
+            val targetIndex = initialStatus.mediaItemIndex.coerceIn(0, (initialStatus.items.size - 1).coerceAtLeast(0))
             if (queue.preloadItem != null) {
-                player.addMediaItems(
-                    0,
-                    initialStatus.items.subList(0, initialStatus.mediaItemIndex)
-                )
-                player.addMediaItems(
-                    initialStatus.items.subList(
-                        initialStatus.mediaItemIndex + 1,
-                        initialStatus.items.size
-                    )
-                )
-                if (initialStatus.position > 0L) {
-                    player.seekTo(initialStatus.mediaItemIndex, initialStatus.position)
+                val currentPos = if (initialStatus.position > 0L) initialStatus.position else player.currentPosition
+                player.setMediaItems(initialStatus.items, targetIndex, currentPos)
+                if (player.playbackState == STATE_IDLE) {
+                    player.prepare()
                 }
+                player.playWhenReady = playWhenReady
             } else {
                 player.setMediaItems(
                     initialStatus.items,
-                    if (initialStatus.mediaItemIndex >
-                        0
-                    ) {
-                        initialStatus.mediaItemIndex
-                    } else {
-                        0
-                    },
+                    targetIndex,
                     initialStatus.position,
                 )
                 player.prepare()
@@ -1807,7 +1794,10 @@ class MusicService :
     }
 
     fun startRadioSeamlessly() {
-        if (currentQueue is com.beatwave.music.playback.queues.ListQueue) {
+        if (currentQueue is com.beatwave.music.playback.queues.ListQueue ||
+            currentQueue is com.beatwave.music.playback.queues.YouTubePlaylistQueue ||
+            currentQueue?.playlistId != null
+        ) {
             Timber.tag(TAG).d("startRadioSeamlessly skipped: active queue is a fixed playlist")
             return
         }
@@ -2370,7 +2360,10 @@ class MusicService :
             } else if (player.mediaItemCount - player.currentMediaItemIndex <= 2 && !currentQueue.hasNextPage()) {
                 // When queue is about to end and has no more pages, seamlessly continue with similar genre songs
                 // ONLY for online search / radio queues, NEVER for fixed user playlists!
-                if (currentQueue !is com.beatwave.music.playback.queues.ListQueue) {
+                if (currentQueue !is com.beatwave.music.playback.queues.ListQueue &&
+                    currentQueue !is com.beatwave.music.playback.queues.YouTubePlaylistQueue &&
+                    currentQueue.playlistId == null
+                ) {
                     startRadioSeamlessly()
                 }
             }
@@ -2391,6 +2384,18 @@ class MusicService :
             ?: PlaylistPlaybackTracker.getActivePlaylist(this)
         val curItem = specifiedMediaItem ?: player.currentMediaItem
         if (activePid != null && curItem != null) {
+            if (player.playbackState == Player.STATE_ENDED) {
+                val nextIndex = (player.currentMediaItemIndex + 1) % player.mediaItemCount.coerceAtLeast(1)
+                val nextItem = if (player.mediaItemCount > 0) player.getMediaItemAt(nextIndex) else curItem
+                PlaylistPlaybackTracker.savePlaylistProgress(
+                    context = this,
+                    playlistId = activePid,
+                    songId = nextItem.mediaId,
+                    songIndex = nextIndex,
+                    positionMs = 0L,
+                )
+                return
+            }
             val curPos = player.currentPosition
             PlaylistPlaybackTracker.savePlaylistProgress(
                 context = this,

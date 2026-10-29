@@ -107,13 +107,14 @@
         </LinearLayout>
 
         <!-- Divider line -->
-        <View
+        <ImageView
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginTop="10dp"
             android:layout_marginBottom="8dp"
             android:alpha="0.15"
-            android:background="@android:color/white" />
+            android:src="@android:color/white"
+            android:contentDescription="@null" />
 
         <!-- Up Next Section -->
         <TextView

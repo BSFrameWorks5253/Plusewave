@@ -956,10 +956,10 @@ private fun OnlinePlaylistHeader(
                                 } else if (songs.any { it.id == mediaMetadata?.id }) {
                                     playerConnection.player.play()
                                 } else {
-                                    val resolvedIdx = com.beatwave.music.playback.PlaylistPlaybackTracker.resolveStartIndex(context, playlist.id, songs.map { it.id })
-                                    if (resolvedIdx > 0) {
-                                        val songTitle = songs.getOrNull(resolvedIdx)?.title
-                                        val msg = if (!songTitle.isNullOrBlank()) "Resuming from track #${resolvedIdx + 1}: $songTitle" else "Resuming from track #${resolvedIdx + 1}"
+                                    val (startIndex, positionMs) = com.beatwave.music.playback.PlaylistPlaybackTracker.resolveStartProgress(context, playlist.id, songs.map { it.id })
+                                    if (startIndex > 0) {
+                                        val songTitle = songs.getOrNull(startIndex)?.title
+                                        val msg = if (!songTitle.isNullOrBlank()) "Resuming from track #${startIndex + 1}: $songTitle" else "Resuming from track #${startIndex + 1}"
                                         android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                                     }
                                     playerConnection.playQueue(
@@ -968,8 +968,8 @@ private fun OnlinePlaylistHeader(
                                             playlistTitle = playlist.title,
                                             initialSongs = songs,
                                             initialContinuation = continuation,
-                                            startIndex = com.beatwave.music.playback.PlaylistPlaybackTracker.resolveStartIndex(context, playlist.id, songs.map { it.id }),
-                                            position = com.beatwave.music.playback.PlaylistPlaybackTracker.getLastPlayedPosition(context, playlist.id)
+                                            startIndex = startIndex,
+                                            position = positionMs
                                         )
                                     )
                                 }

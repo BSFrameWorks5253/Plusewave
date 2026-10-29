@@ -69,7 +69,10 @@ object PlaylistPlaybackTracker {
     fun resolveStartProgress(context: Context, playlistId: String, songIds: List<String>): Pair<Int, Long> {
         if (songIds.isEmpty()) return Pair(0, 0L)
 
-        val savedPosition = getLastPlayedPosition(context, playlistId)
+        val rawPosition = getLastPlayedPosition(context, playlistId)
+        // If within the first 3 seconds, start from 0 to avoid micro-seeking glitches
+        val savedPosition = if (rawPosition < 3000L) 0L else rawPosition
+
         val savedSongId = getLastPlayedSongId(context, playlistId)
         if (!savedSongId.isNullOrBlank()) {
             val idx = songIds.indexOf(savedSongId)

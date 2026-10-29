@@ -26,23 +26,31 @@ interface Queue {
         val mediaItemIndex: Int,
         val position: Long = 0L,
     ) {
-        fun filterExplicit(enabled: Boolean = true) =
-            if (enabled) {
-                copy(
-                    items = items.filterExplicit(),
-                )
+        fun filterExplicit(enabled: Boolean = true): Status {
+            if (!enabled) return this
+            val targetMediaId = items.getOrNull(mediaItemIndex)?.mediaId
+            val filteredItems = items.filterExplicit()
+            val newIndex = if (targetMediaId != null) {
+                val idx = filteredItems.indexOfFirst { it.mediaId == targetMediaId }
+                if (idx != -1) idx else mediaItemIndex.coerceIn(0, (filteredItems.size - 1).coerceAtLeast(0))
             } else {
-                this
+                mediaItemIndex.coerceIn(0, (filteredItems.size - 1).coerceAtLeast(0))
             }
+            return copy(items = filteredItems, mediaItemIndex = newIndex)
+        }
 
-        fun filterVideoSongs(disableVideos: Boolean = false) =
-            if (disableVideos) {
-                copy(
-                    items = items.filterVideoSongs(true),
-                )
+        fun filterVideoSongs(disableVideos: Boolean = false): Status {
+            if (!disableVideos) return this
+            val targetMediaId = items.getOrNull(mediaItemIndex)?.mediaId
+            val filteredItems = items.filterVideoSongs(true)
+            val newIndex = if (targetMediaId != null) {
+                val idx = filteredItems.indexOfFirst { it.mediaId == targetMediaId }
+                if (idx != -1) idx else mediaItemIndex.coerceIn(0, (filteredItems.size - 1).coerceAtLeast(0))
             } else {
-                this
+                mediaItemIndex.coerceIn(0, (filteredItems.size - 1).coerceAtLeast(0))
             }
+            return copy(items = filteredItems, mediaItemIndex = newIndex)
+        }
     }
 }
 

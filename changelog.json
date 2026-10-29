@@ -1,55 +1,30 @@
 {
-  "description": "Pulse Wave 6.1.16 — Dual V1 (JAR) & V2 APK Signing, Package Installer Compatibility Fix, Direct Vinyl Controls & In-App Updater Overhaul.",
+  "description": "Pulse Wave 6.1.17 \u2014 Playlist Playback Splicing Fix, Widget RemoteViews Compliance, Library Top Playlist Placement & Speed Dial Home Fix.",
   "image": "",
   "changelog": [
     {
-      "title": "Dual V1 & V2 APK Signing (Fixes 'Package is invalid')",
+      "title": "Playlist Playback & Queue Loading Fix",
       "items": [
-        "Full Dual Signing: Explicitly enabled both V1 JAR signing and V2 APK Signature Scheme across all build flavors.",
-        "Universal Package Installer Compatibility: Resolves 'Package is invalid' / 'Problem parsing the package' parse errors across HyperOS, MIUI, Samsung, and Android 12+ package installers.",
-        "FileProvider Grant Permissions: Preserves full Uri read permissions for system installers."
+        "Atomic Queue Timeline Loading: Playlist items load atomically into ExoPlayer rather than splicing chunks, preventing playback interruptions and queue drops.",
+        "Async State Guard: Fixed premature STATE_IDLE termination in MusicService to guarantee coroutine playlist loading completes.",
+        "Radio Guard: Protected active playlists from being wiped out by automatic recommendation radio transitions.",
+        "Clean Start Bounds: Sanitized playlist start offsets to eliminate playback failure caused by previous playlist offsets."
       ]
     },
     {
-      "title": "Direct Vinyl Play/Pause/Prev/Next Controls",
+      "title": "Widget RemoteViews Compliance & Stability",
       "items": [
-        "Platter Tap Controls (Player & Widget): Tap the center of the vinyl record to toggle Play / Pause instantly with tactile haptic feedback.",
-        "Edge Skip Controls: Tap the left edge of the vinyl disc to skip to the Previous song, or tap the right edge to skip to the Next song.",
-        "Double-Tap Quick Skip: Double-tap either side of the vinyl disc in the player for rapid track navigation.",
-        "Turntable Widget Platter Touch: Control music directly from the home screen turntable disc even in pure size-oriented layout."
+        "RemoteViews Inflation Fix: Replaced illegal non-RemoteViews tags (<View> and <Space>) with valid <ImageView> and weighted <FrameLayout> across turntable, queue, and now-playing widgets.",
+        "Binder IPC Overflow Prevention: Added dimension clamping to widget art generation to prevent TransactionTooLargeException buffer crashes."
       ]
     },
     {
-      "title": "In-App Updater Overhaul & Installation Fix",
+      "title": "Playlist Cards Library Top Placement & Speed Dial",
       "items": [
-        "OkHttp Multi-Hop Redirect Engine: Swapped out legacy connection with OkHttp supporting 302 GitHub redirect asset streams and proper user-agent headers.",
-        "Internal Cache Storage: Moved update staging to internal app cache to bypass Android 11+ / HyperOS Scoped Storage file blocks.",
-        "Full FileProvider Permissions: Added missing XML roots and granted explicit read URI permissions to system package installers (MIUI, Samsung, Google).",
-        "Direct Browser Download Fallback: Added an instant 'Browser' download action directly inside the update alert dialog.",
-        "Auto-Install Trigger: Automatically launches the package installer prompt as soon as the APK download finishes."
-      ]
-    },
-    {
-      "title": "Interactive Vinyl Turntable & Scratching",
-      "items": [
-        "Scratch & Seek Vinyl Disc: Grab and spin the vinyl record in the player forward or backward to scrub through songs with real-time audio scrubbing physics.",
-        "Realistic Vinyl Scratch Sound: Synthesized needle-on-groove DJ scratch audio effect pitch-bent to your rotational drag velocity.",
-        "Animated Tonearm Stylus: Mechanical needle swings into the groove during playback and lifts away into resting stand on pause.",
-        "DJ Scratch Mode Easter Egg: Triple-tap the center vinyl label to trigger instant DJ Spinback mode!"
-      ]
-    },
-    {
-      "title": "Pure Size-Oriented Turntable Widget",
-      "items": [
-        "Pure Turntable Platter: Clean circular vinyl deck with tonearm and ambient glow with no clutter, scaling responsively to any widget dimension.",
-        "Continuous Spin Tracking: Platter tracks live playback state directly from your home screen."
-      ]
-    },
-    {
-      "title": "Library Playlist Reordering Fix",
-      "items": [
-        "Silky Smooth Reordering: Swapped to 60fps in-memory list updates during drag so dragging never drops frames or gets canceled.",
-        "Atomic Drop Persistence: Preferences are saved once upon releasing the drag handle, eliminating DataStore write collisions."
+        "Top Placement in Library: When custom sorting or tapping 'Move to Top', user playlist cards appear directly at the top of the Library (above auto playlists) in both Grid and List views.",
+        "Free Drag to Top: Lifted reordering constraint so playlists can be dragged to the very top (index 0) of the list.",
+        "Stable Auto-Playlist IDs: Fixed auto playlist random UUID recreation so custom covers and state persist reliably.",
+        "Speed Dial on Home: Re-enabled Speed Dial feed so pinned playlist cards appear right at the top of the Home screen."
       ]
     }
   ]

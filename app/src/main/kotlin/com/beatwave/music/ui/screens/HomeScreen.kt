@@ -1114,9 +1114,7 @@ fun HomeScreen(
 
         if (heroCardEnabled && quickPicks?.isNotEmpty() == true) list.add(HomeSection.Hero)
         if (spotifyHomeSections?.isNotEmpty() == true) list.add(HomeSection.SpotifyDiscovery)
-        // Speed Dial section commented out per request -- gated out here rather than
-        // deleting the section's rendering code, so it is one line to bring back.
-        // if (speedDialItems.isNotEmpty()) list.add(HomeSection.SpeedDial)
+        if (speedDialItems.isNotEmpty()) list.add(HomeSection.SpeedDial)
         if (quickPicks?.isNotEmpty() == true) list.add(HomeSection.QuickPicks)
         if (lastPlayedRecommendation != null) list.add(HomeSection.LastPlayedRecommendation)
         if (communityPlaylists?.isNotEmpty() == true) list.add(HomeSection.FromTheCommunity)
