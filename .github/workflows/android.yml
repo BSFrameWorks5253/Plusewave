@@ -55,6 +55,8 @@ jobs:
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
           LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          DONATION_UPI_ID: ${{ secrets.DONATION_UPI_ID || 'burhanuddin08@fam' }}
+          DONATION_PAYEE_NAME: ${{ secrets.DONATION_PAYEE_NAME || 'PulseWave' }}
 
       - name: Extract Dynamic Version
         id: get_version

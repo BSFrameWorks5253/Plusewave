@@ -98,6 +98,19 @@ android {
             ?: ""
         buildConfigField("String", "GITHUB_ISSUE_TOKEN", "\"$githubIssueToken\"")
 
+        // Donation UPI configuration from .env, local.properties, or environment variables
+        val donationUpiId = envProperties.getProperty("DONATION_UPI_ID")
+            ?: localProperties.getProperty("DONATION_UPI_ID")
+            ?: System.getenv("DONATION_UPI_ID")?.takeIf { it.isNotBlank() }
+            ?: "burhanuddin08@fam"
+        buildConfigField("String", "DONATION_UPI_ID", "\"$donationUpiId\"")
+
+        val donationPayeeName = envProperties.getProperty("DONATION_PAYEE_NAME")
+            ?: localProperties.getProperty("DONATION_PAYEE_NAME")
+            ?: System.getenv("DONATION_PAYEE_NAME")?.takeIf { it.isNotBlank() }
+            ?: "PulseWave"
+        buildConfigField("String", "DONATION_PAYEE_NAME", "\"$donationPayeeName\"")
+
 //add nightly build label support
         val isNightly = project.hasProperty("nightly") && project.property("nightly") == "true"
         buildConfigField("Boolean", "IS_NIGHTLY", isNightly.toString())

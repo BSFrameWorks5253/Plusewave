@@ -60,6 +60,7 @@ import com.beatwave.music.ui.screens.search.OnlineSearchResult
 import com.beatwave.music.ui.screens.search.SearchScreen
 import com.beatwave.music.ui.screens.settings.AboutScreen
 import com.beatwave.music.ui.screens.settings.SuggestionScreen
+import com.beatwave.music.ui.screens.settings.SupportScreen
 import com.beatwave.music.ui.screens.settings.AccountSettingsScreen
 import com.beatwave.music.ui.screens.settings.AiSettings
 import com.beatwave.music.ui.screens.settings.AppearanceSettings
@@ -414,6 +415,10 @@ fun NavGraphBuilder.navigationBuilder(
 
     sharedComposable("settings/suggestions/issues") {
         SuggestionScreen(navController, scrollBehavior, initialTab = 1)
+    }
+
+    sharedComposable("settings/support") {
+        SupportScreen(navController, scrollBehavior)
     }
 
 

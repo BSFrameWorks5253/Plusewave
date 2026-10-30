@@ -1,30 +1,28 @@
 {
-  "description": "Pulse Wave 6.1.17 \u2014 Playlist Playback Splicing Fix, Widget RemoteViews Compliance, Library Top Playlist Placement & Speed Dial Home Fix.",
+  "description": "Pulse Wave 6.1.18 — Dedicated In-App Support & Donation Page, Personalized UPI Integration & Quick Pay Options.",
   "image": "",
   "changelog": [
     {
-      "title": "Playlist Playback & Queue Loading Fix",
+      "title": "Dedicated Support Screen in Settings",
       "items": [
-        "Atomic Queue Timeline Loading: Playlist items load atomically into ExoPlayer rather than splicing chunks, preventing playback interruptions and queue drops.",
-        "Async State Guard: Fixed premature STATE_IDLE termination in MusicService to guarantee coroutine playlist loading completes.",
-        "Radio Guard: Protected active playlists from being wiped out by automatic recommendation radio transitions.",
-        "Clean Start Bounds: Sanitized playlist start offsets to eliminate playback failure caused by previous playlist offsets."
+        "New Support Development Destination: Placed directly below 'Issue Noting & Bug Reports' in Settings, providing a clean hub for supporting the project.",
+        "Quick Amount Selection: Dedicated chips for ₹50, ₹100, ₹250, and ₹500 with one-tap deep linking to any UPI payment app.",
+        "One-Tap UPI Copy: Tap-to-copy UPI ID with clipboard confirmation and immediate visual feedback.",
+        "Searchable Settings Integration: 'Support Development' is fully indexed in the settings search catalog."
       ]
     },
     {
-      "title": "Widget RemoteViews Compliance & Stability",
+      "title": "Personalized UPI & Environment Configuration",
       "items": [
-        "RemoteViews Inflation Fix: Replaced illegal non-RemoteViews tags (<View> and <Space>) with valid <ImageView> and weighted <FrameLayout> across turntable, queue, and now-playing widgets.",
-        "Binder IPC Overflow Prevention: Added dimension clamping to widget art generation to prevent TransactionTooLargeException buffer crashes."
+        "Account-Linked UPI: Direct integration with burhanuddin08@fam (PulseWave) across all donation prompts and screens.",
+        "Environment Variables & BuildConfig: Added DONATION_UPI_ID and DONATION_PAYEE_NAME support via root .env and local.properties with zero-overhead fallbacks."
       ]
     },
     {
-      "title": "Playlist Cards Library Top Placement & Speed Dial",
+      "title": "Interactive Donation Prompt Dialog",
       "items": [
-        "Top Placement in Library: When custom sorting or tapping 'Move to Top', user playlist cards appear directly at the top of the Library (above auto playlists) in both Grid and List views.",
-        "Free Drag to Top: Lifted reordering constraint so playlists can be dragged to the very top (index 0) of the list.",
-        "Stable Auto-Playlist IDs: Fixed auto playlist random UUID recreation so custom covers and state persist reliably.",
-        "Speed Dial on Home: Re-enabled Speed Dial feed so pinned playlist cards appear right at the top of the Home screen."
+        "Transparent UPI Card: In-app prompt dialog now displays the exact UPI ID with interactive copy functionality before launching the UPI app.",
+        "Safe URI Intent Launching: Reliable intent dispatching across Google Pay, PhonePe, Paytm, BHIM, Cred, and all UPI clients."
       ]
     }
   ]

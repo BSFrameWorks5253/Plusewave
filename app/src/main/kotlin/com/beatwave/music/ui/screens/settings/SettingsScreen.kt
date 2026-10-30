@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.beatwave.music.BuildConfig
 import com.beatwave.music.LocalPlayerAwareWindowInsets
+import com.beatwave.music.constants.DonationUpiId
 import com.beatwave.music.ui.component.IconButton
 import com.beatwave.music.ui.component.Material3SettingsGroup
 import com.beatwave.music.ui.component.Material3SettingsItem
@@ -202,6 +203,14 @@ fun SettingsScreen(
                     title = "Issue Noting & Bug Reports",
                     subtitle = "Report bugs & glitches (linked to GitHub Issues)",
                     onClick = { navController.navigate("settings/suggestions/issues") },
+                )
+                SettingsDivider()
+                SettingsNavItem(
+                    icon = painterResource(R.drawable.favorite),
+                    iconTint = Color(0xFFFF2D55),
+                    title = "Support Development",
+                    subtitle = "Contribute via UPI ($DonationUpiId)",
+                    onClick = { navController.navigate("settings/support") },
                 )
             }
         }
