@@ -65,11 +65,11 @@ jobs:
           tail -n 120 build.log || true
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -B build-failure-diagnostic
+          git checkout -B ci-build-log
           cp build.log failure-diagnostic.log
           git add failure-diagnostic.log
           git commit -m "ci: dump failure diagnostic log" || true
-          git push origin build-failure-diagnostic --force || true
+          git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-build-log --force || true
 
       - name: Extract Dynamic Version
         id: get_version
