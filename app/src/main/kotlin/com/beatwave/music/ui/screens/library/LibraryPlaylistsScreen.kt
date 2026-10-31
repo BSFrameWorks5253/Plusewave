@@ -10,21 +10,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.runtime.produceState
-import androidx.compose.ui.platform.LocalContext
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
-import com.beatwave.music.LocalDatabase
-import com.beatwave.music.ui.utils.rememberGridColumns
-import com.beatwave.music.constants.SongSortType
-import com.beatwave.music.ui.utils.bounceClick
-import com.beatwave.music.ui.utils.combinedBounceClick
-import kotlinx.coroutines.flow.first
-import sh.calvin.reorderable.ReorderableItem
-import sh.calvin.reorderable.rememberReorderableLazyListState
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.FlowRow
@@ -43,6 +28,8 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -56,11 +43,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -69,17 +57,17 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.music.innertube.utils.parseCookieString
 import com.beatwave.music.LocalPlayerAwareWindowInsets
 import com.beatwave.music.R
 import com.beatwave.music.constants.CONTENT_TYPE_HEADER
 import com.beatwave.music.constants.CONTENT_TYPE_PLAYLIST
+import com.beatwave.music.constants.CustomPlaylistOrderKey
 import com.beatwave.music.constants.GridItemSize
 import com.beatwave.music.constants.GridItemsSizeKey
-import com.beatwave.music.constants.GridThumbnailHeight
 import com.beatwave.music.constants.InnerTubeCookieKey
 import com.beatwave.music.constants.LibraryIconsOnlyKey
 import com.beatwave.music.constants.LibraryViewType
@@ -106,16 +94,37 @@ import com.beatwave.music.ui.component.PlaylistGridItem
 import com.beatwave.music.ui.component.PlaylistListItem
 import com.beatwave.music.ui.component.SortHeader
 import com.beatwave.music.ui.component.buildAlphabetSectionIndex
+import com.beatwave.music.ui.theme.AppleTokens
+import com.beatwave.music.ui.utils.combinedBounceClick
+import com.beatwave.music.ui.utils.heroPullZoom
+import com.beatwave.music.ui.utils.listOverscroll
+import com.beatwave.music.ui.utils.rememberGridColumns
+import com.beatwave.music.ui.utils.rememberHeroZoom
 import com.beatwave.music.utils.rememberEnumPreference
 import com.beatwave.music.utils.rememberPreference
 import com.beatwave.music.viewmodels.LibraryPlaylistsViewModel
+import com.music.innertube.utils.parseCookieString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.util.UUID
-import com.beatwave.music.ui.theme.AppleTokens
-import com.beatwave.music.ui.utils.heroPullZoom
-import com.beatwave.music.ui.utils.listOverscroll
-import com.beatwave.music.ui.utils.rememberHeroZoom
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyGridState
+import sh.calvin.reorderable.rememberReorderableLazyListState
+
+sealed interface LibraryPlaylistItem {
+    val id: String
+
+    data class Auto(
+        override val id: String,
+        val playlist: Playlist,
+        val route: String,
+    ) : LibraryPlaylistItem
+
+    data class User(
+        val playlist: Playlist,
+    ) : LibraryPlaylistItem {
+        override val id: String get() = playlist.id
+    }
+}
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -209,7 +218,6 @@ fun LibraryPlaylistsScreen(
     // Pull-to-refresh only: no hero artwork on this screen, so heroZoom.scale
     // goes unread and the modifier contributes just the rubber-band stretch.
     val heroZoom = rememberHeroZoom()
-
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val scrollToTop =
@@ -321,43 +329,94 @@ fun LibraryPlaylistsScreen(
     // Hoisted: both view types de-duped the same list separately, and the scroll rail
     // needs the resulting count too.
     val visiblePlaylists = remember(playlists) { playlists.distinctBy { it.id } }
-    val customOrder by rememberPreference(CustomPlaylistOrderKey, "")
-    val topCustomPlaylists = remember(visiblePlaylists, customOrder) {
-        if (customOrder.isBlank()) emptyList()
-        else {
-            val orderList = customOrder.split(",").filter { it.isNotBlank() }
-            orderList.mapNotNull { id -> visiblePlaylists.find { it.id == id } }
+    var customOrder by rememberPreference(CustomPlaylistOrderKey, "")
+
+    val autoItems = remember(
+        showLiked, showDownloaded, showTop, showCached, showUploaded,
+        topSize, likedPlaylist, downloadPlaylist, topPlaylist, cachePlaylist, uploadedPlaylist
+    ) {
+        buildList {
+            if (showLiked) add(LibraryPlaylistItem.Auto("auto:liked", likedPlaylist, "auto_playlist/liked"))
+            if (showDownloaded) add(LibraryPlaylistItem.Auto("auto:downloaded", downloadPlaylist, "auto_playlist/downloaded"))
+            if (showTop) add(LibraryPlaylistItem.Auto("auto:top", topPlaylist, "top_playlist/$topSize"))
+            if (showCached) add(LibraryPlaylistItem.Auto("auto:cached", cachePlaylist, "cache_playlist/cached"))
+            if (showUploaded) add(LibraryPlaylistItem.Auto("auto:uploaded", uploadedPlaylist, "auto_playlist/uploaded"))
         }
     }
 
-    // In-memory mutable list for 60fps smooth dragging without IO DataStore write spam
-    val localPlaylists = remember(visiblePlaylists) { visiblePlaylists.toMutableStateList() }
+    val userItems = remember(visiblePlaylists) {
+        visiblePlaylists.map { LibraryPlaylistItem.User(it) }
+    }
+
+    val localUnifiedItems = remember(autoItems, userItems, sortType, customOrder) {
+        val allMap = (autoItems + userItems).associateBy { it.id }
+        if (sortType == PlaylistSortType.CUSTOM && customOrder.isNotBlank()) {
+            val orderIds = customOrder.split(",").filter { it.isNotBlank() }
+            val orderedList = mutableListOf<LibraryPlaylistItem>()
+            val seen = mutableSetOf<String>()
+            for (id in orderIds) {
+                allMap[id]?.let {
+                    orderedList.add(it)
+                    seen.add(id)
+                }
+            }
+            for (item in autoItems) {
+                if (item.id !in seen) {
+                    orderedList.add(item)
+                    seen.add(item.id)
+                }
+            }
+            for (item in userItems) {
+                if (item.id !in seen) {
+                    orderedList.add(item)
+                    seen.add(item.id)
+                }
+            }
+            orderedList.toMutableStateList()
+        } else {
+            (autoItems + userItems).toMutableStateList()
+        }
+    }
+
     var hasDragged by remember { mutableStateOf(false) }
 
     val reorderableListState = rememberReorderableLazyListState(
         lazyListState = lazyListState,
         scrollThresholdPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
     ) { from, to ->
-        val headerCount = if (sortType == PlaylistSortType.CUSTOM) {
-            3
-        } else {
-            3 + (if (showLiked) 1 else 0) + (if (showDownloaded) 1 else 0) +
-                (if (showTop) 1 else 0) + (if (showCached) 1 else 0) + (if (showUploaded) 1 else 0)
-        }
+        val headerCount = 3
         if (from.index >= headerCount && to.index >= headerCount) {
             val fromIdx = from.index - headerCount
             val toIdx = to.index - headerCount
-            if (fromIdx in localPlaylists.indices && toIdx in localPlaylists.indices) {
-                localPlaylists.add(toIdx, localPlaylists.removeAt(fromIdx))
+            if (fromIdx in localUnifiedItems.indices && toIdx in localUnifiedItems.indices) {
+                localUnifiedItems.add(toIdx, localUnifiedItems.removeAt(fromIdx))
                 hasDragged = true
             }
         }
     }
 
-    // Persist only on drag completion when the user drops the item
-    LaunchedEffect(reorderableListState.isAnyItemDragging) {
-        if (!reorderableListState.isAnyItemDragging && hasDragged) {
-            viewModel.setCustomPlaylistOrder(localPlaylists.map { it.id })
+    val reorderableGridState = rememberReorderableLazyGridState(
+        lazyGridState = lazyGridState,
+        scrollThresholdPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
+    ) { from, to ->
+        val headerCount = 3
+        if (from.index >= headerCount && to.index >= headerCount) {
+            val fromIdx = from.index - headerCount
+            val toIdx = to.index - headerCount
+            if (fromIdx in localUnifiedItems.indices && toIdx in localUnifiedItems.indices) {
+                localUnifiedItems.add(toIdx, localUnifiedItems.removeAt(fromIdx))
+                hasDragged = true
+            }
+        }
+    }
+
+    LaunchedEffect(reorderableListState.isAnyItemDragging, reorderableGridState.isAnyItemDragging) {
+        val isDragging = reorderableListState.isAnyItemDragging || reorderableGridState.isAnyItemDragging
+        if (!isDragging && hasDragged) {
+            val newOrder = localUnifiedItems.joinToString(",") { it.id }
+            customOrder = newOrder
+            viewModel.setCustomPlaylistOrder(localUnifiedItems.map { it.id })
+            onSortTypeChange(PlaylistSortType.CUSTOM)
             hasDragged = false
         }
     }
@@ -410,7 +469,9 @@ fun LibraryPlaylistsScreen(
                                         grid = false,
                                         onClick = { navController.navigate(item.route) },
                                         showIconOnly = libraryIconsOnly,
-                                        modifier = Modifier.animateItem().longPressDraggableHandle()
+                                        modifier = Modifier
+                                            .animateItem()
+                                            .longPressDraggableHandle()
                                     )
                                 }
                                 is LibraryPlaylistItem.User -> {
@@ -428,6 +489,7 @@ fun LibraryPlaylistsScreen(
                             }
                         }
                     }
+                }
 
                 HideOnScrollFAB(
                     lazyListState = lazyListState,
@@ -470,176 +532,39 @@ fun LibraryPlaylistsScreen(
                         headerContent()
                     }
 
-                    if (sortType == PlaylistSortType.CUSTOM) {
-                        playlists.let { playlists ->
-                            if (playlists.isEmpty()) {
-                                item(span = { GridItemSpan(maxLineSpan) }) {
+                    items(
+                        items = localUnifiedItems,
+                        key = { it.id },
+                        contentType = { CONTENT_TYPE_PLAYLIST },
+                    ) { item ->
+                        ReorderableItem(
+                            state = reorderableGridState,
+                            key = item.id
+                        ) { isDragging ->
+                            when (item) {
+                                is LibraryPlaylistItem.Auto -> {
+                                    AutoPlaylistCard(
+                                        playlist = item.playlist,
+                                        grid = true,
+                                        onClick = { navController.navigate(item.route) },
+                                        showIconOnly = libraryIconsOnly,
+                                        modifier = Modifier
+                                            .animateItem()
+                                            .longPressDraggableHandle()
+                                    )
                                 }
-                            }
-
-                            items(
-                                items = localPlaylists,
-                                key = { it.id },
-                                contentType = { CONTENT_TYPE_PLAYLIST },
-                            ) { playlist ->
-                                LibraryPlaylistGridItem(
-                                    navController = navController,
-                                    menuState = menuState,
-                                    coroutineScope = coroutineScope,
-                                    playlist = playlist,
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem()
-                                )
-                            }
-                        }
-
-                        if (showLiked) {
-                            item(key = "likedPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = likedPlaylist,
-                                    grid = true,
-                                    onClick = { navController.navigate("auto_playlist/liked") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        if (showDownloaded) {
-                            item(key = "downloadedPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = downloadPlaylist,
-                                    grid = true,
-                                    onClick = { navController.navigate("auto_playlist/downloaded") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        if (showTop) {
-                            item(key = "TopPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = topPlaylist,
-                                    grid = true,
-                                    onClick = { navController.navigate("top_playlist/$topSize") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        if (showCached) {
-                            item(key = "cachePlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = cachePlaylist,
-                                    grid = true,
-                                    onClick = { navController.navigate("cache_playlist/cached") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        if (showUploaded) {
-                            item(key = "uploadedPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = uploadedPlaylist,
-                                    grid = true,
-                                    onClick = { navController.navigate("auto_playlist/uploaded") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                    } else {
-                        // Custom top-ordered playlists (like "my MP4") before Liked playlist
-                        items(
-                            items = topCustomPlaylists,
-                            key = { "top_${it.id}" },
-                            contentType = { CONTENT_TYPE_PLAYLIST }
-                        ) { playlist ->
-                            LibraryPlaylistGridItem(
-                                navController = navController,
-                                menuState = menuState,
-                                coroutineScope = coroutineScope,
-                                playlist = playlist,
-                                showIconOnly = libraryIconsOnly,
-                                modifier = Modifier.animateItem()
-                            )
-                        }
-
-                        if (showLiked) {
-                            item(key = "likedPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = likedPlaylist,
-                                    grid = true,
-                                    onClick = { navController.navigate("auto_playlist/liked") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        if (showDownloaded) {
-                            item(key = "downloadedPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = downloadPlaylist,
-                                    grid = true,
-                                    onClick = { navController.navigate("auto_playlist/downloaded") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        if (showTop) {
-                            item(key = "TopPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = topPlaylist,
-                                    grid = true,
-                                    onClick = { navController.navigate("top_playlist/$topSize") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        if (showCached) {
-                            item(key = "cachePlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = cachePlaylist,
-                                    grid = true,
-                                    onClick = { navController.navigate("cache_playlist/cached") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        if (showUploaded) {
-                            item(key = "uploadedPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = uploadedPlaylist,
-                                    grid = true,
-                                    onClick = { navController.navigate("auto_playlist/uploaded") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-
-                        playlists.let { playlists ->
-                            if (playlists.isEmpty()) {
-                                item(span = { GridItemSpan(maxLineSpan) }) {
+                                is LibraryPlaylistItem.User -> {
+                                    LibraryPlaylistGridItem(
+                                        navController = navController,
+                                        menuState = menuState,
+                                        coroutineScope = coroutineScope,
+                                        playlist = item.playlist,
+                                        showIconOnly = libraryIconsOnly,
+                                        modifier = Modifier
+                                            .animateItem()
+                                            .longPressDraggableHandle()
+                                    )
                                 }
-                            }
-
-                            items(
-                                items = localPlaylists,
-                                key = { it.id },
-                                contentType = { CONTENT_TYPE_PLAYLIST },
-                            ) { playlist ->
-                                LibraryPlaylistGridItem(
-                                    navController = navController,
-                                    menuState = menuState,
-                                    coroutineScope = coroutineScope,
-                                    playlist = playlist,
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem()
-                                )
                             }
                         }
                     }
