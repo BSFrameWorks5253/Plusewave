@@ -1,6 +1,8 @@
 package com.beatwave.music.ui.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import com.music.innertube.models.PlaylistItem
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize

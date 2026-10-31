@@ -268,7 +268,8 @@ fun LibraryPlaylistListItem(
             else
                 navController.navigate("local_playlist/${playlist.id}")
         }
-)
+    )
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

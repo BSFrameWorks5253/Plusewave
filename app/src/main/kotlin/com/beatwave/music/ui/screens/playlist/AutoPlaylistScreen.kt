@@ -834,7 +834,7 @@ private fun AutoPlaylistHeader(
                         ListQueue(
                             title = context.getString(titleRes),
                             items = songs.shuffled().map { it.toMediaItem() },
-                            playlistId = "auto:${viewModel.playlist}"
+                            playlistId = playlistType
                         ),
                     )
                 },
