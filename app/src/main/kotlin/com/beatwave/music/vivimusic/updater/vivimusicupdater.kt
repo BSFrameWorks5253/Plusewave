@@ -781,9 +781,10 @@ suspend fun checkForUpdate(
                     }
                     if (rawConn.responseCode in 200..299) {
                         val propText = rawConn.inputStream.bufferedReader().use { it.readText() }
-                        val major = Regex("VERSION_MAJOR=(\d+)").find(propText)?.groupValues?.get(1) ?: "6"
-                        val minor = Regex("VERSION_MINOR=(\d+)").find(propText)?.groupValues?.get(1) ?: "1"
-                        val patch = Regex("VERSION_PATCH=(\d+)").find(propText)?.groupValues?.get(1) ?: "20"
+                        val propLines = propText.lines()
+                        val major = propLines.firstOrNull { it.startsWith("VERSION_MAJOR=") }?.substringAfter("=")?.trim() ?: "6"
+                        val minor = propLines.firstOrNull { it.startsWith("VERSION_MINOR=") }?.substringAfter("=")?.trim() ?: "1"
+                        val patch = propLines.firstOrNull { it.startsWith("VERSION_PATCH=") }?.substringAfter("=")?.trim() ?: "20"
                         val remoteTag = "v$major.$minor.$patch"
                         val synthRelease = JSONObject().apply {
                             put("tag_name", remoteTag)

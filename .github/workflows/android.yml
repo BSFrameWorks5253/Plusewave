@@ -58,6 +58,12 @@ jobs:
           DONATION_UPI_ID: ${{ secrets.DONATION_UPI_ID || 'burhanuddin08@fam' }}
           DONATION_PAYEE_NAME: ${{ secrets.DONATION_PAYEE_NAME || 'PulseWave' }}
 
+      - name: Output Build Failure
+        if: failure()
+        run: |
+          echo "==== GRADLE BUILD FAILURE TRACE ===="
+          tail -n 120 build.log || true
+
       - name: Extract Dynamic Version
         id: get_version
         run: |
