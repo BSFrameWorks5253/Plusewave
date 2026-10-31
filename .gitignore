@@ -8,6 +8,8 @@
 node_modules/
 desktop/node_modules/
 desktop/dist/
+website/node_modules/
+website/dist/
 desktop/playlists_store.json
 
 # Files for the ART/Dalvik VM

@@ -37,6 +37,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.runtime.getValue
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.beatwave.music.utils.rememberPreference
 
 @Composable
 fun LibraryArtistListItem(
@@ -190,9 +193,14 @@ fun LibraryPlaylistListItem(
     showIconOnly: Boolean = false,
     isCustomSort: Boolean = false,
     dragHandleModifier: Modifier = Modifier,
-) = PlaylistListItem(
-    playlist = playlist,
-    showIconOnly = showIconOnly,
+) {
+    val customThumbnail by rememberPreference(stringPreferencesKey("thumbnail_${playlist.id}"), "")
+    val thumbnailOverrideUrl = customThumbnail.takeIf { it.isNotBlank() } ?: playlist.playlist.thumbnailUrl
+
+    PlaylistListItem(
+        playlist = playlist,
+        showIconOnly = showIconOnly,
+        thumbnailOverrideUrl = thumbnailOverrideUrl,
     trailingContent = {
         if (isCustomSort) {
             androidx.compose.material3.IconButton(
@@ -276,10 +284,14 @@ fun LibraryPlaylistGridItem(
     val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current
 
+    val customThumbnail by rememberPreference(stringPreferencesKey("thumbnail_${playlist.id}"), "")
+    val thumbnailOverrideUrl = customThumbnail.takeIf { it.isNotBlank() } ?: playlist.playlist.thumbnailUrl
+
     PlaylistGridItem(
         playlist = playlist,
         fillMaxWidth = true,
         showIconOnly = showIconOnly,
+        thumbnailOverrideUrl = thumbnailOverrideUrl,
         onQuickPlay = {
             if (!playlist.playlist.isEditable && playlist.songCount == 0 && playlist.playlist.browseId != null) {
                 playerConnection?.playQueue(

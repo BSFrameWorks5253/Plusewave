@@ -2236,6 +2236,278 @@ class vivimusicWidgetManager @Inject constructor(
         )
     }
 
+    private fun getNothingPlayPauseIntent(): PendingIntent {
+        val intent = Intent(context, NothingPlayerWidgetReceiver::class.java).apply {
+            action = NothingPlayerWidgetReceiver.ACTION_NOTHING_PLAY_PAUSE
+        }
+        return PendingIntent.getBroadcast(
+            context,
+            201,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun getNothingPreviousIntent(): PendingIntent {
+        val intent = Intent(context, NothingPlayerWidgetReceiver::class.java).apply {
+            action = NothingPlayerWidgetReceiver.ACTION_NOTHING_PREVIOUS
+        }
+        return PendingIntent.getBroadcast(
+            context,
+            202,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun getNothingNextIntent(): PendingIntent {
+        val intent = Intent(context, NothingPlayerWidgetReceiver::class.java).apply {
+            action = NothingPlayerWidgetReceiver.ACTION_NOTHING_NEXT
+        }
+        return PendingIntent.getBroadcast(
+            context,
+            203,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun createNothingPlayerRemoteViews(
+        options: Bundle,
+        config: WidgetConfig,
+        title: String,
+        artist: String,
+        albumArt: Bitmap?,
+        isPlaying: Boolean,
+        isLiked: Boolean,
+        duration: Long = 0L,
+        currentPosition: Long = 0L,
+        audioQuality: String? = null
+    ): RemoteViews {
+        val views = RemoteViews(context.packageName, R.layout.widget_nothing_player)
+        val card = cardSizeFor(options)
+
+        // 1. Dot-matrix LED banner: PULSEWAVE > {TRACK/GENRE}
+        val bannerText = if (title.isNotBlank()) "PULSEWAVE > ${title.take(16).uppercase()}" else "PULSEWAVE > NOW PLAYING"
+        val bannerBitmap = createNothingDotMatrixBanner(bannerText, card.width.coerceAtLeast(320), 44)
+        views.setImageViewBitmap(R.id.widget_nothing_banner, bannerBitmap)
+
+        // 2. Left chamber: Recessed turntable platter with metallic spheres
+        val platterDim = minOf(card.width / 2, card.height).coerceIn(120, 240)
+        val platterBitmap = createNothingTurntablePlatter(platterDim, albumArt, isPlaying)
+        views.setImageViewBitmap(R.id.widget_nothing_platter, platterBitmap)
+
+        // 3. Right accent card
+        views.setTextViewText(R.id.widget_nothing_title, title.ifEmpty { context.getString(R.string.not_playing) })
+        views.setTextViewText(R.id.widget_nothing_artist, artist.ifEmpty { context.getString(R.string.tap_to_play) })
+        if (albumArt != null) {
+            views.setImageViewBitmap(R.id.widget_nothing_art, albumArt)
+        } else {
+            views.setImageViewResource(R.id.widget_nothing_art, R.drawable.widget_turntable_default_art)
+        }
+
+        // Progress bar
+        val progressMax = 1000
+        val progress = if (duration > 0) ((currentPosition.toFloat() / duration.toFloat()) * progressMax).toInt().coerceIn(0, progressMax) else 0
+        views.setProgressBar(R.id.widget_nothing_progress, progressMax, progress, false)
+
+        // Time current & duration
+        val currentStr = makeTimeString(currentPosition)
+        val durationStr = if (duration > 0) makeTimeString(duration) else "00:00"
+        views.setTextViewText(R.id.widget_nothing_time_current, currentStr)
+        views.setTextViewText(R.id.widget_nothing_time_duration, durationStr)
+
+        // Touch handlers
+        views.setOnClickPendingIntent(R.id.widget_nothing_card, getOpenAppIntent(expandPlayer = true))
+        views.setOnClickPendingIntent(R.id.widget_nothing_banner, getOpenAppIntent(expandPlayer = false))
+        views.setOnClickPendingIntent(R.id.widget_nothing_touch_prev, getNothingPreviousIntent())
+        views.setOnClickPendingIntent(R.id.widget_nothing_touch_play_pause, getNothingPlayPauseIntent())
+        views.setOnClickPendingIntent(R.id.widget_nothing_touch_next, getNothingNextIntent())
+
+        return views
+    }
+
+    private fun createNothingDotMatrixBanner(text: String, targetWidth: Int, targetHeight: Int): Bitmap {
+        val width = targetWidth.coerceAtLeast(300)
+        val height = targetHeight.coerceAtLeast(40)
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+
+        val font = mapOf(
+            'A' to intArrayOf(0x0E, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11),
+            'B' to intArrayOf(0x1E, 0x11, 0x11, 0x1E, 0x11, 0x11, 0x1E),
+            'C' to intArrayOf(0x0E, 0x11, 0x10, 0x10, 0x10, 0x11, 0x0E),
+            'D' to intArrayOf(0x1C, 0x12, 0x11, 0x11, 0x11, 0x12, 0x1C),
+            'E' to intArrayOf(0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x1F),
+            'F' to intArrayOf(0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x10),
+            'G' to intArrayOf(0x0E, 0x11, 0x10, 0x17, 0x11, 0x11, 0x0F),
+            'H' to intArrayOf(0x11, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11),
+            'I' to intArrayOf(0x0E, 0x04, 0x04, 0x04, 0x04, 0x04, 0x0E),
+            'J' to intArrayOf(0x07, 0x02, 0x02, 0x02, 0x02, 0x12, 0x0C),
+            'K' to intArrayOf(0x11, 0x12, 0x14, 0x18, 0x14, 0x12, 0x11),
+            'L' to intArrayOf(0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x1F),
+            'M' to intArrayOf(0x11, 0x1B, 0x15, 0x15, 0x11, 0x11, 0x11),
+            'N' to intArrayOf(0x11, 0x11, 0x19, 0x15, 0x13, 0x11, 0x11),
+            'O' to intArrayOf(0x0E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E),
+            'P' to intArrayOf(0x1E, 0x11, 0x11, 0x1E, 0x10, 0x10, 0x10),
+            'Q' to intArrayOf(0x0E, 0x11, 0x11, 0x11, 0x15, 0x12, 0x0D),
+            'R' to intArrayOf(0x1E, 0x11, 0x11, 0x1E, 0x14, 0x12, 0x11),
+            'S' to intArrayOf(0x0E, 0x11, 0x10, 0x0E, 0x01, 0x11, 0x0E),
+            'T' to intArrayOf(0x1F, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04),
+            'U' to intArrayOf(0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E),
+            'V' to intArrayOf(0x11, 0x11, 0x11, 0x11, 0x11, 0x0A, 0x04),
+            'W' to intArrayOf(0x11, 0x11, 0x11, 0x15, 0x15, 0x1B, 0x11),
+            'X' to intArrayOf(0x11, 0x11, 0x0A, 0x04, 0x0A, 0x11, 0x11),
+            'Y' to intArrayOf(0x11, 0x11, 0x0A, 0x04, 0x04, 0x04, 0x04),
+            'Z' to intArrayOf(0x1F, 0x01, 0x02, 0x04, 0x08, 0x10, 0x1F),
+            '0' to intArrayOf(0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E),
+            '1' to intArrayOf(0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E),
+            '2' to intArrayOf(0x0E, 0x11, 0x01, 0x06, 0x08, 0x10, 0x1F),
+            '3' to intArrayOf(0x1F, 0x02, 0x04, 0x02, 0x01, 0x11, 0x0E),
+            '4' to intArrayOf(0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02),
+            '5' to intArrayOf(0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E),
+            '6' to intArrayOf(0x06, 0x08, 0x10, 0x1E, 0x11, 0x11, 0x0E),
+            '7' to intArrayOf(0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08),
+            '8' to intArrayOf(0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E),
+            '9' to intArrayOf(0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C),
+            '>' to intArrayOf(0x10, 0x08, 0x04, 0x02, 0x04, 0x08, 0x10),
+            '<' to intArrayOf(0x02, 0x04, 0x08, 0x10, 0x08, 0x04, 0x02),
+            '-' to intArrayOf(0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00),
+            '_' to intArrayOf(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1F),
+            ':' to intArrayOf(0x00, 0x0C, 0x0C, 0x00, 0x0C, 0x0C, 0x00),
+            '.' to intArrayOf(0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C),
+            ' ' to intArrayOf(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
+        )
+
+        val activePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            style = Paint.Style.FILL
+        }
+        val dimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#222227")
+            style = Paint.Style.FILL
+        }
+
+        val dotPitch = (height / 8f).coerceAtLeast(3.5f)
+        val dotRadius = dotPitch * 0.38f
+        val startY = dotPitch * 0.9f
+        var currentX = dotPitch * 1.2f
+
+        val totalCols = ((width - dotPitch * 2) / dotPitch).toInt()
+
+        // Draw active text dots and build grid
+        val activePixels = mutableSetOf<Pair<Int, Int>>() // col, row
+        var colCursor = 0
+
+        for (ch in text) {
+            val rows = font[ch] ?: font[' ' ]!!
+            for (col in 0 until 5) {
+                for (row in 0 until 7) {
+                    val bit = (rows[row] shr (4 - col)) and 1
+                    if (bit == 1) {
+                        activePixels.add(Pair(colCursor + col, row))
+                    }
+                }
+            }
+            colCursor += 6 // 5 dots char + 1 dot space
+            if (colCursor >= totalCols) break
+        }
+
+        // Draw dot matrix display grid
+        for (c in 0 until totalCols) {
+            for (r in 0 until 7) {
+                val cx = currentX + c * dotPitch
+                val cy = startY + r * dotPitch
+                if (activePixels.contains(Pair(c, r))) {
+                    canvas.drawCircle(cx, cy, dotRadius, activePaint)
+                } else {
+                    canvas.drawCircle(cx, cy, dotRadius * 0.75f, dimPaint)
+                }
+            }
+        }
+
+        return bitmap
+    }
+
+    private fun createNothingTurntablePlatter(size: Int, source: Bitmap?, isPlaying: Boolean): Bitmap {
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val cx = size / 2f
+        val cy = size / 2f
+        val radius = size * 0.46f
+
+        // 1. Recessed dark platter chamber background
+        val platterPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = RadialGradient(
+                cx, cy, radius,
+                intArrayOf(Color.parseColor("#25252B"), Color.parseColor("#151518"), Color.parseColor("#0C0C0E")),
+                floatArrayOf(0f, 0.7f, 1f),
+                Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawCircle(cx, cy, radius, platterPaint)
+
+        // 2. Vinyl grooves
+        val groovePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 1f
+            color = Color.parseColor("#1CFFFFFF")
+        }
+        val grooveSteps = 5
+        for (i in 1..grooveSteps) {
+            val r = radius * (0.42f + (i.toFloat() / grooveSteps.toFloat()) * 0.52f)
+            canvas.drawCircle(cx, cy, r, groovePaint)
+        }
+
+        // 3. Center Spindle / Album art
+        val centerRadius = radius * 0.38f
+        if (source != null) {
+            val scaledArt = Bitmap.createScaledBitmap(source, (centerRadius * 2).toInt(), (centerRadius * 2).toInt(), true)
+            val artPath = android.graphics.Path().apply {
+                addCircle(cx, cy, centerRadius, android.graphics.Path.Direction.CW)
+            }
+            canvas.save()
+            canvas.clipPath(artPath)
+            canvas.drawBitmap(scaledArt, cx - centerRadius, cy - centerRadius, null)
+            canvas.restore()
+        } else {
+            val centerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.parseColor("#202025")
+            }
+            canvas.drawCircle(cx, cy, centerRadius, centerPaint)
+        }
+
+        // Center spindle pin
+        val spindlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#80808A")
+        }
+        canvas.drawCircle(cx, cy, radius * 0.08f, spindlePaint)
+
+        // 4. Glossy 3D Chrome Spheres clustered on lower-right (Nothing OS aesthetic)
+        val spheres = listOf(
+            Triple(cx + radius * 0.42f, cy + radius * 0.45f, radius * 0.18f),
+            Triple(cx + radius * 0.65f, cy + radius * 0.32f, radius * 0.14f),
+            Triple(cx + radius * 0.50f, cy + radius * 0.68f, radius * 0.12f),
+            Triple(cx + radius * 0.25f, cy + radius * 0.60f, radius * 0.10f),
+            Triple(cx + radius * 0.72f, cy + radius * 0.54f, radius * 0.09f),
+            Triple(cx + radius * 0.38f, cy + radius * 0.74f, radius * 0.07f)
+        )
+
+        for ((sx, sy, sr) in spheres) {
+            val spherePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                shader = RadialGradient(
+                    sx - sr * 0.35f, sy - sr * 0.35f, sr * 1.3f,
+                    intArrayOf(Color.WHITE, Color.rgb(215, 220, 230), Color.rgb(130, 135, 145), Color.rgb(25, 28, 35)),
+                    floatArrayOf(0f, 0.22f, 0.65f, 1f),
+                    Shader.TileMode.CLAMP
+                )
+            }
+            canvas.drawCircle(sx, sy, sr, spherePaint)
+        }
+
+        return bitmap
+    }
+
     private companion object {
         const val ART_CORNER_FRACTION = 0.13f
         const val CARD_PADDING_DP = 14f

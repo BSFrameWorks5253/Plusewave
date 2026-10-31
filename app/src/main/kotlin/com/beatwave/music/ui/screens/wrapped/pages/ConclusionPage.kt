@@ -77,8 +77,8 @@ fun ConclusionPage(onClose: () -> Unit) {
             // Share Wrapped Button
             OutlinedButton(
                 onClick = {
-                    val topSong = state.topSongs.firstOrNull()?.song?.song?.title ?: "Various"
-                    val topArtist = state.topArtists.firstOrNull()?.name ?: "Various"
+                    val topSong = state.topSongs.firstOrNull()?.title ?: "Various"
+                    val topArtist = state.topArtists.firstOrNull()?.title ?: state.topArtists.firstOrNull()?.artist?.name ?: "Various"
                     val shareText = "🎧 My PulseWave Wrapped:\n⏱️ Total: ${state.totalMinutes} minutes\n🎵 Top Song: $topSong\n🎤 Top Artist: $topArtist\n\nStreamed with PulseWave ⚡"
                     val intent = Intent().apply {
                         action = Intent.ACTION_SEND

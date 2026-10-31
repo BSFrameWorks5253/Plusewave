@@ -750,7 +750,7 @@ suspend fun checkForUpdate(
                 null
             }
 
-            // 2. Fetch GitHub Releases
+            // 2. Fetch GitHub Releases (with rate-limit-free raw GitHub fallback)
             var releases: JSONArray? = null
             try {
                 val url = URL("https://api.github.com/repos/BSFrameworks5253/Plusewave/releases")
@@ -769,6 +769,44 @@ suspend fun checkForUpdate(
                 }
             } catch (e: Exception) {
                 Timber.tag("UpdateCheck").w(e, "Error fetching GitHub releases")
+            }
+
+            // Fallback: If GitHub releases API failed or rate-limited (HTTP 403), check raw version.properties
+            if (releases == null || releases.length() == 0) {
+                try {
+                    val rawVersionUrl = URL("https://raw.githubusercontent.com/BSFrameworks5253/Plusewave/main/version.properties")
+                    val rawConn = (rawVersionUrl.openConnection() as java.net.HttpURLConnection).apply {
+                        connectTimeout = 5000
+                        readTimeout = 5000
+                    }
+                    if (rawConn.responseCode in 200..299) {
+                        val propText = rawConn.inputStream.bufferedReader().use { it.readText() }
+                        val major = Regex("VERSION_MAJOR=(\d+)").find(propText)?.groupValues?.get(1) ?: "6"
+                        val minor = Regex("VERSION_MINOR=(\d+)").find(propText)?.groupValues?.get(1) ?: "1"
+                        val patch = Regex("VERSION_PATCH=(\d+)").find(propText)?.groupValues?.get(1) ?: "20"
+                        val remoteTag = "v$major.$minor.$patch"
+                        val synthRelease = JSONObject().apply {
+                            put("tag_name", remoteTag)
+                            put("name", "PulseWave $remoteTag")
+                            put("draft", false)
+                            put("prerelease", false)
+                            put("published_at", "")
+                            put("body", "PulseWave $remoteTag update available")
+                            val assetArray = JSONArray().apply {
+                                put(JSONObject().apply {
+                                    put("name", "PulseWave-$remoteTag-universal-release.apk")
+                                    put("browser_download_url", "https://github.com/BSFrameworks5253/Plusewave/releases/download/$remoteTag/PulseWave-$remoteTag-universal-release.apk")
+                                    put("size", 0L)
+                                })
+                            }
+                            put("assets", assetArray)
+                        }
+                        releases = JSONArray().apply { put(synthRelease) }
+                        Timber.tag("UpdateCheck").i("Using raw version.properties fallback: $remoteTag")
+                    }
+                } catch (e: Exception) {
+                    Timber.tag("UpdateCheck").w(e, "Raw version fallback check failed")
+                }
             }
 
             // 3. Check Nightly run ONLY if this is actually a nightly build AND beta updates are enabled
@@ -860,14 +898,21 @@ suspend fun checkForUpdate(
                     ghTag = targetTagName
                     val changelogList = mutableListOf<ChangelogSection>()
                     try {
-                        val changelogUrl = URL("https://github.com/BSFrameworks5253/Plusewave/releases/download/$targetTagName/changelog.json")
-                        val changelogConn = (changelogUrl.openConnection() as java.net.HttpURLConnection).apply {
-                            setRequestProperty("User-Agent", "PulseWave/$currentVersion")
-                            connectTimeout = 5000
-                            readTimeout = 5000
+                        val changelogJson = try {
+                            val changelogUrl = URL("https://github.com/BSFrameworks5253/Plusewave/releases/download/$targetTagName/changelog.json")
+                            val changelogConn = (changelogUrl.openConnection() as java.net.HttpURLConnection).apply {
+                                setRequestProperty("User-Agent", "PulseWave/$currentVersion")
+                                connectTimeout = 5000
+                                readTimeout = 5000
+                            }
+                            if (changelogConn.responseCode in 200..299) {
+                                changelogConn.inputStream.bufferedReader().use { it.readText() }
+                            } else {
+                                URL("https://raw.githubusercontent.com/BSFrameworks5253/Plusewave/main/changelog.json").openStream().bufferedReader().use { it.readText() }
+                            }
+                        } catch (_: Exception) {
+                            URL("https://raw.githubusercontent.com/BSFrameworks5253/Plusewave/main/changelog.json").openStream().bufferedReader().use { it.readText() }
                         }
-                        if (changelogConn.responseCode in 200..299) {
-                            val changelogJson = changelogConn.inputStream.bufferedReader().use { it.readText() }
                             val changelogData = JSONObject(changelogJson)
                             ghDesc = changelogData.optString("description").takeIf { it.isNotEmpty() }
                             ghImg = changelogData.optString("image").takeIf { it.isNotEmpty() }

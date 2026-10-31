@@ -472,6 +472,26 @@
                 android:resource="@xml/turntable_widget_info" />
         </receiver>
 
+        <!-- Nothing OS Player Widget -->
+        <receiver
+            android:name=".widget.NothingPlayerWidgetReceiver"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:label="@string/widget_nothing_player">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="${applicationId}.widget.NOTHING_PLAY_PAUSE" />
+                <action android:name="${applicationId}.widget.NOTHING_NEXT" />
+                <action android:name="${applicationId}.widget.NOTHING_PREVIOUS" />
+                <action android:name="${applicationId}.widget.UPDATE_NOTHING_WIDGET" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_nothing_player_info" />
+        </receiver>
+
         <!-- Up Next Queue Preview Widget -->
         <receiver
             android:name=".widget.QueueWidgetReceiver"

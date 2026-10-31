@@ -394,188 +394,40 @@ fun LibraryPlaylistsScreen(
                         headerContent()
                     }
 
-                    if (sortType == PlaylistSortType.CUSTOM) {
-                        playlists.let { playlists ->
-                            if (playlists.isEmpty()) {
-                                item(key = "empty_placeholder") {
+                    items(
+                        items = localUnifiedItems,
+                        key = { it.id },
+                        contentType = { CONTENT_TYPE_PLAYLIST },
+                    ) { item ->
+                        ReorderableItem(
+                            state = reorderableListState,
+                            key = item.id
+                        ) { isDragging ->
+                            when (item) {
+                                is LibraryPlaylistItem.Auto -> {
+                                    AutoPlaylistCard(
+                                        playlist = item.playlist,
+                                        grid = false,
+                                        onClick = { navController.navigate(item.route) },
+                                        showIconOnly = libraryIconsOnly,
+                                        modifier = Modifier.animateItem().longPressDraggableHandle()
+                                    )
                                 }
-                            }
-
-                            items(
-                                items = localPlaylists.filterNot { it.id in topCustomPlaylists.map { p -> p.id } },
-                                key = { it.id },
-                                contentType = { CONTENT_TYPE_PLAYLIST },
-                            ) { playlist ->
-                                ReorderableItem(
-                                    state = reorderableListState,
-                                    key = playlist.id
-                                ) { isDragging ->
+                                is LibraryPlaylistItem.User -> {
                                     LibraryPlaylistListItem(
                                         navController = navController,
                                         menuState = menuState,
                                         coroutineScope = coroutineScope,
-                                        playlist = playlist,
+                                        playlist = item.playlist,
                                         showIconOnly = libraryIconsOnly,
                                         isCustomSort = true,
-                                        dragHandleModifier = Modifier.draggableHandle(),
+                                        dragHandleModifier = Modifier.longPressDraggableHandle(),
                                         modifier = Modifier.animateItem()
                                     )
                                 }
                             }
                         }
-
-                        if (showLiked) {
-                            item(key = "likedPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = likedPlaylist,
-                                    grid = false,
-                                    onClick = { navController.navigate("auto_playlist/liked") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        if (showDownloaded) {
-                            item(key = "downloadedPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = downloadPlaylist,
-                                    grid = false,
-                                    onClick = { navController.navigate("auto_playlist/downloaded") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        if (showTop) {
-                            item(key = "TopPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = topPlaylist,
-                                    grid = false,
-                                    onClick = { navController.navigate("top_playlist/$topSize") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        if (showCached) {
-                            item(key = "cachePlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = cachePlaylist,
-                                    grid = false,
-                                    onClick = { navController.navigate("cache_playlist/cached") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        if (showUploaded) {
-                            item(key = "uploadedPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = uploadedPlaylist,
-                                    grid = false,
-                                    onClick = { navController.navigate("auto_playlist/uploaded") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                    } else {
-                        // Custom top-ordered playlists (like "my MP4") before Liked playlist
-                        items(
-                            items = topCustomPlaylists,
-                            key = { "top_${it.id}" },
-                            contentType = { CONTENT_TYPE_PLAYLIST }
-                        ) { playlist ->
-                            LibraryPlaylistListItem(
-                                navController = navController,
-                                menuState = menuState,
-                                coroutineScope = coroutineScope,
-                                playlist = playlist,
-                                showIconOnly = libraryIconsOnly,
-                                modifier = Modifier.animateItem()
-                            )
-                        }
-
-                        if (showLiked) {
-                            item(key = "likedPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = likedPlaylist,
-                                    grid = false,
-                                    onClick = { navController.navigate("auto_playlist/liked") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        if (showDownloaded) {
-                            item(key = "downloadedPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = downloadPlaylist,
-                                    grid = false,
-                                    onClick = { navController.navigate("auto_playlist/downloaded") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        if (showTop) {
-                            item(key = "TopPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = topPlaylist,
-                                    grid = false,
-                                    onClick = { navController.navigate("top_playlist/$topSize") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        if (showCached) {
-                            item(key = "cachePlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = cachePlaylist,
-                                    grid = false,
-                                    onClick = { navController.navigate("cache_playlist/cached") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        if (showUploaded) {
-                            item(key = "uploadedPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
-                                AutoPlaylistCard(
-                                    playlist = uploadedPlaylist,
-                                    grid = false,
-                                    onClick = { navController.navigate("auto_playlist/uploaded") },
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-
-                        playlists.let { playlists ->
-                            if (playlists.isEmpty()) {
-                                item(key = "empty_placeholder") {
-                                }
-                            }
-
-                            items(
-                                items = localPlaylists.filterNot { it.id in topCustomPlaylists.map { p -> p.id } },
-                                key = { it.id },
-                                contentType = { CONTENT_TYPE_PLAYLIST },
-                            ) { playlist ->
-                                LibraryPlaylistListItem(
-                                    navController = navController,
-                                    menuState = menuState,
-                                    coroutineScope = coroutineScope,
-                                    playlist = playlist,
-                                    showIconOnly = libraryIconsOnly,
-                                    isCustomSort = false,
-                                    modifier = Modifier.animateItem()
-                                )
-                            }
-                        }
                     }
-                }
 
                 HideOnScrollFAB(
                     lazyListState = lazyListState,

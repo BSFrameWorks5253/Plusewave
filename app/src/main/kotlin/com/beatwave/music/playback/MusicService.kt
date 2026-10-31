@@ -221,6 +221,7 @@ import com.beatwave.music.widget.NowPlayingWidgetReceiver
 import com.beatwave.music.widget.PlaylistWidgetReceiver
 import com.beatwave.music.widget.QueueWidgetReceiver
 import com.beatwave.music.widget.TurntableWidgetReceiver
+import com.beatwave.music.widget.NothingPlayerWidgetReceiver
 import com.beatwave.music.widget.WidgetQueueItem
 import com.beatwave.music.widget.vivimusicWidgetManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -4069,7 +4070,7 @@ class MusicService :
                     updateWidgetUI(player.isPlaying)
                 }
             }
-            MusicWidgetReceiver.ACTION_UPDATE_WIDGET, TurntableWidgetReceiver.ACTION_UPDATE_TURNTABLE_WIDGET -> {
+            MusicWidgetReceiver.ACTION_UPDATE_WIDGET, TurntableWidgetReceiver.ACTION_UPDATE_TURNTABLE_WIDGET, NothingPlayerWidgetReceiver.ACTION_UPDATE_NOTHING_WIDGET -> {
                 updateWidgetUI(player.isPlaying)
             }
         }

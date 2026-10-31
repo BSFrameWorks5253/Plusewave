@@ -507,6 +507,12 @@ fun PlaylistMenu(
                                                 .split(",")
                                                 .filter { it.isNotBlank() }
                                                 .toMutableList()
+                                            val defaultAutos = listOf("auto:liked", "auto:downloaded", "auto:top", "auto:cached", "auto:uploaded")
+                                            for (autoId in defaultAutos) {
+                                                if (!currentOrder.contains(autoId)) {
+                                                    currentOrder.add(autoId)
+                                                }
+                                            }
                                             currentOrder.remove(playlist.id)
                                             currentOrder.add(0, playlist.id)
                                             val allDbPlaylists = database.playlistsByCreateDateAsc().firstOrNull() ?: emptyList()

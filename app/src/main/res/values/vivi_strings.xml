@@ -683,6 +683,7 @@
     <string name="widget_pause">Pause</string>
     <string name="widget_music_player">Music Player</string>
     <string name="widget_turntable">Turntable</string>
+    <string name="widget_nothing_player">Nothing OS Player</string>
     <string name="widget_now_playing">Now Playing</string>
     <string name="widget_lyrics">Lyrics</string>
     <string name="widget_lyrics_description">Current lyric line with playback controls</string>

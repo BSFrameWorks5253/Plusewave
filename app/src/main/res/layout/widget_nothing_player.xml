@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_nothing_bg"
+    android:padding="12dp"
+    android:theme="@style/Theme.Widget.PulseWave">
+
+    <!-- Top: Nothing OS Dot-Matrix LED Banner (e.g. PULSEWAVE > NOW PLAYING) -->
+    <ImageView
+        android:id="@+id/widget_nothing_banner"
+        android:layout_width="match_parent"
+        android:layout_height="22dp"
+        android:layout_marginBottom="8dp"
+        android:scaleType="fitCenter"
+        android:contentDescription="PulseWave Dot Matrix Banner" />
+
+    <!-- Bottom content row: Left = Recessed 3D Platter Chamber, Right = Frosted Accent Card -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Left Platter Chamber: Vinyl Record with spheres & direct touch controls -->
+        <FrameLayout
+            android:id="@+id/widget_nothing_turntable_container"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="38"
+            android:layout_marginEnd="8dp">
+
+            <ImageView
+                android:id="@+id/widget_nothing_platter"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:contentDescription="Vinyl Platter" />
+
+            <!-- Touch targets: Left = Prev, Center = Play/Pause, Right = Next -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:weightSum="100">
+
+                <ImageView
+                    android:id="@+id/widget_nothing_touch_prev"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="30"
+                    android:src="@android:color/transparent"
+                    android:contentDescription="@string/previous" />
+
+                <ImageView
+                    android:id="@+id/widget_nothing_touch_play_pause"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="40"
+                    android:src="@android:color/transparent"
+                    android:contentDescription="@string/play_pause" />
+
+                <ImageView
+                    android:id="@+id/widget_nothing_touch_next"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="30"
+                    android:src="@android:color/transparent"
+                    android:contentDescription="@string/next" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- Right: Rounded Accent Card with Album Art, Title, Artist, Progress, and Time -->
+        <RelativeLayout
+            android:id="@+id/widget_nothing_card"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="62"
+            android:background="@drawable/widget_nothing_card_bg"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp">
+
+            <!-- Top Row: Thumbnail + Title / Artist -->
+            <LinearLayout
+                android:id="@+id/widget_nothing_track_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/widget_nothing_art"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:scaleType="centerCrop"
+                    android:background="@drawable/widget_nothing_art_clip"
+                    android:contentDescription="@string/album_art" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/widget_nothing_title"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Track Title"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="#18181B"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/widget_nothing_artist"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Artist Name"
+                        android:textSize="11sp"
+                        android:textColor="#52525B"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Center: Seekbar / Progress pill -->
+            <ProgressBar
+                android:id="@+id/widget_nothing_progress"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="7dp"
+                android:layout_centerVertical="true"
+                android:progressDrawable="@drawable/widget_nothing_progressbar"
+                android:max="1000"
+                android:progress="350" />
+
+            <!-- Bottom Row: Time and Logo Badge -->
+            <RelativeLayout
+                android:id="@+id/widget_nothing_bottom_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:gravity="bottom"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/widget_nothing_time_current"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="04:38"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="#18181B" />
+
+                    <TextView
+                        android:id="@+id/widget_nothing_time_duration"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="5dp"
+                        android:text="05:29"
+                        android:textSize="10sp"
+                        android:textColor="#52525B" />
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/widget_nothing_badge"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/pulsewave_notification"
+                    android:contentDescription="PulseWave" />
+            </RelativeLayout>
+        </RelativeLayout>
+    </LinearLayout>
+</LinearLayout>

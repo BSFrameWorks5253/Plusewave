@@ -2815,7 +2815,21 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleDeepLinkIntent(intent: Intent, navController: NavHostController) {
+        val explicitRoute = intent.getStringExtra("route")
+        if (!explicitRoute.isNullOrBlank()) {
+            intent.removeExtra("route")
+            navController.navigate(explicitRoute) { launchSingleTop = true }
+            return
+        }
         val uri = intent.data ?: intent.extras?.getString(Intent.EXTRA_TEXT)?.toUri() ?: return
+        if (uri.scheme == "pulsewave" || uri.scheme == "beatwave") {
+            val route = uri.host ?: uri.pathSegments.firstOrNull()
+            if (route == "update" || route == "settings/update") {
+                intent.data = null
+                navController.navigate("update") { launchSingleTop = true }
+                return
+            }
+        }
         intent.data = null
         intent.removeExtra(Intent.EXTRA_TEXT)
         val coroutineScope = lifecycle.coroutineScope

@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import com.beatwave.music.MainActivity
 import com.beatwave.music.R
 
 object UpdateNotificationHelper {
@@ -30,13 +31,13 @@ object UpdateNotificationHelper {
             nm.createNotificationChannel(channel)
         }
 
-        // Direct download URL format from vivimusicupdater - use the full tag (vX.X.X or bX.X.X) or nightly link
-        val apkUrl = if (versionName.contains("nightly", ignoreCase = true)) {
-            "https://nightly.link/BSFrameworks5253/Plusewave/workflows/nightly.yml/main/pulsewave-gms-nightly.zip"
-        } else {
-            "https://github.com/BSFrameworks5253/Plusewave/releases/download/$versionName/PulseWave-$versionName-universal-release.apk"
+        // Tap opens in-app updater screen directly
+        val intent = Intent(context, MainActivity::class.java).apply {
+            action = Intent.ACTION_VIEW
+            data = "pulsewave://update".toUri()
+            putExtra("route", "update")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        val intent = Intent(Intent.ACTION_VIEW, apkUrl.toUri())
 
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         val pending = PendingIntent.getActivity(context, NOTIFICATION_ID, intent, flags)
