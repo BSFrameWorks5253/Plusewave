@@ -58,11 +58,18 @@ jobs:
           DONATION_UPI_ID: ${{ secrets.DONATION_UPI_ID || 'burhanuddin08@fam' }}
           DONATION_PAYEE_NAME: ${{ secrets.DONATION_PAYEE_NAME || 'PulseWave' }}
 
-      - name: Output Build Failure
+      - name: Output and Commit Build Failure
         if: failure()
         run: |
           echo "==== GRADLE BUILD FAILURE TRACE ===="
           tail -n 120 build.log || true
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B build-failure-diagnostic
+          cp build.log failure-diagnostic.log
+          git add failure-diagnostic.log
+          git commit -m "ci: dump failure diagnostic log" || true
+          git push origin build-failure-diagnostic --force || true
 
       - name: Extract Dynamic Version
         id: get_version
