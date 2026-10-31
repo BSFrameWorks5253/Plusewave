@@ -2312,8 +2312,8 @@ class vivimusicWidgetManager @Inject constructor(
         views.setProgressBar(R.id.widget_nothing_progress, progressMax, progress, false)
 
         // Time current & duration
-        val currentStr = makeTimeString(currentPosition)
-        val durationStr = if (duration > 0) makeTimeString(duration) else "00:00"
+        val currentStr = formatNothingTimeString(currentPosition)
+        val durationStr = if (duration > 0) formatNothingTimeString(duration) else "00:00"
         views.setTextViewText(R.id.widget_nothing_time_current, currentStr)
         views.setTextViewText(R.id.widget_nothing_time_duration, durationStr)
 
@@ -2325,6 +2325,13 @@ class vivimusicWidgetManager @Inject constructor(
         views.setOnClickPendingIntent(R.id.widget_nothing_touch_next, getNothingNextIntent())
 
         return views
+    }
+
+    private fun formatNothingTimeString(ms: Long): String {
+        val totalSeconds = (ms / 1000).coerceAtLeast(0)
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        return String.format("%02d:%02d", minutes, seconds)
     }
 
     private fun createNothingDotMatrixBanner(text: String, targetWidth: Int, targetHeight: Int): Bitmap {

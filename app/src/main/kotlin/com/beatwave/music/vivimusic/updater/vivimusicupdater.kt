@@ -927,9 +927,6 @@ suspend fun checkForUpdate(
                                 }
                                 changelogList.add(ChangelogSection(title, itemsList))
                             }
-                        } else {
-                            throw Exception("HTTP ${changelogConn.responseCode}")
-                        }
                     } catch (_: Exception) {
                         val body = targetRelease.optString("body", context.getString(R.string.no_changelog_available))
                         val fallbackItems = body.split("\n").filter { it.isNotBlank() }
