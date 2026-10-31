@@ -799,12 +799,15 @@ private fun TopPlaylistHeader(
                     }
                 }
 
+                val isShuffleOn by playerConnection.shuffleModeEnabled.collectAsState()
                 Button(
                     onClick = {
+                        playerConnection.player.shuffleModeEnabled = true
                         playerConnection.playQueue(
                             ListQueue(
                                 title = name,
                                 items = songs.shuffled().map { it.toMediaItem() },
+                                playlistId = "auto:top"
                             )
                         )
                     },
@@ -813,8 +816,8 @@ private fun TopPlaylistHeader(
                         .height(48.dp),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = LocalContentColor.current.copy(alpha = 0.15f),
-                        contentColor = LocalContentColor.current,
+                        containerColor = if (isShuffleOn) MaterialTheme.colorScheme.primaryContainer else LocalContentColor.current.copy(alpha = 0.15f),
+                        contentColor = if (isShuffleOn) MaterialTheme.colorScheme.onPrimaryContainer else LocalContentColor.current,
                     ),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp),
                 ) {
@@ -823,7 +826,7 @@ private fun TopPlaylistHeader(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.shuffle),
+                            painter = painterResource(if (isShuffleOn) R.drawable.shuffle_on else R.drawable.shuffle),
                             contentDescription = null,
                             modifier = Modifier.size(20.dp),
                             tint = LocalContentColor.current,

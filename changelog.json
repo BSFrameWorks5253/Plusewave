@@ -1,28 +1,51 @@
 {
-  "description": "Pulse Wave 6.1.18 — Dedicated In-App Support & Donation Page, Personalized UPI Integration & Quick Pay Options.",
+  "description": "Pulse Wave 6.1.19 — Developer Branding to BS.Framework5253, NPCI UPI Custom Payments, Vinyl Widget Controls & Rewind/Forward, Playlist Top Ordering & Shuffle Isolation.",
   "image": "",
   "changelog": [
     {
-      "title": "Dedicated Support Screen in Settings",
+      "title": "Developer Branding & Unified Identity",
       "items": [
-        "New Support Development Destination: Placed directly below 'Issue Noting & Bug Reports' in Settings, providing a clean hub for supporting the project.",
-        "Quick Amount Selection: Dedicated chips for ₹50, ₹100, ₹250, and ₹500 with one-tap deep linking to any UPI payment app.",
-        "One-Tap UPI Copy: Tap-to-copy UPI ID with clipboard confirmation and immediate visual feedback.",
-        "Searchable Settings Integration: 'Support Development' is fully indexed in the settings search catalog."
+        "BS.Framework5253 Developer Identity: Updated all developer and creator credits in About and updater screens to BS.Framework5253 with official GitHub profile links.",
+        "Unified PulseWave Branding: Cleaned all legacy references to ensure cohesive PulseWave branding across the application."
       ]
     },
     {
-      "title": "Personalized UPI & Environment Configuration",
+      "title": "NPCI-Compliant UPI & Custom Amount Support",
       "items": [
-        "Account-Linked UPI: Direct integration with burhanuddin08@fam (PulseWave) across all donation prompts and screens.",
-        "Environment Variables & BuildConfig: Added DONATION_UPI_ID and DONATION_PAYEE_NAME support via root .env and local.properties with zero-overhead fallbacks."
+        "Crash-Free UPI Payments: Formatted strict NPCI-compliant payment URIs (pa, pn, tn, tr, cu=INR, formatted am) launched in isolated chooser tasks to eliminate force-closes in FamPay, PhonePe, and Google Pay.",
+        "Interactive Custom Amount Input: Users can now enter any custom amount in INR or choose from quick preset chips (₹50, ₹100, ₹250, ₹500).",
+        "Clipboard Fallback Safety: Automatically copies UPI ID (burhanuddin08@fam) with toast confirmation if no UPI handler is available."
       ]
     },
     {
-      "title": "Interactive Donation Prompt Dialog",
+      "title": "Vinyl Turntable Widget Controls & Rewind / Fast Forward",
       "items": [
-        "Transparent UPI Card: In-app prompt dialog now displays the exact UPI ID with interactive copy functionality before launching the UPI app.",
-        "Safe URI Intent Launching: Reliable intent dispatching across Google Pay, PhonePe, Paytm, BHIM, Cred, and all UPI clients."
+        "Restored Widget Controls: Unhidden the frosted liquid glass controls dock and track info pill on the vinyl turntable widget.",
+        "10-Second Rewind & Fast Forward: Added interactive -10s replay and +10s fast forward buttons directly on the turntable dock with immediate service seek dispatch."
+      ]
+    },
+    {
+      "title": "Playlist Isolation, Shuffle Indicators & Sync",
+      "items": [
+        "Strict Playlist Playback: Fixed outside radio tracks from injecting into the queue when shuffling or reaching playlist boundaries.",
+        "Clear Shuffle Indicator: Shuffle buttons across playlist headers and player queue now clearly display active status with shuffle_on icon and accent styling.",
+        "Informative Download Warning Badge: Tapping the playlist download warning badge now displays an explanation dialog clarifying incomplete downloads with retry instructions.",
+        "Active YouTube Playlist Sync: Added direct 'Sync with YouTube Music' option in the playlist menu to pull updated remote tracks and order on demand."
+      ]
+    },
+    {
+      "title": "Library & Speed Dial Playlist Cards",
+      "items": [
+        "Top Custom Playlist Placement: Prioritized custom-ordered playlists (e.g. 'my MP4') to appear at the very top of Library Mix and Playlists before the Liked playlist.",
+        "Speed Dial Fallback Artwork: Empty and local playlist cards now render a stylish playlist icon surface instead of appearing blank on the home speed dial shelf.",
+        "Push Pin State: Accurately reflects pinned status on home speed dial tiles."
+      ]
+    },
+    {
+      "title": "Pulse Wrapped Sharing",
+      "items": [
+        "Wrapped Share Button: Added 'Share My Wrapped' to the conclusion page of Pulse Wrapped, allowing instant sharing of your yearly listening stats.",
+        "Social Summary: Generates a sleek summary of total minutes, top song, and top artist for easy sharing to social media."
       ]
     }
   ]

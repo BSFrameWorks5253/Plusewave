@@ -91,7 +91,7 @@ class TurntableWidgetReceiver : AppWidgetProvider() {
         super.onReceive(context, intent)
 
         when (intent.action) {
-            ACTION_TURNTABLE_PLAY_PAUSE, ACTION_TURNTABLE_NEXT, ACTION_TURNTABLE_PREVIOUS, ACTION_TURNTABLE_LIKE -> {
+            ACTION_TURNTABLE_PLAY_PAUSE, ACTION_TURNTABLE_NEXT, ACTION_TURNTABLE_PREVIOUS, ACTION_TURNTABLE_LIKE, ACTION_TURNTABLE_REWIND, ACTION_TURNTABLE_FORWARD -> {
                 // User interactions from widget buttons can start the service
                 val serviceIntent = Intent(context, MusicService::class.java).apply {
                     action = when (intent.action) {
@@ -99,6 +99,8 @@ class TurntableWidgetReceiver : AppWidgetProvider() {
                         ACTION_TURNTABLE_NEXT -> MusicWidgetReceiver.ACTION_NEXT
                         ACTION_TURNTABLE_PREVIOUS -> MusicWidgetReceiver.ACTION_PREVIOUS
                         ACTION_TURNTABLE_LIKE -> MusicWidgetReceiver.ACTION_LIKE
+                        ACTION_TURNTABLE_REWIND -> MusicWidgetReceiver.ACTION_REWIND
+                        ACTION_TURNTABLE_FORWARD -> MusicWidgetReceiver.ACTION_FORWARD
                         else -> intent.action
                     }
                     putExtras(intent)
@@ -127,6 +129,8 @@ class TurntableWidgetReceiver : AppWidgetProvider() {
         const val ACTION_TURNTABLE_NEXT = "com.pulsewave.music.widget.TURNTABLE_NEXT"
         const val ACTION_TURNTABLE_PREVIOUS = "com.pulsewave.music.widget.TURNTABLE_PREVIOUS"
         const val ACTION_TURNTABLE_LIKE = "com.pulsewave.music.widget.TURNTABLE_LIKE"
+        const val ACTION_TURNTABLE_REWIND = "com.pulsewave.music.widget.TURNTABLE_REWIND"
+        const val ACTION_TURNTABLE_FORWARD = "com.pulsewave.music.widget.TURNTABLE_FORWARD"
         const val ACTION_UPDATE_TURNTABLE_WIDGET = "com.pulsewave.music.widget.UPDATE_TURNTABLE_WIDGET"
     }
 }

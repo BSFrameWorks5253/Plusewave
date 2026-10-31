@@ -1493,9 +1493,18 @@ fun LocalPlaylistHeader(
                                 downloadState = downloadState,
                                 onEdit = onShowEditDialog,
                                 onSync = {
-                                    onSync()
-                                    scope.launch(Dispatchers.Main) {
-                                        snackbarHostState.showSnackbar(context.getString(R.string.playlist_synced))
+                                    scope.launch(Dispatchers.IO) {
+                                        try {
+                                            syncUtils.syncSavedPlaylistsSuspend()
+                                            withContext(Dispatchers.Main) {
+                                                onSync()
+                                                snackbarHostState.showSnackbar(context.getString(R.string.playlist_synced))
+                                            }
+                                        } catch (e: Exception) {
+                                            withContext(Dispatchers.Main) {
+                                                snackbarHostState.showSnackbar("Sync failed: ${e.message}")
+                                            }
+                                        }
                                     }
                                 },
                                 onDelete = onshowDeletePlaylistDialog,
@@ -1580,20 +1589,24 @@ fun LocalPlaylistHeader(
                     )
                 }
 
-                // Shuffle Button (Right - Circular)
+                // Shuffle Button (Right - Circular with active state indicator)
+                val isShuffleOn by playerConnection.shuffleModeEnabled.collectAsState()
                 GlassCircleButton(
                     onClick = {
+                        playerConnection.player.shuffleModeEnabled = true
                         playerConnection.playQueue(
                             ListQueue(
                                 title = playlist.playlist.name,
                                 items = songs.shuffled().map { it.song.toMediaItem() },
+                                playlistId = playlist.id
                             )
                         )
                     },
                     size = 48.dp,
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.shuffle),
+                        painter = painterResource(if (isShuffleOn) R.drawable.shuffle_on else R.drawable.shuffle),
+                        tint = if (isShuffleOn) MaterialTheme.colorScheme.primary else LocalContentColor.current,
                         contentDescription = "Shuffle",
                         modifier = Modifier.size(20.dp),
                     )

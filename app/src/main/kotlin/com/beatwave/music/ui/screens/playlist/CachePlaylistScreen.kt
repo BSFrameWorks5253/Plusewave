@@ -765,13 +765,16 @@ private fun CachePlaylistHeader(
                 }
             }
 
-            // Shuffle Button
+            // Shuffle Button with active state
+            val isShuffleOn by playerConnection.shuffleModeEnabled.collectAsState()
             androidx.compose.material3.Button(
                 onClick = {
+                    playerConnection.player.shuffleModeEnabled = true
                     playerConnection.playQueue(
                         ListQueue(
                             title = context.getString(R.string.cached_playlist),
                             items = songs.shuffled().map { it.toMediaItem() },
+                            playlistId = "auto:cache"
                         )
                     )
                 },
@@ -780,8 +783,8 @@ private fun CachePlaylistHeader(
                     .height(48.dp),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                 colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                    containerColor = LocalContentColor.current.copy(alpha = 0.15f),
-                    contentColor = LocalContentColor.current
+                    containerColor = if (isShuffleOn) MaterialTheme.colorScheme.primaryContainer else LocalContentColor.current.copy(alpha = 0.15f),
+                    contentColor = if (isShuffleOn) MaterialTheme.colorScheme.onPrimaryContainer else LocalContentColor.current
                 ),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp)
             ) {
@@ -790,10 +793,10 @@ private fun CachePlaylistHeader(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.shuffle),
+                        painter = painterResource(if (isShuffleOn) R.drawable.shuffle_on else R.drawable.shuffle),
                         contentDescription = null,
                         modifier = Modifier.size(20.dp),
-                        tint = LocalContentColor.current
+                        tint = if (isShuffleOn) MaterialTheme.colorScheme.onPrimaryContainer else LocalContentColor.current
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(

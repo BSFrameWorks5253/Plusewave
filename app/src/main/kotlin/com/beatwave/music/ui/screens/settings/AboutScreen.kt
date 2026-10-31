@@ -73,6 +73,7 @@ import com.beatwave.music.BuildConfig
 import com.beatwave.music.LocalPlayerAwareWindowInsets
 import com.beatwave.music.constants.DonationUpiId
 import com.beatwave.music.constants.DonationUpiUri
+import com.beatwave.music.constants.launchUpiPayment
 import com.beatwave.music.R
 import com.beatwave.music.ui.component.IconButton
 import com.beatwave.music.ui.component.PulseWaveLogo
@@ -217,7 +218,7 @@ fun AboutScreen(
                     description = { Text(stringResource(R.string.app_developer), color = MaterialTheme.colorScheme.primary) },
                     tintIcon = false,
                     iconShape = cookieShape,
-                    onClick = { uriHandler.safeOpenUri(context, "https://github.com/vortexapps67") }
+                    onClick = { uriHandler.safeOpenUri(context, "https://github.com/BSFrameworks5253") }
                 )
             )
         )
@@ -252,7 +253,7 @@ fun AboutScreen(
                     icon = painterResource(R.drawable.favorite),
                     title = { Text(stringResource(R.string.support_upi)) },
                     description = { Text(DonationUpiId) },
-                    onClick = { uriHandler.safeOpenUri(context, DonationUpiUri) }
+                    onClick = { launchUpiPayment(context) }
                 ),
             )
         )

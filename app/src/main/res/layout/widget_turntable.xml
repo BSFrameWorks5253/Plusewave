@@ -119,7 +119,7 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Bottom Controls: Frosted Liquid Glass dock with Prev, Glowing Play/Pause, Next, Like -->
+    <!-- Bottom Controls: Frosted Liquid Glass dock with Prev, Rewind 10s, Glowing Play/Pause, Forward 10s, Next, Like -->
     <LinearLayout
         android:id="@+id/widget_turntable_controls"
         android:layout_width="wrap_content"
@@ -140,6 +140,14 @@
             android:src="@drawable/ic_widget_skip_previous"
             android:contentDescription="@string/previous" />
 
+        <ImageView
+            android:id="@+id/widget_turntable_rewind_button"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="6dp"
+            android:src="@drawable/replay"
+            android:contentDescription="Rewind 10 seconds" />
+
         <FrameLayout
             android:id="@+id/widget_turntable_play_container"
             android:layout_width="36dp"
@@ -156,6 +164,14 @@
                 android:src="@drawable/ic_widget_play"
                 android:contentDescription="@string/play_pause" />
         </FrameLayout>
+
+        <ImageView
+            android:id="@+id/widget_turntable_forward_button"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="6dp"
+            android:src="@drawable/fast_forward"
+            android:contentDescription="Forward 10 seconds" />
 
         <ImageView
             android:id="@+id/widget_turntable_next_button"

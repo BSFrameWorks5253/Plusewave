@@ -300,9 +300,9 @@ constructor(
                         val orderList = prefs.customOrder.split(",").filter { it.isNotBlank() }
                         val orderMap = orderList.mapIndexed { idx, id -> id to idx }.toMap()
                         val sorted = filtered.sortedWith(
-                            compareBy<Playlist> { orderMap[it.playlist.id] ?: Int.MAX_VALUE }
+                            compareBy<Playlist> { orderMap[it.playlist.id] ?: 999999 }
                         )
-                        if (prefs.descending) sorted.reversed() else sorted
+                        sorted
                     } else {
                         filtered
                     }

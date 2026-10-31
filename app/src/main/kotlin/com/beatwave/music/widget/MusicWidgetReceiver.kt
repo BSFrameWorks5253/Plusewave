@@ -94,7 +94,8 @@ open class MusicWidgetReceiver : AppWidgetProvider() {
 
         when (intent.action) {
             ACTION_PLAY_PAUSE, ACTION_LIKE, ACTION_NEXT, ACTION_PREVIOUS,
-            ACTION_SHUFFLE, ACTION_REPEAT, ACTION_PLAY_PLAYLIST, ACTION_SKIP_TO_QUEUE_ITEM -> {
+            ACTION_SHUFFLE, ACTION_REPEAT, ACTION_PLAY_PLAYLIST, ACTION_SKIP_TO_QUEUE_ITEM,
+            ACTION_REWIND, ACTION_FORWARD -> {
                 val serviceIntent = Intent(context, MusicService::class.java).apply {
                     action = intent.action
                     putExtras(intent)
@@ -127,6 +128,8 @@ open class MusicWidgetReceiver : AppWidgetProvider() {
         const val ACTION_REPEAT = "com.pulsewave.music.widget.REPEAT"
         const val ACTION_PLAY_PLAYLIST = "com.pulsewave.music.widget.PLAY_PLAYLIST"
         const val ACTION_SKIP_TO_QUEUE_ITEM = "com.pulsewave.music.widget.SKIP_TO_QUEUE_ITEM"
+        const val ACTION_REWIND = "com.pulsewave.music.widget.REWIND"
+        const val ACTION_FORWARD = "com.pulsewave.music.widget.FORWARD"
         const val ACTION_UPDATE_WIDGET = "com.pulsewave.music.widget.UPDATE_WIDGET"
 
         const val EXTRA_PLAYLIST_ID = "playlist_id"

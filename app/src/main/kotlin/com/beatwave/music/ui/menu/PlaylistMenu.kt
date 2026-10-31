@@ -61,6 +61,7 @@ import com.beatwave.music.LocalDatabase
 import com.beatwave.music.LocalDownloadUtil
 import com.beatwave.music.LocalListenTogetherManager
 import com.beatwave.music.LocalPlayerConnection
+import com.beatwave.music.LocalSyncUtils
 import com.beatwave.music.R
 import com.beatwave.music.db.entities.Playlist
 import com.beatwave.music.db.entities.PlaylistSong
@@ -171,6 +172,7 @@ fun PlaylistMenu(
         }
     )
 
+    val syncUtils = LocalSyncUtils.current
     val isPinned by database.speedDialDao.isPinned(playlist.id).collectAsState(initial = false)
 
     var showEditDialog by remember {
@@ -382,10 +384,12 @@ fun PlaylistMenu(
                             onClick = {
                                 onDismiss()
                                 if (songs.isNotEmpty()) {
+                                    playerConnection.player.shuffleModeEnabled = true
                                     playerConnection.playQueue(
                                         ListQueue(
                                             title = playlist.playlist.name,
-                                            items = songs.shuffled().map(Song::toMediaItem)
+                                            items = songs.shuffled().map(Song::toMediaItem),
+                                            playlistId = playlist.id
                                         )
                                     )
                                 }
@@ -707,6 +711,37 @@ fun PlaylistMenu(
                         )
                     }
                     val currentBrowseId = dbPlaylist?.playlist?.browseId ?: playlist.playlist.browseId
+                    if (currentBrowseId != null && !isGuest) {
+                        add(
+                            Material3MenuItemData(
+                                title = { Text(text = "Sync with YouTube Music") },
+                                description = { Text(text = "Pull latest songs & order from YouTube Music") },
+                                icon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.sync),
+                                        contentDescription = null,
+                                    )
+                                },
+                                onClick = {
+                                    isSyncing = true
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        try {
+                                            syncUtils.syncSavedPlaylistsSuspend()
+                                            withContext(Dispatchers.Main) {
+                                                Toast.makeText(context, "Playlist synced successfully!", Toast.LENGTH_SHORT).show()
+                                                isSyncing = false
+                                            }
+                                        } catch (e: Exception) {
+                                            withContext(Dispatchers.Main) {
+                                                Toast.makeText(context, "Sync error: ${e.message}", Toast.LENGTH_SHORT).show()
+                                                isSyncing = false
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                        )
+                    }
                     if (currentBrowseId == null && isSignedIn && !isGuest) {
                         add(
                             Material3MenuItemData(

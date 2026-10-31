@@ -48,6 +48,7 @@ import com.beatwave.music.constants.DonationPromptDismissedKey
 import com.beatwave.music.constants.DonationPromptLastShownKey
 import com.beatwave.music.constants.DonationUpiId
 import com.beatwave.music.constants.DonationUpiUri
+import com.beatwave.music.constants.launchUpiPayment
 import com.beatwave.music.constants.FirstLaunchTimestampKey
 import com.beatwave.music.ui.utils.safeOpenUri
 import com.beatwave.music.utils.rememberPreference
@@ -160,7 +161,7 @@ fun DonationPromptHost() {
             ) {
                 Button(
                     onClick = {
-                        uriHandler.safeOpenUri(context, DonationUpiUri)
+                        launchUpiPayment(context)
                         dismiss()
                     },
                     modifier = Modifier.fillMaxWidth(),

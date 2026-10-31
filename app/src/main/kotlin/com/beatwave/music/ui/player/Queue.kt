@@ -423,6 +423,7 @@ fun Queue(
                     val shuffleModeEnabledInside by playerConnection.shuffleModeEnabled.collectAsState()
                     PlayerQueueButton(
                         icon = R.drawable.shuffle,
+                        activeIcon = R.drawable.shuffle_on,
                         onClick = {
                             coroutineScope.launch {
                                 lazyListState.animateScrollToItem(
@@ -957,7 +958,7 @@ fun Queue(
                             .height(56.dp),
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.shuffle),
+                            painter = painterResource(if (shuffleModeEnabled) R.drawable.shuffle_on else R.drawable.shuffle),
                             contentDescription = null,
                             modifier = Modifier.size(22.dp)
                         )

@@ -306,6 +306,42 @@ fun PlayerV2(
     val ambientEdgeGlowIntensity by rememberPreference(AmbientEdgeGlowIntensityKey, defaultValue = 0.85f)
     var gradientColors by remember { mutableStateOf<List<Color>>(emptyList()) }
     val gradientColorsCache = remember { mutableMapOf<String, List<Color>>() }
+    val scope = rememberCoroutineScope()
+
+    // Adaptive Artwork Glow
+    LaunchedEffect(currentSong?.song?.thumbnailUrl) {
+        val url = currentSong?.song?.thumbnailUrl
+        if (url != null) {
+            val cached = gradientColorsCache[url]
+            if (cached != null) {
+                gradientColors = cached
+            } else {
+                withContext(Dispatchers.IO) {
+                    val loader = context.imageLoader
+                    val request = ImageRequest.Builder(context)
+                        .data(url)
+                        .allowHardware(false)
+                        .build()
+                    val result = loader.execute(request)
+                    val bitmap = result.drawable?.toBitmap()
+                    if (bitmap != null) {
+                        val palette = Palette.from(bitmap).generate()
+                        val colors = listOf(
+                            Color(palette.getDominantColor(0xFF6200EE)),
+                            Color(palette.getVibrantColor(0xFF03DAC5)),
+                            Color(palette.getMutedColor(0xFF3700B3))
+                        )
+                        gradientColorsCache[url] = colors
+                        withContext(Dispatchers.Main) {
+                            gradientColors = colors
+                        }
+                    }
+                }
+            }
+        } else {
+            gradientColors = emptyList()
+        }
+    }
 
     var showAudioDeviceBottomSheet by remember { mutableStateOf(false) }
     
@@ -1337,6 +1373,16 @@ fun PlayerV2(
             // (Controls AnimatedVisibility closed above)
 
             // Bottom Utility Action Bar
+            if (ambientEdgeGlowEnabled && gradientColors.isNotEmpty()) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    AmbientEdgeGlow(
+                        colors = gradientColors,
+                        isPlaying = isPlaying,
+                        intensity = ambientEdgeGlowIntensity
+                    )
+                }
+            }
+
             AnimatedVisibility(
                 visible = controlsVisible,
                 enter = fadeIn(animationSpec = tween(500, easing = LinearOutSlowInEasing)) +

@@ -181,7 +181,7 @@
 
   <h2>🙏 Credits</h2>
 
-  <p>Pulse Wave is developed and maintained by <a href="https://github.com/vortexapps67">Vortex Apps</a>. See <a href="https://support-akshansh.vercel.app">support-akshansh.vercel.app</a> for support.</p>
+  <p>Pulse Wave is developed and maintained by <a href="https://github.com/BSFrameworks5253">BS.Framework5253</a>. See <a href="https://support-akshansh.vercel.app">support-akshansh.vercel.app</a> for support.</p>
 
   <table border="0" cellpadding="10" cellspacing="0" width="90%">
     <tr valign="top">

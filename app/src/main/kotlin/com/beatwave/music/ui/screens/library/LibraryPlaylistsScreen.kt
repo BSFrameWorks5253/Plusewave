@@ -321,6 +321,15 @@ fun LibraryPlaylistsScreen(
     // Hoisted: both view types de-duped the same list separately, and the scroll rail
     // needs the resulting count too.
     val visiblePlaylists = remember(playlists) { playlists.distinctBy { it.id } }
+    val customOrder by rememberPreference(CustomPlaylistOrderKey, "")
+    val topCustomPlaylists = remember(visiblePlaylists, customOrder) {
+        if (customOrder.isBlank()) emptyList()
+        else {
+            val orderList = customOrder.split(",").filter { it.isNotBlank() }
+            orderList.mapNotNull { id -> visiblePlaylists.find { it.id == id } }
+        }
+    }
+
     // In-memory mutable list for 60fps smooth dragging without IO DataStore write spam
     val localPlaylists = remember(visiblePlaylists) { visiblePlaylists.toMutableStateList() }
     var hasDragged by remember { mutableStateOf(false) }
@@ -393,7 +402,7 @@ fun LibraryPlaylistsScreen(
                             }
 
                             items(
-                                items = localPlaylists,
+                                items = localPlaylists.filterNot { it.id in topCustomPlaylists.map { p -> p.id } },
                                 key = { it.id },
                                 contentType = { CONTENT_TYPE_PLAYLIST },
                             ) { playlist ->
@@ -471,6 +480,22 @@ fun LibraryPlaylistsScreen(
                             }
                         }
                     } else {
+                        // Custom top-ordered playlists (like "my MP4") before Liked playlist
+                        items(
+                            items = topCustomPlaylists,
+                            key = { "top_${it.id}" },
+                            contentType = { CONTENT_TYPE_PLAYLIST }
+                        ) { playlist ->
+                            LibraryPlaylistListItem(
+                                navController = navController,
+                                menuState = menuState,
+                                coroutineScope = coroutineScope,
+                                playlist = playlist,
+                                showIconOnly = libraryIconsOnly,
+                                modifier = Modifier.animateItem()
+                            )
+                        }
+
                         if (showLiked) {
                             item(key = "likedPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
                                 AutoPlaylistCard(
@@ -534,7 +559,7 @@ fun LibraryPlaylistsScreen(
                             }
 
                             items(
-                                items = localPlaylists,
+                                items = localPlaylists.filterNot { it.id in topCustomPlaylists.map { p -> p.id } },
                                 key = { it.id },
                                 contentType = { CONTENT_TYPE_PLAYLIST },
                             ) { playlist ->
@@ -672,6 +697,22 @@ fun LibraryPlaylistsScreen(
                             }
                         }
                     } else {
+                        // Custom top-ordered playlists (like "my MP4") before Liked playlist
+                        items(
+                            items = topCustomPlaylists,
+                            key = { "top_${it.id}" },
+                            contentType = { CONTENT_TYPE_PLAYLIST }
+                        ) { playlist ->
+                            LibraryPlaylistGridItem(
+                                navController = navController,
+                                menuState = menuState,
+                                coroutineScope = coroutineScope,
+                                playlist = playlist,
+                                showIconOnly = libraryIconsOnly,
+                                modifier = Modifier.animateItem()
+                            )
+                        }
+
                         if (showLiked) {
                             item(key = "likedPlaylist", contentType = { CONTENT_TYPE_PLAYLIST }) {
                                 AutoPlaylistCard(

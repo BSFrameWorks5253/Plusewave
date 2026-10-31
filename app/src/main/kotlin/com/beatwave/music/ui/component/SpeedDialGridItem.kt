@@ -52,21 +52,33 @@ fun SpeedDialGridItem(
                 .aspectRatio(1f)
                 .clip(shape)
         ) {
-            ItemThumbnail(
-                thumbnailUrl = item.thumbnail,
-                isActive = isActive,
-                isPlaying = isPlaying,
-                shape = shape,
-                modifier = Modifier.fillMaxSize(),
-                targetSizePx = thumbnailSizePx,
-                // Always fill the tile edge-to-edge, like Apple Music's browse tiles —
-                // independent of the user's general CropAlbumArtKey preference, which
-                // otherwise defaults to Fit and left the art visibly inset/letterboxed.
-                forceContentScale = ContentScale.Crop,
-                // No static paused-play glyph on the tile — just the animated bars
-                // while it's actually playing.
-                showPausedPlayIcon = false,
-            )
+            if (item.thumbnail.isNullOrBlank()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(shape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(if (item is PlaylistItem) R.drawable.playlist_play else R.drawable.music_note),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+            } else {
+                ItemThumbnail(
+                    thumbnailUrl = item.thumbnail,
+                    isActive = isActive,
+                    isPlaying = isPlaying,
+                    shape = shape,
+                    modifier = Modifier.fillMaxSize(),
+                    targetSizePx = thumbnailSizePx,
+                    forceContentScale = ContentScale.Crop,
+                    showPausedPlayIcon = false,
+                )
+            }
 
             if (isPinned) {
                 Icon(

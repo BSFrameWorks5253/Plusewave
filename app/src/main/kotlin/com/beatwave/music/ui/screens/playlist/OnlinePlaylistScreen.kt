@@ -1199,8 +1199,10 @@ private fun OnlinePlaylistHeader(
                     },
                     size = 48.dp,
                 ) {
+                    val isShuffleOn by playerConnection.shuffleModeEnabled.collectAsState()
                     Icon(
-                        painter = painterResource(R.drawable.shuffle),
+                        painter = painterResource(if (isShuffleOn) R.drawable.shuffle_on else R.drawable.shuffle),
+                        tint = if (isShuffleOn) MaterialTheme.colorScheme.primary else LocalContentColor.current,
                         contentDescription = stringResource(R.string.shuffle_content_desc),
                         modifier = Modifier.size(20.dp)
                     )

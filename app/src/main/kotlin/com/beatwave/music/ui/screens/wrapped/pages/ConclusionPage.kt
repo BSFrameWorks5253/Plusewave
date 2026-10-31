@@ -1,22 +1,29 @@
 package com.beatwave.music.ui.screens.wrapped.pages
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -24,11 +31,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.beatwave.music.R
+import com.beatwave.music.ui.screens.wrapped.LocalWrappedManager
 import com.beatwave.music.ui.screens.wrapped.components.AnimatedBackground
 import com.beatwave.music.ui.screens.wrapped.components.ShapeType
 
 @Composable
 fun ConclusionPage(onClose: () -> Unit) {
+    val context = LocalContext.current
+    val manager = com.beatwave.music.ui.screens.wrapped.LocalWrappedManager.current
+    val state by manager.state.collectAsState()
+
     Box(modifier = Modifier.fillMaxSize()) {
         AnimatedBackground(elementCount = 30, shapeTypes = listOf(ShapeType.Circle, ShapeType.Line))
         Column(
@@ -60,7 +72,35 @@ fun ConclusionPage(onClose: () -> Unit) {
                     color = Color.Gray
                 )
             )
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Share Wrapped Button
+            OutlinedButton(
+                onClick = {
+                    val topSong = state.topSongs.firstOrNull()?.song?.song?.title ?: "Various"
+                    val topArtist = state.topArtists.firstOrNull()?.name ?: "Various"
+                    val shareText = "🎧 My PulseWave Wrapped:\n⏱️ Total: ${state.totalMinutes} minutes\n🎵 Top Song: $topSong\n🎤 Top Artist: $topArtist\n\nStreamed with PulseWave ⚡"
+                    val intent = Intent().apply {
+                        action = Intent.ACTION_SEND
+                        putExtra(Intent.EXTRA_TEXT, shareText)
+                        type = "text/plain"
+                    }
+                    context.startActivity(Intent.createChooser(intent, "Share Your Wrapped"))
+                },
+                shape = CircleShape,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+            ) {
+                Text(
+                    text = "Share My Wrapped 📊",
+                    style = TextStyle(
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Button(
                 onClick = onClose,
                 shape = CircleShape,

@@ -826,12 +826,15 @@ private fun AutoPlaylistHeader(
                 }
             }
 
+            val isShuffleOn by playerConnection.shuffleModeEnabled.collectAsState()
             Button(
                 onClick = {
+                    playerConnection.player.shuffleModeEnabled = true
                     playerConnection.playQueue(
                         ListQueue(
                             title = context.getString(titleRes),
                             items = songs.shuffled().map { it.toMediaItem() },
+                            playlistId = "auto:$playlist"
                         ),
                     )
                 },
@@ -840,8 +843,8 @@ private fun AutoPlaylistHeader(
                     .height(48.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = LocalContentColor.current.copy(alpha = 0.15f),
-                    contentColor = LocalContentColor.current,
+                    containerColor = if (isShuffleOn) MaterialTheme.colorScheme.primaryContainer else LocalContentColor.current.copy(alpha = 0.15f),
+                    contentColor = if (isShuffleOn) MaterialTheme.colorScheme.onPrimaryContainer else LocalContentColor.current,
                 ),
                 contentPadding = PaddingValues(vertical = 12.dp),
             ) {
@@ -850,10 +853,10 @@ private fun AutoPlaylistHeader(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.shuffle),
+                        painter = painterResource(if (isShuffleOn) R.drawable.shuffle_on else R.drawable.shuffle),
                         contentDescription = null,
                         modifier = Modifier.size(20.dp),
-                        tint = LocalContentColor.current,
+                        tint = if (isShuffleOn) MaterialTheme.colorScheme.onPrimaryContainer else LocalContentColor.current,
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(

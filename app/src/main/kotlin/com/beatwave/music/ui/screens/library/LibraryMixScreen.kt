@@ -116,6 +116,7 @@ import com.beatwave.music.ui.utils.combinedBounceClick
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.beatwave.music.utils.rememberEnumPreference
 import com.beatwave.music.constants.LocalOnlyModeKey
+import com.beatwave.music.constants.CustomPlaylistOrderKey
 import com.beatwave.music.utils.rememberPreference
 import com.beatwave.music.viewmodels.LibraryMixViewModel
 import java.text.Collator
@@ -243,6 +244,15 @@ fun LibraryMixScreen(
     val showCached = showCachedPref && !localOnly
     val showUploaded = showUploadedPref && !localOnly
 
+    val customOrder by rememberPreference(CustomPlaylistOrderKey, "")
+    val topCustomPlaylists = remember(playlists, customOrder) {
+        if (customOrder.isBlank()) emptyList()
+        else {
+            val orderList = customOrder.split(",").filter { it.isNotBlank() }
+            orderList.mapNotNull { id -> playlists.find { it.id == id } }
+        }
+    }
+
     val platformLocale = LocalLocale.current.platformLocale
     val allItems =
         remember(albums, playlists, sortType, sortDescending, platformLocale) {
@@ -285,6 +295,11 @@ fun LibraryMixScreen(
                 }.reversed(sortDescending)
             items
         }
+
+    val displayedItems = remember(allItems, topCustomPlaylists) {
+        val topIds = topCustomPlaylists.map { it.id }.toSet()
+        allItems.filterNot { it.id in topIds }.distinctBy { it.id }
+    }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -428,6 +443,37 @@ fun LibraryMixScreen(
                             contentType = CONTENT_TYPE_HEADER,
                         ) {
                             headerContent()
+                        }
+
+                        // Prioritized/moved-to-top custom playlists (e.g. "my MP4") displayed first before Liked playlist
+                        items(
+                            items = topCustomPlaylists,
+                            key = { "top_mix_${it.id}" },
+                            contentType = { CONTENT_TYPE_PLAYLIST },
+                        ) { playlist ->
+                            PlaylistListItem(
+                                playlist = playlist,
+                                autoPlaylist = false,
+                                flat = true,
+                                showIconOnly = libraryIconsOnly,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .combinedBounceClick(
+                                        onClick = { navController.navigate("local_playlist/${playlist.id}") },
+                                        onLongClick = {
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            menuState.show {
+                                                PlaylistMenu(
+                                                    playlist = playlist,
+                                                    coroutineScope = coroutineScope,
+                                                    onDismiss = menuState::dismiss,
+                                                    autoPlaylist = false
+                                                )
+                                            }
+                                        }
+                                    )
+                                    .animateItem()
+                            )
                         }
 
                         if (showLiked) {
@@ -641,7 +687,7 @@ fun LibraryMixScreen(
                     }
 
                     items(
-                        items = allItems.distinctBy { it.id },
+                        items = displayedItems,
                         key = { it.id },
                         contentType = { CONTENT_TYPE_PLAYLIST },
                     ) { item ->
@@ -810,6 +856,38 @@ fun LibraryMixScreen(
                     ) {
                         headerContent()
                     }
+
+                    // Prioritized/moved-to-top custom playlists (e.g. "my MP4") displayed first before Liked playlist
+                    items(
+                        items = topCustomPlaylists,
+                        key = { "top_mix_${it.id}" },
+                        contentType = { CONTENT_TYPE_PLAYLIST },
+                    ) { playlist ->
+                        PlaylistGridItem(
+                            playlist = playlist,
+                            fillMaxWidth = true,
+                            autoPlaylist = false,
+                            showIconOnly = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .combinedBounceClick(
+                                    onClick = { navController.navigate("local_playlist/${playlist.id}") },
+                                    onLongClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        menuState.show {
+                                            PlaylistMenu(
+                                                playlist = playlist,
+                                                coroutineScope = coroutineScope,
+                                                onDismiss = menuState::dismiss,
+                                                autoPlaylist = false
+                                            )
+                                        }
+                                    }
+                                )
+                                .animateItem()
+                        )
+                    }
+
                     if (showLiked) {
                         item(
                             key = "likedPlaylist",
@@ -1021,7 +1099,7 @@ fun LibraryMixScreen(
                     }
 
                     items(
-                        items = allItems.distinctBy { it.id },
+                        items = displayedItems,
                         key = { it.id },
                         contentType = { CONTENT_TYPE_PLAYLIST },
                     ) { item ->

@@ -2428,7 +2428,10 @@ class MusicService :
                 player.prepare()
                 player.play()
             } else if (repeatMode == REPEAT_MODE_OFF && dataStore.get(AutoLoadMoreKey, true)) {
-                if (currentQueue !is com.beatwave.music.playback.queues.ListQueue) {
+                val isPlaylist = currentQueue is com.beatwave.music.playback.queues.ListQueue ||
+                    currentQueue is com.beatwave.music.playback.queues.YouTubePlaylistQueue ||
+                    currentQueue?.playlistId != null
+                if (!isPlaylist) {
                     startRadioSeamlessly()
                 }
             }
@@ -2568,9 +2571,14 @@ class MusicService :
             if (player.mediaItemCount == 0) return
 
             // If queue only has 1 song, fetch similar genre songs so shuffle has a real queue to shuffle through!
-            if (player.mediaItemCount <= 1) {
+            // BUT NEVER inject outside songs if currentQueue is a playlist!
+            val isPlaylistQueue = currentQueue is com.beatwave.music.playback.queues.ListQueue ||
+                currentQueue is com.beatwave.music.playback.queues.YouTubePlaylistQueue ||
+                currentQueue?.playlistId != null
+
+            if (player.mediaItemCount <= 1 && !isPlaylistQueue) {
                 startRadioSeamlessly()
-            } else {
+            } else if (player.mediaItemCount > 1) {
                 val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
                 val currentIndex = player.currentMediaItemIndex
                 val totalCount = player.mediaItemCount
@@ -3998,6 +4006,17 @@ class MusicService :
             }
             MusicWidgetReceiver.ACTION_LIKE -> {
                 toggleLike()
+            }
+            MusicWidgetReceiver.ACTION_REWIND -> {
+                val newPos = (player.currentPosition - 10000L).coerceAtLeast(0L)
+                player.seekTo(newPos)
+                updateWidgetUI(player.isPlaying)
+            }
+            MusicWidgetReceiver.ACTION_FORWARD -> {
+                val duration = player.duration.takeIf { it > 0 } ?: Long.MAX_VALUE
+                val newPos = (player.currentPosition + 10000L).coerceAtMost(duration)
+                player.seekTo(newPos)
+                updateWidgetUI(player.isPlaying)
             }
             MusicWidgetReceiver.ACTION_NEXT -> {
                 if (player.hasNextMediaItem()) {

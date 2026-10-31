@@ -2113,14 +2113,47 @@ object Icon {
             // "never downloaded" — the row just silently reverted to looking like
             // nothing had happened, with no notification either, so a failure was
             // completely invisible. Surfacing it distinctly is the whole fix.
-            Download.STATE_FAILED -> Icon(
-                painter = painterResource(R.drawable.error),
-                contentDescription = stringResource(R.string.download_failed),
-                tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier
-                    .size(18.dp)
-                    .padding(end = 2.dp)
-            )
+            Download.STATE_FAILED -> {
+                var showExplanationDialog by remember { mutableStateOf(false) }
+                if (showExplanationDialog) {
+                    androidx.compose.material3.AlertDialog(
+                        onDismissRequest = { showExplanationDialog = false },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.error),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        },
+                        title = {
+                            androidx.compose.material3.Text(
+                                text = "Download Incomplete",
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            )
+                        },
+                        text = {
+                            androidx.compose.material3.Text(
+                                text = "One or more tracks in this playlist failed to download (e.g. network timeout or restricted video). Open the playlist menu to retry downloading."
+                            )
+                        },
+                        confirmButton = {
+                            androidx.compose.material3.TextButton(onClick = { showExplanationDialog = false }) {
+                                androidx.compose.material3.Text("Dismiss")
+                            }
+                        }
+                    )
+                }
+                Icon(
+                    painter = painterResource(R.drawable.error),
+                    contentDescription = stringResource(R.string.download_failed),
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .padding(end = 2.dp)
+                        .clickable { showExplanationDialog = true }
+                )
+            }
             else -> { /* no icon */ }
         }
     }

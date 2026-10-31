@@ -1139,9 +1139,11 @@ class vivimusicWidgetManager @Inject constructor(
         )
         views.setImageViewBitmap(R.id.widget_turntable_album_art, turntableComposite)
 
-        // Pure size-oriented turntable widget: Only the vinyl platter and tonearm deck
-        views.setViewVisibility(R.id.widget_turntable_info_container, android.view.View.GONE)
-        views.setViewVisibility(R.id.widget_turntable_controls, android.view.View.GONE)
+        // Display turntable info pill and frosted controls dock
+        views.setTextViewText(R.id.widget_turntable_title, title.ifEmpty { context.getString(R.string.not_playing) })
+        views.setTextViewText(R.id.widget_turntable_artist, artist.ifEmpty { context.getString(R.string.tap_to_play) })
+        views.setViewVisibility(R.id.widget_turntable_info_container, android.view.View.VISIBLE)
+        views.setViewVisibility(R.id.widget_turntable_controls, android.view.View.VISIBLE)
 
         // Audio quality / lossless badge
         if (config.showLosslessBadge && !audioQuality.isNullOrBlank()) {
@@ -1177,6 +1179,8 @@ class vivimusicWidgetManager @Inject constructor(
         views.setOnClickPendingIntent(R.id.widget_turntable_prev_button, getTurntablePreviousIntent())
         views.setOnClickPendingIntent(R.id.widget_turntable_next_button, getTurntableNextIntent())
         views.setOnClickPendingIntent(R.id.widget_turntable_like_button, getTurntableLikeIntent())
+        views.setOnClickPendingIntent(R.id.widget_turntable_rewind_button, getTurntableRewindIntent())
+        views.setOnClickPendingIntent(R.id.widget_turntable_forward_button, getTurntableForwardIntent())
         // Platter direct touch hotspots: Left = Prev, Center = Play/Pause, Right = Next
         views.setOnClickPendingIntent(R.id.widget_turntable_touch_prev, getTurntablePreviousIntent())
         views.setOnClickPendingIntent(R.id.widget_turntable_touch_play_pause, getTurntablePlayPauseIntent())
@@ -2203,6 +2207,30 @@ class vivimusicWidgetManager @Inject constructor(
         return PendingIntent.getBroadcast(
             context,
             108,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun getTurntableRewindIntent(): PendingIntent {
+        val intent = Intent(context, TurntableWidgetReceiver::class.java).apply {
+            action = TurntableWidgetReceiver.ACTION_TURNTABLE_REWIND
+        }
+        return PendingIntent.getBroadcast(
+            context,
+            109,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun getTurntableForwardIntent(): PendingIntent {
+        val intent = Intent(context, TurntableWidgetReceiver::class.java).apply {
+            action = TurntableWidgetReceiver.ACTION_TURNTABLE_FORWARD
+        }
+        return PendingIntent.getBroadcast(
+            context,
+            110,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )

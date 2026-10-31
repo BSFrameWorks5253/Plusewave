@@ -35,6 +35,7 @@ import com.beatwave.music.R
 import com.beatwave.music.constants.DonationPayeeName
 import com.beatwave.music.constants.DonationUpiId
 import com.beatwave.music.constants.getDonationUpiUriWithAmount
+import com.beatwave.music.constants.launchUpiPayment
 import com.beatwave.music.ui.component.IconButton
 import com.beatwave.music.ui.utils.appTopBarWindowInsets
 import com.beatwave.music.ui.utils.safeOpenUri
@@ -50,7 +51,8 @@ fun SupportScreen(
     val clipboardManager = LocalClipboardManager.current
 
     val quickAmounts = listOf(50, 100, 250, 500)
-    var selectedAmount by remember { mutableStateOf<Int?>(100) }
+    var customAmountText by remember { mutableStateOf("100") }
+    val parsedAmount = customAmountText.toFloatOrNull()?.takeIf { it > 0 }
 
     Scaffold(
         topBar = {
@@ -198,10 +200,10 @@ fun SupportScreen(
                         }
                     }
 
-                    // Quick Amount Selection
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Amount Selection & Custom Amount
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(
-                            text = "Choose Amount (INR)",
+                            text = "Choose or Enter Amount (INR)",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -211,11 +213,11 @@ fun SupportScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             quickAmounts.forEach { amount ->
-                                val isSelected = selectedAmount == amount
+                                val isSelected = parsedAmount?.toInt() == amount
                                 FilterChip(
                                     selected = isSelected,
                                     onClick = {
-                                        selectedAmount = if (isSelected) null else amount
+                                        customAmountText = if (isSelected) "" else amount.toString()
                                     },
                                     label = {
                                         Text(
@@ -227,17 +229,43 @@ fun SupportScreen(
                                 )
                             }
                         }
+
+                        // Custom Amount Input Field
+                        OutlinedTextField(
+                            value = customAmountText,
+                            onValueChange = { input ->
+                                val filtered = input.filter { it.isDigit() || it == '.' }
+                                if (filtered.count { it == '.' } <= 1 && filtered.length <= 6) {
+                                    customAmountText = filtered
+                                }
+                            },
+                            label = { Text("Custom Amount") },
+                            placeholder = { Text("e.g. 50, 150, 500") },
+                            leadingIcon = {
+                                Text(
+                                    text = "₹",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            singleLine = true,
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                            ),
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
 
-                    // Primary Button: Open in UPI App
+                    // Primary Button: Open in UPI App (with chooser + new task flag to prevent crashes)
                     Button(
                         onClick = {
-                            val uri = getDonationUpiUriWithAmount(selectedAmount)
-                            uriHandler.safeOpenUri(context, uri)
+                            launchUpiPayment(context, parsedAmount)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
+                            .height(52.dp),
                         shape = RoundedCornerShape(14.dp)
                     ) {
                         Icon(
@@ -247,7 +275,10 @@ fun SupportScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = if (selectedAmount != null) "Pay ₹$selectedAmount via UPI App" else "Pay via UPI App",
+                            text = if (parsedAmount != null && parsedAmount > 0f) {
+                                val formatted = if (parsedAmount % 1f == 0f) parsedAmount.toInt().toString() else "%.2f".format(java.util.Locale.US, parsedAmount)
+                                "Pay ₹$formatted via UPI App"
+                            } else "Pay via UPI App",
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp
                         )

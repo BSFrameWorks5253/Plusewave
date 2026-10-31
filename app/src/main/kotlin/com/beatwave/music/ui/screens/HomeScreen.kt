@@ -2297,9 +2297,10 @@ private fun LazyListScope.speedDialSection(
                                                 // scattered rather than as one row.
                                                 .padding(AppleTokens.ItemGap / 4)
                                         ) {
+                                            val pinnedIds by viewModel.pinnedSpeedDialIds.collectAsState()
                                             SpeedDialGridItem(
                                                 item = item,
-                                                isPinned = false,
+                                                isPinned = item.id in pinnedIds,
                                                 isActive = remember(item.id, mediaMetadata?.album?.id, mediaMetadata?.id) {
                                                     item.id in listOf(mediaMetadata?.album?.id, mediaMetadata?.id)
                                                 },
