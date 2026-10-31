@@ -10,4 +10,4 @@
     android:initialLayout="@layout/widget_nothing_player"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
-    android:description="@string/widget_now_playing_desc" />
+    android:description="@string/widget_nothing_player" />
