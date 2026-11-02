@@ -162,6 +162,8 @@ fun PlayerV2(
     val isMuted by playerConnection.isMuted.collectAsState()
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
+    val shuffleModeEnabled by playerConnection.shuffleModeEnabled.collectAsState()
+    val repeatMode by playerConnection.repeatMode.collectAsState()
     
     androidx.activity.compose.BackHandler(enabled = playerState != PlayerInternalState.COVER) {
         playerState = PlayerInternalState.COVER
@@ -1217,12 +1219,35 @@ fun PlayerV2(
                 
                     Spacer(modifier = Modifier.height(16.dp))
                 
-                    // Floating Apple Music Playback Controls Deck (matching convxdemo.mp4)
+                    // Floating Playback Controls Deck with Direct Shuffle & Repeat
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        IconButton(
+                            onClick = { playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled },
+                            enabled = !isListenTogetherGuest,
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                if (shuffleModeEnabled) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .clip(CircleShape)
+                                            .background(adaptivePrimary.copy(alpha = 0.22f))
+                                    )
+                                }
+                                Icon(
+                                    painter = painterResource(if (shuffleModeEnabled) R.drawable.shuffle_on else R.drawable.shuffle),
+                                    tint = if (shuffleModeEnabled) adaptivePrimary else adaptiveSecondary.copy(alpha = 0.55f),
+                                    modifier = Modifier.size(24.dp),
+                                    contentDescription = if (shuffleModeEnabled) "Shuffle On" else "Shuffle Off"
+                                )
+                            }
+                        }
+
                         IconButton(
                             onClick = { playerConnection.player.seekToPrevious() },
                             enabled = !isListenTogetherGuest && canSkipPrevious,
@@ -1281,6 +1306,46 @@ fun PlayerV2(
                                 modifier = Modifier.size(38.dp),
                                 contentDescription = "Next",
                             )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                val nextMode = when (repeatMode) {
+                                    androidx.media3.common.Player.REPEAT_MODE_OFF -> androidx.media3.common.Player.REPEAT_MODE_ALL
+                                    androidx.media3.common.Player.REPEAT_MODE_ALL -> androidx.media3.common.Player.REPEAT_MODE_ONE
+                                    else -> androidx.media3.common.Player.REPEAT_MODE_OFF
+                                }
+                                playerConnection.player.repeatMode = nextMode
+                            },
+                            enabled = !isListenTogetherGuest,
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            val isRepeatActive = repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF
+                            Box(contentAlignment = Alignment.Center) {
+                                if (isRepeatActive) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .clip(CircleShape)
+                                            .background(adaptivePrimary.copy(alpha = 0.22f))
+                                    )
+                                }
+                                Icon(
+                                    painter = painterResource(
+                                        when (repeatMode) {
+                                            androidx.media3.common.Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
+                                            else -> R.drawable.repeat
+                                        }
+                                    ),
+                                    tint = if (isRepeatActive) adaptivePrimary else adaptiveSecondary.copy(alpha = 0.55f),
+                                    modifier = Modifier.size(24.dp),
+                                    contentDescription = when (repeatMode) {
+                                        androidx.media3.common.Player.REPEAT_MODE_ONE -> "Repeat One"
+                                        androidx.media3.common.Player.REPEAT_MODE_ALL -> "Repeat All"
+                                        else -> "Repeat Off"
+                                    }
+                                )
+                            }
                         }
                     }
                     

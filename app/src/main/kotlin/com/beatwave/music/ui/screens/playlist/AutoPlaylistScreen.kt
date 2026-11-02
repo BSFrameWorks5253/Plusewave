@@ -829,14 +829,25 @@ private fun AutoPlaylistHeader(
             val isShuffleOn by playerConnection.shuffleModeEnabled.collectAsState()
             Button(
                 onClick = {
-                    playerConnection.player.shuffleModeEnabled = true
-                    playerConnection.playQueue(
-                        ListQueue(
-                            title = context.getString(titleRes),
-                            items = songs.shuffled().map { it.toMediaItem() },
-                            playlistId = playlistType
-                        ),
-                    )
+                    if (isShuffleOn) {
+                        playerConnection.player.shuffleModeEnabled = false
+                        playerConnection.playQueue(
+                            ListQueue(
+                                title = context.getString(titleRes),
+                                items = songs.map { it.toMediaItem() },
+                                playlistId = playlistType
+                            ),
+                        )
+                    } else {
+                        playerConnection.player.shuffleModeEnabled = true
+                        playerConnection.playQueue(
+                            ListQueue(
+                                title = context.getString(titleRes),
+                                items = songs.shuffled().map { it.toMediaItem() },
+                                playlistId = playlistType
+                            ),
+                        )
+                    }
                 },
                 modifier = Modifier
                     .weight(1f)

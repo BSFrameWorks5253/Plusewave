@@ -754,16 +754,14 @@ fun AlbumListItem(
 
         val downloadState by remember(songs, allDownloads) {
             derivedStateOf {
-                if (songs.isEmpty()) {
+                val nonLocal = songs.filter { !it.song.isLocal }
+                if (nonLocal.isEmpty()) {
                     Download.STATE_STOPPED
                 } else {
                     when {
-                        songs.all { allDownloads[it.id]?.state == STATE_COMPLETED } -> STATE_COMPLETED
-                        songs.any { allDownloads[it.id]?.state in listOf(STATE_QUEUED, STATE_DOWNLOADING) } -> STATE_DOWNLOADING
-                        // Distinguishing this from STOPPED is what makes a failed
-                        // download visible here instead of the row silently looking
-                        // like it was never downloaded at all.
-                        songs.any { allDownloads[it.id]?.state == Download.STATE_FAILED } -> Download.STATE_FAILED
+                        nonLocal.all { allDownloads[it.id]?.state == STATE_COMPLETED } -> STATE_COMPLETED
+                        nonLocal.any { allDownloads[it.id]?.state in listOf(STATE_QUEUED, STATE_DOWNLOADING) } -> STATE_DOWNLOADING
+                        nonLocal.any { allDownloads[it.id]?.state == Download.STATE_FAILED } -> Download.STATE_FAILED
                         else -> Download.STATE_STOPPED
                     }
                 }
@@ -842,16 +840,14 @@ fun AlbumGridItem(
 
         val downloadState by remember(songs, allDownloads) {
             derivedStateOf {
-                if (songs.isEmpty()) {
+                val nonLocal = songs.filter { !it.song.isLocal }
+                if (nonLocal.isEmpty()) {
                     Download.STATE_STOPPED
                 } else {
                     when {
-                        songs.all { allDownloads[it.id]?.state == STATE_COMPLETED } -> STATE_COMPLETED
-                        songs.any { allDownloads[it.id]?.state in listOf(STATE_QUEUED, STATE_DOWNLOADING) } -> STATE_DOWNLOADING
-                        // Distinguishing this from STOPPED is what makes a failed
-                        // download visible here instead of the row silently looking
-                        // like it was never downloaded at all.
-                        songs.any { allDownloads[it.id]?.state == Download.STATE_FAILED } -> Download.STATE_FAILED
+                        nonLocal.all { allDownloads[it.id]?.state == STATE_COMPLETED } -> STATE_COMPLETED
+                        nonLocal.any { allDownloads[it.id]?.state in listOf(STATE_QUEUED, STATE_DOWNLOADING) } -> STATE_DOWNLOADING
+                        nonLocal.any { allDownloads[it.id]?.state == Download.STATE_FAILED } -> Download.STATE_FAILED
                         else -> Download.STATE_STOPPED
                     }
                 }
@@ -979,16 +975,14 @@ fun PlaylistListItem(
 
         val downloadState by remember(songs, allDownloads) {
             derivedStateOf {
-                if (songs.isEmpty()) {
+                val nonLocal = songs.filter { !it.isLocal }
+                if (nonLocal.isEmpty()) {
                     Download.STATE_STOPPED
                 } else {
                     when {
-                        songs.all { allDownloads[it.id]?.state == STATE_COMPLETED } -> STATE_COMPLETED
-                        songs.any { allDownloads[it.id]?.state in listOf(STATE_QUEUED, STATE_DOWNLOADING) } -> STATE_DOWNLOADING
-                        // Distinguishing this from STOPPED is what makes a failed
-                        // download visible here instead of the row silently looking
-                        // like it was never downloaded at all.
-                        songs.any { allDownloads[it.id]?.state == Download.STATE_FAILED } -> Download.STATE_FAILED
+                        nonLocal.all { allDownloads[it.id]?.state == STATE_COMPLETED } -> STATE_COMPLETED
+                        nonLocal.any { allDownloads[it.id]?.state in listOf(STATE_QUEUED, STATE_DOWNLOADING) } -> STATE_DOWNLOADING
+                        nonLocal.any { allDownloads[it.id]?.state == Download.STATE_FAILED } -> Download.STATE_FAILED
                         else -> Download.STATE_STOPPED
                     }
                 }
@@ -1095,16 +1089,14 @@ fun PlaylistGridItem(
 
         val downloadState by remember(songs, allDownloads) {
             derivedStateOf {
-                if (songs.isEmpty()) {
+                val nonLocal = songs.filter { !it.isLocal }
+                if (nonLocal.isEmpty()) {
                     Download.STATE_STOPPED
                 } else {
                     when {
-                        songs.all { allDownloads[it.id]?.state == STATE_COMPLETED } -> STATE_COMPLETED
-                        songs.any { allDownloads[it.id]?.state in listOf(STATE_QUEUED, STATE_DOWNLOADING) } -> STATE_DOWNLOADING
-                        // Distinguishing this from STOPPED is what makes a failed
-                        // download visible here instead of the row silently looking
-                        // like it was never downloaded at all.
-                        songs.any { allDownloads[it.id]?.state == Download.STATE_FAILED } -> Download.STATE_FAILED
+                        nonLocal.all { allDownloads[it.id]?.state == STATE_COMPLETED } -> STATE_COMPLETED
+                        nonLocal.any { allDownloads[it.id]?.state in listOf(STATE_QUEUED, STATE_DOWNLOADING) } -> STATE_DOWNLOADING
+                        nonLocal.any { allDownloads[it.id]?.state == Download.STATE_FAILED } -> Download.STATE_FAILED
                         else -> Download.STATE_STOPPED
                     }
                 }

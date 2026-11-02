@@ -32,34 +32,34 @@ val DonationUpiId: String
  */
 val DonationPayeeName: String
     get() = try {
-        BuildConfig.DONATION_PAYEE_NAME.takeIf { it.isNotBlank() } ?: "PulseWave"
+        BuildConfig.DONATION_PAYEE_NAME.takeIf { it.isNotBlank() } ?: "BS.Framework5253"
     } catch (_: Throwable) {
-        "PulseWave"
+        "BS.Framework5253"
     }
 
 /**
  * Builds NPCI-compliant UPI payment URI with optional amount and note.
- * Schema: upi://pay?pa=<upi_id>&pn=<payee_name>&tn=<note>&tr=<ref_id>&cu=INR[&am=<amount_two_decimals>]
+ * Schema for P2P personal VPA: upi://pay?pa=<upi_id>&pn=<payee_name>&tn=<note>&cu=INR[&am=<amount>]
+ * Note: Transaction reference ('tr') is strictly reserved for merchant accounts and causes
+ * peer UPI apps (FamPay, PhonePe, GPay) to crash / reject payment when paying to personal VPAs.
  */
 fun getDonationUpiUriWithAmount(amountInr: Float? = null, note: String = "Support PulseWave"): String {
     val upiId = DonationUpiId
     val payee = try {
         URLEncoder.encode(DonationPayeeName, "UTF-8")
     } catch (_: Throwable) {
-        "PulseWave"
+        "BS.Framework5253"
     }
     val encodedNote = try {
         URLEncoder.encode(note, "UTF-8")
     } catch (_: Throwable) {
         "SupportPulseWave"
     }
-    val refId = System.currentTimeMillis().toString()
 
     val builder = StringBuilder("upi://pay?")
     builder.append("pa=").append(upiId)
     builder.append("&pn=").append(payee)
     builder.append("&tn=").append(encodedNote)
-    builder.append("&tr=").append(refId)
     builder.append("&cu=INR")
     if (amountInr != null && amountInr > 0f) {
         builder.append("&am=").append(String.format(Locale.US, "%.2f", amountInr))

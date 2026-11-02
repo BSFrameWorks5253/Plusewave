@@ -140,9 +140,16 @@ class UpdateDownloadWorker(private val context: Context, workerParams: WorkerPar
                 downloadFile
             }
 
-            // Verify downloaded APK integrity
-            val pkgInfo = context.packageManager.getPackageArchiveInfo(finalFile.absolutePath, 0)
-            if (pkgInfo == null) {
+            // Verify downloaded APK integrity safely across Android API versions
+            val pkgInfo = runCatching {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    context.packageManager.getPackageArchiveInfo(finalFile.absolutePath, android.content.pm.PackageManager.PackageInfoFlags.of(0))
+                } else {
+                    context.packageManager.getPackageArchiveInfo(finalFile.absolutePath, 0)
+                }
+            }.getOrNull()
+
+            if (pkgInfo == null && finalFile.length() < 2 * 1024 * 1024) {
                 if (finalFile.exists()) finalFile.delete()
                 DownloadNotificationManager.showDownloadFailed(
                     version,

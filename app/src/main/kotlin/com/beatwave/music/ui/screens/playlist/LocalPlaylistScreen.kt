@@ -1593,22 +1593,33 @@ fun LocalPlaylistHeader(
                 val isShuffleOn by playerConnection.shuffleModeEnabled.collectAsState()
                 GlassCircleButton(
                     onClick = {
-                        playerConnection.player.shuffleModeEnabled = true
-                        playerConnection.playQueue(
-                            ListQueue(
-                                title = playlist.playlist.name,
-                                items = songs.shuffled().map { it.song.toMediaItem() },
-                                playlistId = playlist.id
+                        if (isShuffleOn) {
+                            playerConnection.player.shuffleModeEnabled = false
+                            playerConnection.playQueue(
+                                ListQueue(
+                                    title = playlist.playlist.name,
+                                    items = songs.map { it.song.toMediaItem() },
+                                    playlistId = playlist.id
+                                )
                             )
-                        )
+                        } else {
+                            playerConnection.player.shuffleModeEnabled = true
+                            playerConnection.playQueue(
+                                ListQueue(
+                                    title = playlist.playlist.name,
+                                    items = songs.shuffled().map { it.song.toMediaItem() },
+                                    playlistId = playlist.id
+                                )
+                            )
+                        }
                     },
                     size = 48.dp,
                 ) {
                     Icon(
                         painter = painterResource(if (isShuffleOn) R.drawable.shuffle_on else R.drawable.shuffle),
                         tint = if (isShuffleOn) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-                        contentDescription = "Shuffle",
-                        modifier = Modifier.size(20.dp),
+                        contentDescription = if (isShuffleOn) "Shuffle On" else "Shuffle Off",
+                        modifier = Modifier.size(22.dp),
                     )
                 }
 

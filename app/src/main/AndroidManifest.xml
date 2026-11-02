@@ -464,6 +464,8 @@
                 <action android:name="${applicationId}.widget.TURNTABLE_NEXT" />
                 <action android:name="${applicationId}.widget.TURNTABLE_PREVIOUS" />
                 <action android:name="${applicationId}.widget.TURNTABLE_LIKE" />
+                <action android:name="${applicationId}.widget.TURNTABLE_REWIND" />
+                <action android:name="${applicationId}.widget.TURNTABLE_FORWARD" />
                 <action android:name="${applicationId}.widget.UPDATE_TURNTABLE_WIDGET" />
             </intent-filter>
 

@@ -1,34 +1,43 @@
 {
-  "description": "Pulse Wave 6.1.20 — Nothing OS Dot-Matrix & Turntable Platter Widget, Full Drag-and-Drop Library Reordering (Grid & List), Custom Playlist Cover Art Display, Resilient In-App Auto-Updates.",
+  "description": "Pulse Wave 6.1.21 — Drag & Drop Custom Library Ordering, Strict Playlist & Shuffle Isolation, Dot-Matrix & Vinyl Controls with Rewind/Forward, UPI Fix for P2P Payments, Download Warning Resolution, and Player Deck Controls.",
   "image": "",
   "changelog": [
     {
-      "title": "Nothing OS Aesthetic Music Widget",
+      "title": "Library & Playlist Drag-and-Drop Reordering",
       "items": [
-        "Nothing OS Dot-Matrix LED Banner: Real-time 5x7 dot-matrix LED ticker displaying currently playing track information with high-contrast Nothing typography.",
-        "3D Turntable Platter Chamber: Realistic rotating turntable platter with groove rings and reflective chrome spheres matching Nothing design aesthetics.",
-        "Interactive Remote Controls: Integrated Previous, Play/Pause, and Next action triggers with progress bar and dual elapsed/total time readout directly on the home screen."
+        "Full Drag-and-Drop Organization: Enabled drag-and-drop reordering with persistent custom sorting in both Library and Playlists screens for both Grid and List layouts.",
+        "Custom Playlists to the Top: Local and user playlists (such as my MP4 or Mp3 FAV) can now be freely positioned above auto playlists or at the very top of the Library.",
+        "Synced Custom Covers: Fixed playlist card covers so custom images set on auto playlists reflect consistently across screens.",
+        "Local Playlist Switch: Added a dedicated toggle for the Local music playlist in Appearance Settings under Auto Playlists."
       ]
     },
     {
-      "title": "Library Drag-and-Drop Reordering & Custom Placement",
+      "title": "Strict Playlist Playback & Shuffle Isolation",
       "items": [
-        "Full Reordering in Grid & List Views: Long-press and drag any playlist card—including Liked, Downloaded, and custom playlists—to position it anywhere in the library.",
-        "Place Custom Playlists Ahead of Liked: Move your favorite playlists (e.g. 'my MP4') before the Liked playlist at index 0 via drag-and-drop or the 'Move to top' menu option.",
-        "Custom Playlist Thumbnail Rendering: Fixed custom cover artwork and thumbnails so they display on all playlist cards in both Grid and List views."
+        "Fixed Queue Boundary: Shuffling or playing a playlist now strictly plays songs contained inside that playlist, preventing external radio or automix tracks from being mixed in.",
+        "Direct Shuffle & Repeat Controls: Added dedicated Shuffle and Repeat buttons directly to the player controls row with glowing active states so state is instantly visible."
       ]
     },
     {
-      "title": "Robust Auto-Updates & Notification Deep Linking",
+      "title": "Vinyl & Nothing OS Widget Enhancements",
       "items": [
-        "Rate-Limit Free Updates: Added instant fallback to raw GitHub data so update checks succeed even when unauthenticated GitHub API rate limits are reached.",
-        "In-App Notification Navigation: Tapping update notifications now opens the app's clean in-app updater screen with progress indicator and install button."
+        "Vinyl Widget Controls: Restored rewind (-10s) and fast-forward (+10s) controls on the Vinyl turntable widget dock, properly registered with system broadcast intent filters.",
+        "Nothing OS Widget Sync: Connected the Nothing OS dot-matrix player widget to the active music service dispatch loop for live progress updates."
       ]
     },
     {
-      "title": "Stability & Verification",
+      "title": "UPI Payments & In-App Support",
       "items": [
-        "Build Compilation Fixes: Resolved Compose state setter imports, Wrapped conclusion page metadata accessors, and Coil 3 image bitmap conversions."
+        "NPCI P2P Intent Standards: Cleaned UPI payment URI schema by removing merchant-only transaction ref tags that caused FamPay and other UPI apps to force-quit.",
+        "Payee & Custom Amount: Configured BS.Framework5253 as the project payee with direct support for custom contribution amounts."
+      ]
+    },
+    {
+      "title": "Bug Fixes & System Stability",
+      "items": [
+        "Local Track Download Warning Fix: Excluded local device files from download error checks, eliminating false warning badges on local MP3 playlists.",
+        "YouTube Playlist Sync: Fixed double-VL prefixing on InnerTube playlist requests so remote YouTube Music playlists sync reliably.",
+        "Auto-Updater Reliability: Modernized APK archive parsing for Android 13+ to avoid false-negative corruptions."
       ]
     }
   ]

@@ -498,6 +498,7 @@ enum class PlaylistSortType {
 }
 
 enum class MixSortType {
+    CUSTOM,
     CREATE_DATE,
     NAME,
     LAST_UPDATED,

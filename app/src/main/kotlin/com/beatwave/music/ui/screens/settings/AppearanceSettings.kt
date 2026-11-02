@@ -165,6 +165,7 @@ import com.beatwave.music.constants.ShowDownloadedPlaylistKey
 import com.beatwave.music.constants.ShowLikedPlaylistKey
 import com.beatwave.music.constants.ShowTopPlaylistKey
 import com.beatwave.music.constants.ShowUploadedPlaylistKey
+import com.beatwave.music.constants.ShowLocalPlaylistKey
 import com.beatwave.music.constants.SlimNavBarKey
 import com.beatwave.music.constants.SwipeLyricsKey
 import com.beatwave.music.constants.SwipeSensitivityKey
@@ -377,6 +378,10 @@ fun AppearanceSettings(
     )
     val (showUploadedPlaylist, onShowUploadedPlaylistChange) = rememberPreference(
         ShowUploadedPlaylistKey,
+        defaultValue = true
+    )
+    val (showLocalPlaylist, onShowLocalPlaylistChange) = rememberPreference(
+        ShowLocalPlaylistKey,
         defaultValue = true
     )
     val (showCommentButton, onShowCommentButtonChange) = rememberPreference(
@@ -1686,6 +1691,26 @@ fun AppearanceSettings(
                         )
                     },
                     onClick = { onShowUploadedPlaylistChange(!showUploadedPlaylist) }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.folder),
+                    title = { Text(stringResource(R.string.filter_local)) },
+                    trailingContent = {
+                        Switch(
+                            checked = showLocalPlaylist,
+                            onCheckedChange = onShowLocalPlaylistChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (showLocalPlaylist) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onShowLocalPlaylistChange(!showLocalPlaylist) }
                 )
             )
         )

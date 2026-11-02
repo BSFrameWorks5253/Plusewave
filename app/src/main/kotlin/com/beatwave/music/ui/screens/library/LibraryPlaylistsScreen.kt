@@ -78,6 +78,7 @@ import com.beatwave.music.constants.PlaylistViewTypeKey
 import com.beatwave.music.constants.ShowCachedPlaylistKey
 import com.beatwave.music.constants.ShowDownloadedPlaylistKey
 import com.beatwave.music.constants.ShowLikedPlaylistKey
+import com.beatwave.music.constants.ShowLocalPlaylistKey
 import com.beatwave.music.constants.ShowTopPlaylistKey
 import com.beatwave.music.constants.ShowUploadedPlaylistKey
 import com.beatwave.music.constants.YtmSyncKey
@@ -143,7 +144,7 @@ fun LibraryPlaylistsScreen(
     var viewType by rememberEnumPreference(PlaylistViewTypeKey, LibraryViewType.GRID)
     val (sortType, onSortTypeChange) = rememberEnumPreference(
         PlaylistSortTypeKey,
-        PlaylistSortType.CREATE_DATE
+        PlaylistSortType.CUSTOM
     )
     val (sortDescending, onSortDescendingChange) = rememberPreference(
         PlaylistSortDescendingKey,
@@ -207,11 +208,22 @@ fun LibraryPlaylistsScreen(
             songThumbnails = emptyList(),
         )
 
+    val localPlaylist =
+        Playlist(
+            playlist = PlaylistEntity(
+                id = "auto:local",
+                name = stringResource(R.string.filter_local)
+            ),
+            songCount = 0,
+            songThumbnails = emptyList(),
+        )
+
     val (showLiked) = rememberPreference(ShowLikedPlaylistKey, true)
     val (showDownloaded) = rememberPreference(ShowDownloadedPlaylistKey, true)
     val (showTop) = rememberPreference(ShowTopPlaylistKey, true)
     val (showCached) = rememberPreference(ShowCachedPlaylistKey, true)
     val (showUploaded) = rememberPreference(ShowUploadedPlaylistKey, true)
+    val (showLocal) = rememberPreference(ShowLocalPlaylistKey, true)
 
     val lazyListState = rememberLazyListState()
     val lazyGridState = rememberLazyGridState()
@@ -332,8 +344,8 @@ fun LibraryPlaylistsScreen(
     var customOrder by rememberPreference(CustomPlaylistOrderKey, "")
 
     val autoItems = remember(
-        showLiked, showDownloaded, showTop, showCached, showUploaded,
-        topSize, likedPlaylist, downloadPlaylist, topPlaylist, cachePlaylist, uploadedPlaylist
+        showLiked, showDownloaded, showTop, showCached, showUploaded, showLocal,
+        topSize, likedPlaylist, downloadPlaylist, topPlaylist, cachePlaylist, uploadedPlaylist, localPlaylist
     ) {
         buildList {
             if (showLiked) add(LibraryPlaylistItem.Auto("auto:liked", likedPlaylist, "auto_playlist/liked"))
@@ -341,6 +353,7 @@ fun LibraryPlaylistsScreen(
             if (showTop) add(LibraryPlaylistItem.Auto("auto:top", topPlaylist, "top_playlist/$topSize"))
             if (showCached) add(LibraryPlaylistItem.Auto("auto:cached", cachePlaylist, "cache_playlist/cached"))
             if (showUploaded) add(LibraryPlaylistItem.Auto("auto:uploaded", uploadedPlaylist, "auto_playlist/uploaded"))
+            if (showLocal) add(LibraryPlaylistItem.Auto("auto:local", localPlaylist, "auto_playlist/local"))
         }
     }
 
@@ -349,27 +362,40 @@ fun LibraryPlaylistsScreen(
     }
 
     val localUnifiedItems = remember(autoItems, userItems, sortType, customOrder) {
-        val allMap = (autoItems + userItems).associateBy { it.id }
+        val allMap = mutableMapOf<String, LibraryPlaylistItem>()
+        for (item in autoItems) {
+            allMap[item.id] = item
+            when (item.id) {
+                "auto:liked" -> allMap[PlaylistEntity.LIKED_PLAYLIST_ID] = item
+                "auto:downloaded" -> allMap[PlaylistEntity.DOWNLOADED_PLAYLIST_ID] = item
+                "auto:top" -> allMap[PlaylistEntity.TOP_PLAYLIST_ID] = item
+                "auto:cached" -> allMap[PlaylistEntity.CACHED_PLAYLIST_ID] = item
+                "auto:uploaded" -> allMap[PlaylistEntity.UPLOADED_PLAYLIST_ID] = item
+                "auto:local" -> allMap[PlaylistEntity.LOCAL_PLAYLIST_ID] = item
+            }
+        }
+        for (item in userItems) {
+            allMap[item.id] = item
+        }
         if (sortType == PlaylistSortType.CUSTOM && customOrder.isNotBlank()) {
             val orderIds = customOrder.split(",").filter { it.isNotBlank() }
             val orderedList = mutableListOf<LibraryPlaylistItem>()
             val seen = mutableSetOf<String>()
             for (id in orderIds) {
                 allMap[id]?.let {
-                    orderedList.add(it)
-                    seen.add(id)
+                    if (seen.add(it.id)) {
+                        orderedList.add(it)
+                    }
                 }
             }
             for (item in autoItems) {
-                if (item.id !in seen) {
+                if (seen.add(item.id)) {
                     orderedList.add(item)
-                    seen.add(item.id)
                 }
             }
             for (item in userItems) {
-                if (item.id !in seen) {
+                if (seen.add(item.id)) {
                     orderedList.add(item)
-                    seen.add(item.id)
                 }
             }
             orderedList.toMutableStateList()
@@ -481,7 +507,7 @@ fun LibraryPlaylistsScreen(
                                         coroutineScope = coroutineScope,
                                         playlist = item.playlist,
                                         showIconOnly = libraryIconsOnly,
-                                        isCustomSort = true,
+                                        isCustomSort = (sortType == PlaylistSortType.CUSTOM),
                                         dragHandleModifier = Modifier.longPressDraggableHandle(),
                                         modifier = Modifier.animateItem()
                                     )
@@ -606,9 +632,26 @@ private fun AutoPlaylistCard(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val aliasId = when (playlist.id) {
+        "auto:liked" -> PlaylistEntity.LIKED_PLAYLIST_ID
+        "auto:downloaded" -> PlaylistEntity.DOWNLOADED_PLAYLIST_ID
+        "auto:top" -> PlaylistEntity.TOP_PLAYLIST_ID
+        "auto:cached" -> PlaylistEntity.CACHED_PLAYLIST_ID
+        "auto:uploaded" -> PlaylistEntity.UPLOADED_PLAYLIST_ID
+        "auto:local" -> PlaylistEntity.LOCAL_PLAYLIST_ID
+        PlaylistEntity.LIKED_PLAYLIST_ID -> "auto:liked"
+        PlaylistEntity.DOWNLOADED_PLAYLIST_ID -> "auto:downloaded"
+        PlaylistEntity.TOP_PLAYLIST_ID -> "auto:top"
+        PlaylistEntity.CACHED_PLAYLIST_ID -> "auto:cached"
+        PlaylistEntity.UPLOADED_PLAYLIST_ID -> "auto:uploaded"
+        PlaylistEntity.LOCAL_PLAYLIST_ID -> "auto:local"
+        else -> null
+    }
     var customUri by rememberPreference(stringPreferencesKey("thumbnail_${playlist.id}"), "")
+    val aliasUri by rememberPreference(stringPreferencesKey("thumbnail_${aliasId ?: ""}"), "")
 
-    val override = customUri.takeIf { it.isNotBlank() }
+    val override = customUri.takeIf { it.isNotBlank() } ?: aliasUri.takeIf { it.isNotBlank() }
 
     var menuOpen by remember { mutableStateOf(false) }
     val picker = rememberLauncherForActivityResult(

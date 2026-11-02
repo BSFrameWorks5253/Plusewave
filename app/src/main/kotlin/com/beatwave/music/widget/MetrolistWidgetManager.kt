@@ -275,6 +275,27 @@ class vivimusicWidgetManager @Inject constructor(
                 )
             }
         }
+
+        // 7. Update Nothing OS style player widgets (Nothing OS / Teenage Engineering aesthetic)
+        val nothingComponent = ComponentName(context, NothingPlayerWidgetReceiver::class.java)
+        val nothingWidgetIds = appWidgetManager.getAppWidgetIds(nothingComponent)
+        if (nothingWidgetIds.isNotEmpty()) {
+            nothingWidgetIds.forEach { widgetId ->
+                val options = appWidgetManager.getAppWidgetOptions(widgetId)
+                val config = WidgetConfig.load(context, widgetId)
+                val nothingViews = createNothingPlayerRemoteViews(
+                    options = options,
+                    config = config,
+                    title = title,
+                    artist = artist,
+                    albumArt = albumArt,
+                    isPlaying = isPlaying,
+                    duration = duration,
+                    currentPosition = currentPosition,
+                )
+                appWidgetManager.updateAppWidget(widgetId, nothingViews)
+            }
+        }
     }
 
     /**
@@ -1160,6 +1181,8 @@ class vivimusicWidgetManager @Inject constructor(
             if (config.showPrevNext) android.view.View.VISIBLE else android.view.View.GONE
         views.setViewVisibility(R.id.widget_turntable_prev_button, transportVisibility)
         views.setViewVisibility(R.id.widget_turntable_next_button, transportVisibility)
+        views.setViewVisibility(R.id.widget_turntable_rewind_button, transportVisibility)
+        views.setViewVisibility(R.id.widget_turntable_forward_button, transportVisibility)
 
         val likeVisibility =
             if (config.showLike) android.view.View.VISIBLE else android.view.View.GONE

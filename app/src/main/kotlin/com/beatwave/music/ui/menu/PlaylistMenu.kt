@@ -77,8 +77,12 @@ import com.beatwave.music.playback.queues.ListQueue
 import com.beatwave.music.playback.queues.YouTubeQueue
 import com.beatwave.music.playback.removeDownloads
 import com.beatwave.music.constants.CustomPlaylistOrderKey
+import com.beatwave.music.constants.MixSortType
+import com.beatwave.music.constants.MixSortTypeKey
 import com.beatwave.music.constants.PlaylistSortTypeKey
 import com.beatwave.music.constants.PlaylistSortDescendingKey
+import com.beatwave.music.constants.MixSortType
+import com.beatwave.music.constants.MixSortTypeKey
 import com.beatwave.music.constants.PlaylistSortType
 import com.beatwave.music.ui.component.DefaultDialog
 import com.beatwave.music.ui.component.Material3MenuGroup
@@ -507,7 +511,20 @@ fun PlaylistMenu(
                                                 .split(",")
                                                 .filter { it.isNotBlank() }
                                                 .toMutableList()
-                                            val defaultAutos = listOf("auto:liked", "auto:downloaded", "auto:top", "auto:cached", "auto:uploaded")
+                                            val defaultAutos = listOf(
+                                                PlaylistEntity.LIKED_PLAYLIST_ID,
+                                                PlaylistEntity.DOWNLOADED_PLAYLIST_ID,
+                                                PlaylistEntity.TOP_PLAYLIST_ID,
+                                                PlaylistEntity.CACHED_PLAYLIST_ID,
+                                                PlaylistEntity.UPLOADED_PLAYLIST_ID,
+                                                PlaylistEntity.LOCAL_PLAYLIST_ID,
+                                                "auto:liked",
+                                                "auto:downloaded",
+                                                "auto:top",
+                                                "auto:cached",
+                                                "auto:uploaded",
+                                                "auto:local"
+                                            )
                                             for (autoId in defaultAutos) {
                                                 if (!currentOrder.contains(autoId)) {
                                                     currentOrder.add(autoId)
@@ -523,6 +540,7 @@ fun PlaylistMenu(
                                             }
                                             preferences[CustomPlaylistOrderKey] = currentOrder.joinToString(",")
                                             preferences[PlaylistSortTypeKey] = PlaylistSortType.CUSTOM.name
+                                            preferences[MixSortTypeKey] = MixSortType.CUSTOM.name
                                             preferences[PlaylistSortDescendingKey] = false
                                         }
                                         withContext(Dispatchers.Main) {

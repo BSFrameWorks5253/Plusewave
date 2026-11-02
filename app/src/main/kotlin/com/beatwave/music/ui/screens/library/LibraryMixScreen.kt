@@ -63,6 +63,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.beatwave.music.LocalPlayerAwareWindowInsets
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyGridState
+import sh.calvin.reorderable.rememberReorderableLazyListState
+import androidx.compose.runtime.toMutableStateList
+import androidx.datastore.preferences.core.edit
 import com.beatwave.music.LocalPlayerConnection
 import com.beatwave.music.R
 import com.beatwave.music.ui.utils.rememberGridColumns
@@ -125,6 +130,27 @@ import java.util.Locale
 import java.util.UUID
 import androidx.compose.ui.platform.LocalLocale
 
+sealed interface LibraryMixItem {
+    val id: String
+    val aliasId: String get() = ""
+    data class Auto(
+        override val id: String,
+        override val aliasId: String,
+        val playlist: Playlist,
+        val route: String,
+        val thumbnailOverrideUrl: String?
+    ) : LibraryMixItem
+    data class UserPlaylist(val playlist: Playlist) : LibraryMixItem {
+        override val id: String = playlist.id
+    }
+    data class UserAlbum(val album: Album) : LibraryMixItem {
+        override val id: String = album.id
+    }
+    data class UserArtist(val artist: Artist) : LibraryMixItem {
+        override val id: String = artist.id
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LibraryMixScreen(
@@ -141,7 +167,7 @@ fun LibraryMixScreen(
     var viewType by rememberEnumPreference(AlbumViewTypeKey, LibraryViewType.GRID)
     val (sortType, onSortTypeChange) = rememberEnumPreference(
         MixSortTypeKey,
-        MixSortType.CREATE_DATE
+        MixSortType.CUSTOM
     )
     val (sortDescending, onSortDescendingChange) = rememberPreference(MixSortDescendingKey, true)
     val gridItemSize by rememberEnumPreference(GridItemsSizeKey, GridItemSize.BIG)
@@ -151,11 +177,28 @@ fun LibraryMixScreen(
     val topSize by viewModel.topValue.collectAsState(initial = 50)
     
     val likedThumbnail by rememberPreference(stringPreferencesKey("thumbnail_${PlaylistEntity.LIKED_PLAYLIST_ID}"), "")
+    val likedThumbnailLegacy by rememberPreference(stringPreferencesKey("thumbnail_auto:liked"), "")
+    val effectiveLikedThumbnail = likedThumbnail.takeIf { it.isNotBlank() } ?: likedThumbnailLegacy.takeIf { it.isNotBlank() }
+
     val downloadThumbnail by rememberPreference(stringPreferencesKey("thumbnail_${PlaylistEntity.DOWNLOADED_PLAYLIST_ID}"), "")
+    val downloadThumbnailLegacy by rememberPreference(stringPreferencesKey("thumbnail_auto:downloaded"), "")
+    val effectiveDownloadThumbnail = downloadThumbnail.takeIf { it.isNotBlank() } ?: downloadThumbnailLegacy.takeIf { it.isNotBlank() }
+
     val topThumbnail by rememberPreference(stringPreferencesKey("thumbnail_${PlaylistEntity.TOP_PLAYLIST_ID}"), "")
+    val topThumbnailLegacy by rememberPreference(stringPreferencesKey("thumbnail_auto:top"), "")
+    val effectiveTopThumbnail = topThumbnail.takeIf { it.isNotBlank() } ?: topThumbnailLegacy.takeIf { it.isNotBlank() }
+
     val cacheThumbnail by rememberPreference(stringPreferencesKey("thumbnail_${PlaylistEntity.CACHED_PLAYLIST_ID}"), "")
+    val cacheThumbnailLegacy by rememberPreference(stringPreferencesKey("thumbnail_auto:cached"), "")
+    val effectiveCacheThumbnail = cacheThumbnail.takeIf { it.isNotBlank() } ?: cacheThumbnailLegacy.takeIf { it.isNotBlank() }
+
     val uploadedThumbnail by rememberPreference(stringPreferencesKey("thumbnail_${PlaylistEntity.UPLOADED_PLAYLIST_ID}"), "")
+    val uploadedThumbnailLegacy by rememberPreference(stringPreferencesKey("thumbnail_auto:uploaded"), "")
+    val effectiveUploadedThumbnail = uploadedThumbnail.takeIf { it.isNotBlank() } ?: uploadedThumbnailLegacy.takeIf { it.isNotBlank() }
+
     val localThumbnail by rememberPreference(stringPreferencesKey("thumbnail_${PlaylistEntity.LOCAL_PLAYLIST_ID}"), "")
+    val localThumbnailLegacy by rememberPreference(stringPreferencesKey("thumbnail_auto:local"), "")
+    val effectiveLocalThumbnail = localThumbnail.takeIf { it.isNotBlank() } ?: localThumbnailLegacy.takeIf { it.isNotBlank() }
 
     val albums by viewModel.albums.collectAsState()
     val artists by viewModel.artists.collectAsState()
@@ -244,67 +287,159 @@ fun LibraryMixScreen(
     val showCached = showCachedPref && !localOnly
     val showUploaded = showUploadedPref && !localOnly
 
-    val customOrder by rememberPreference(CustomPlaylistOrderKey, "")
-    val topCustomPlaylists = remember(playlists, customOrder) {
-        if (customOrder.isBlank()) emptyList()
-        else {
-            val orderList = customOrder.split(",").filter { it.isNotBlank() }
-            orderList.mapNotNull { id -> playlists.find { it.id == id } }
+    var customOrder by rememberPreference(CustomPlaylistOrderKey, "")
+
+    val autoItems = remember(
+        showLiked, showDownloaded, showTop, showCached, showUploaded, showLocal,
+        likedPlaylist, downloadPlaylist, topPlaylist, cachePlaylist, uploadedPlaylist, localPlaylist,
+        effectiveLikedThumbnail, effectiveDownloadThumbnail, effectiveTopThumbnail, effectiveCacheThumbnail, effectiveUploadedThumbnail, effectiveLocalThumbnail
+    ) {
+        buildList {
+            if (showLiked) add(LibraryMixItem.Auto(PlaylistEntity.LIKED_PLAYLIST_ID, "auto:liked", likedPlaylist, "auto_playlist/liked", effectiveLikedThumbnail))
+            if (showDownloaded) add(LibraryMixItem.Auto(PlaylistEntity.DOWNLOADED_PLAYLIST_ID, "auto:downloaded", downloadPlaylist, "auto_playlist/downloaded", effectiveDownloadThumbnail))
+            if (showTop) add(LibraryMixItem.Auto(PlaylistEntity.TOP_PLAYLIST_ID, "auto:top", topPlaylist, "top_playlist/$topSize", effectiveTopThumbnail))
+            if (showCached) add(LibraryMixItem.Auto(PlaylistEntity.CACHED_PLAYLIST_ID, "auto:cached", cachePlaylist, "cache_playlist/cached", effectiveCacheThumbnail))
+            if (showUploaded) add(LibraryMixItem.Auto(PlaylistEntity.UPLOADED_PLAYLIST_ID, "auto:uploaded", uploadedPlaylist, "auto_playlist/uploaded", effectiveUploadedThumbnail))
+            if (showLocal) add(LibraryMixItem.Auto(PlaylistEntity.LOCAL_PLAYLIST_ID, "auto:local", localPlaylist, "auto_playlist/local", effectiveLocalThumbnail))
         }
     }
 
     val platformLocale = LocalLocale.current.platformLocale
-    val allItems =
-        remember(albums, playlists, sortType, sortDescending, platformLocale) {
-            var items = albums + playlists
+    val userItems = remember(albums, playlists, artists, sortType, sortDescending, platformLocale) {
+        if (sortType == MixSortType.CUSTOM) {
+            (playlists.map { LibraryMixItem.UserPlaylist(it) } +
+             albums.map { LibraryMixItem.UserAlbum(it) } +
+             artists.map { LibraryMixItem.UserArtist(it) }).distinctBy { it.id }
+        } else {
             val collator = Collator.getInstance(platformLocale)
             collator.strength = Collator.PRIMARY
-            items =
-                when (sortType) {
-                    MixSortType.CREATE_DATE ->
-                        items.sortedBy { item ->
-                            when (item) {
-                                is Album -> item.album.bookmarkedAt
-                                is Artist -> item.artist.bookmarkedAt
-                                is Playlist -> item.playlist.createdAt
-                                else -> LocalDateTime.now()
-                            }
+            var items = albums + playlists
+            items = when (sortType) {
+                MixSortType.CREATE_DATE -> items.sortedBy { item ->
+                    when (item) {
+                        is Album -> item.album.bookmarkedAt
+                        is Artist -> item.artist.bookmarkedAt
+                        is Playlist -> item.playlist.createdAt
+                        else -> LocalDateTime.now()
+                    }
+                }
+                MixSortType.NAME -> items.sortedWith(
+                    compareBy(collator) { item ->
+                        when (item) {
+                            is Album -> item.album.title
+                            is Artist -> item.artist.name
+                            is Playlist -> item.playlist.name
+                            else -> ""
                         }
-
-                    MixSortType.NAME ->
-                        items.sortedWith(
-                            compareBy(collator) { item ->
-                                when (item) {
-                                    is Album -> item.album.title
-                                    is Artist -> item.artist.name
-                                    is Playlist -> item.playlist.name
-                                    else -> ""
-                                }
-                            },
-                        )
-
-                    MixSortType.LAST_UPDATED ->
-                        items.sortedBy { item ->
-                            when (item) {
-                                is Album -> item.album.lastUpdateTime
-                                is Artist -> item.artist.lastUpdateTime
-                                is Playlist -> item.playlist.lastUpdateTime
-                                else -> LocalDateTime.now()
-                            }
-                        }
-                }.reversed(sortDescending)
-            items
+                    }
+                )
+                MixSortType.LAST_UPDATED -> items.sortedBy { item ->
+                    when (item) {
+                        is Album -> item.album.lastUpdateTime
+                        is Artist -> item.artist.lastUpdateTime
+                        is Playlist -> item.playlist.lastUpdateTime
+                        else -> LocalDateTime.now()
+                    }
+                }
+                MixSortType.CUSTOM -> items
+            }.reversed(sortDescending)
+            items.map { item ->
+                when (item) {
+                    is Playlist -> LibraryMixItem.UserPlaylist(item)
+                    is Album -> LibraryMixItem.UserAlbum(item)
+                    is Artist -> LibraryMixItem.UserArtist(item)
+                    else -> error("Unknown item")
+                }
+            }
         }
-
-    val displayedItems = remember(allItems, topCustomPlaylists) {
-        val topIds = topCustomPlaylists.map { it.id }.toSet()
-        allItems.filterNot { it.id in topIds }.distinctBy { it.id }
     }
 
-    val coroutineScope = rememberCoroutineScope()
+    val localUnifiedItems = remember(autoItems, userItems, sortType, customOrder) {
+        val allMap = mutableMapOf<String, LibraryMixItem>()
+        for (item in autoItems) {
+            allMap[item.id] = item
+            allMap[item.aliasId] = item
+        }
+        for (item in userItems) {
+            allMap[item.id] = item
+        }
+        if (sortType == MixSortType.CUSTOM && customOrder.isNotBlank()) {
+            val orderIds = customOrder.split(",").filter { it.isNotBlank() }
+            val orderedList = mutableListOf<LibraryMixItem>()
+            val seen = mutableSetOf<String>()
+            for (id in orderIds) {
+                allMap[id]?.let {
+                    if (seen.add(it.id)) {
+                        orderedList.add(it)
+                    }
+                }
+            }
+            for (item in autoItems) {
+                if (seen.add(item.id)) {
+                    orderedList.add(item)
+                }
+            }
+            for (item in userItems) {
+                if (seen.add(item.id)) {
+                    orderedList.add(item)
+                }
+            }
+            orderedList.toMutableStateList()
+        } else {
+            (autoItems + userItems).toMutableStateList()
+        }
+    }
 
+    var hasDragged by remember { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
     val lazyListState = rememberLazyListState()
     val lazyGridState = rememberLazyGridState()
+
+    val reorderableListState = rememberReorderableLazyListState(
+        lazyListState = lazyListState,
+        scrollThresholdPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
+    ) { from, to ->
+        val headerCount = 2
+        if (from.index >= headerCount && to.index >= headerCount) {
+            val fromIdx = from.index - headerCount
+            val toIdx = to.index - headerCount
+            if (fromIdx in localUnifiedItems.indices && toIdx in localUnifiedItems.indices) {
+                localUnifiedItems.add(toIdx, localUnifiedItems.removeAt(fromIdx))
+                hasDragged = true
+            }
+        }
+    }
+
+    val reorderableGridState = rememberReorderableLazyGridState(
+        lazyGridState = lazyGridState,
+        scrollThresholdPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
+    ) { from, to ->
+        val headerCount = 2
+        if (from.index >= headerCount && to.index >= headerCount) {
+            val fromIdx = from.index - headerCount
+            val toIdx = to.index - headerCount
+            if (fromIdx in localUnifiedItems.indices && toIdx in localUnifiedItems.indices) {
+                localUnifiedItems.add(toIdx, localUnifiedItems.removeAt(fromIdx))
+                hasDragged = true
+            }
+        }
+    }
+
+    val context = LocalContext.current
+    LaunchedEffect(reorderableListState.isAnyItemDragging, reorderableGridState.isAnyItemDragging) {
+        val isDragging = reorderableListState.isAnyItemDragging || reorderableGridState.isAnyItemDragging
+        if (!isDragging && hasDragged) {
+            val newOrder = localUnifiedItems.joinToString(",") { it.id }
+            customOrder = newOrder
+            context.dataStore.edit { preferences ->
+                preferences[CustomPlaylistOrderKey] = newOrder
+                preferences[MixSortTypeKey] = MixSortType.CUSTOM.name
+            }
+            onSortTypeChange(MixSortType.CUSTOM)
+            hasDragged = false
+        }
+    }
     var showCreatePlaylistDialog by rememberSaveable { mutableStateOf(false) }
 
     if (showCreatePlaylistDialog) {
@@ -342,6 +477,7 @@ fun LibraryMixScreen(
                 onSortDescendingChange = onSortDescendingChange,
                 sortTypeText = { sortType ->
                     when (sortType) {
+                        MixSortType.CUSTOM -> R.string.sort_by_custom
                         MixSortType.CREATE_DATE -> R.string.sort_by_create_date
                         MixSortType.LAST_UPDATED -> R.string.sort_by_last_updated
                         MixSortType.NAME -> R.string.sort_by_name
@@ -445,391 +581,182 @@ fun LibraryMixScreen(
                             headerContent()
                         }
 
-                        // Prioritized/moved-to-top custom playlists (e.g. "my MP4") displayed first before Liked playlist
                         items(
-                            items = topCustomPlaylists,
-                            key = { "top_mix_${it.id}" },
+                            items = localUnifiedItems,
+                            key = { it.id },
                             contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) { playlist ->
-                            PlaylistListItem(
-                                playlist = playlist,
-                                autoPlaylist = false,
-                                flat = true,
-                                showIconOnly = libraryIconsOnly,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .combinedBounceClick(
-                                        onClick = { navController.navigate("local_playlist/${playlist.id}") },
-                                        onLongClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            menuState.show {
-                                                PlaylistMenu(
-                                                    playlist = playlist,
-                                                    coroutineScope = coroutineScope,
-                                                    onDismiss = menuState::dismiss,
-                                                    autoPlaylist = false
+                        ) { item ->
+                            ReorderableItem(
+                                state = reorderableListState,
+                                key = item.id
+                            ) { isDragging ->
+                                when (item) {
+                                    is LibraryMixItem.Auto -> {
+                                        PlaylistListItem(
+                                            playlist = item.playlist,
+                                            autoPlaylist = true,
+                                            flat = true,
+                                            showIconOnly = libraryIconsOnly,
+                                            thumbnailOverrideUrl = item.thumbnailOverrideUrl,
+                                            trailingContent = {
+                                                if (sortType == MixSortType.CUSTOM) {
+                                                    IconButton(onClick = {}, modifier = Modifier.draggableHandle()) {
+                                                        Icon(painterResource(R.drawable.drag_handle), contentDescription = "Reorder", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    }
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .combinedBounceClick(
+                                                    onClick = { navController.navigate(item.route) },
+                                                    onLongClick = {
+                                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                        menuState.show {
+                                                            PlaylistMenu(
+                                                                playlist = item.playlist,
+                                                                coroutineScope = coroutineScope,
+                                                                onDismiss = menuState::dismiss,
+                                                                autoPlaylist = true
+                                                            )
+                                                        }
+                                                    }
                                                 )
-                                            }
-                                        }
-                                    )
-                                    .animateItem()
-                            )
-                        }
-
-                        if (showLiked) {
-                            item(
-                                key = "likedPlaylist",
-                                contentType = { CONTENT_TYPE_PLAYLIST },
-                            ) {
-                                PlaylistListItem(
-                                    playlist = likedPlaylist,
-                                    autoPlaylist = true,
-                                    flat = true,
-                                    showIconOnly = libraryIconsOnly,
-                                    thumbnailOverrideUrl = likedThumbnail.takeIf { it.isNotBlank() },
-                                    modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .combinedBounceClick(
-                                            onClick = {
-                                                navController.navigate("auto_playlist/liked")
-                                            },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuState.show {
-                                                    PlaylistMenu(
-                                                        playlist = likedPlaylist,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                        autoPlaylist = true
-                                                    )
-                                                }
-                                            }
+                                                .animateItem()
                                         )
-                                        .animateItem(),
-                                )
+                                    }
+                                    is LibraryMixItem.UserPlaylist -> {
+                                        PlaylistListItem(
+                                            playlist = item.playlist,
+                                            flat = true,
+                                            showIconOnly = libraryIconsOnly,
+                                            trailingContent = {
+                                                if (sortType == MixSortType.CUSTOM) {
+                                                    IconButton(onClick = {}, modifier = Modifier.draggableHandle()) {
+                                                        Icon(painterResource(R.drawable.drag_handle), contentDescription = "Reorder", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    }
+                                                }
+                                                IconButton(
+                                                    onClick = {
+                                                        menuState.show {
+                                                            PlaylistMenu(
+                                                                playlist = item.playlist,
+                                                                coroutineScope = coroutineScope,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+                                                    }
+                                                ) {
+                                                    Icon(painterResource(R.drawable.more_vert), contentDescription = null)
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .combinedBounceClick(
+                                                    onClick = { navController.navigate("local_playlist/${item.playlist.id}") },
+                                                    onLongClick = {
+                                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                        menuState.show {
+                                                            PlaylistMenu(
+                                                                playlist = item.playlist,
+                                                                coroutineScope = coroutineScope,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+                                                    }
+                                                )
+                                                .animateItem()
+                                        )
+                                    }
+                                    is LibraryMixItem.UserAlbum -> {
+                                        AlbumListItem(
+                                            album = item.album,
+                                            isActive = item.album.id == mediaMetadata?.album?.id,
+                                            isPlaying = isPlaying,
+                                            flat = true,
+                                            showIconOnly = libraryIconsOnly,
+                                            trailingContent = {
+                                                if (sortType == MixSortType.CUSTOM) {
+                                                    IconButton(onClick = {}, modifier = Modifier.draggableHandle()) {
+                                                        Icon(painterResource(R.drawable.drag_handle), contentDescription = "Reorder", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    }
+                                                }
+                                                IconButton(
+                                                    onClick = {
+                                                        menuState.show {
+                                                            AlbumMenu(
+                                                                originalAlbum = item.album,
+                                                                navController = navController,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+                                                    }
+                                                ) {
+                                                    Icon(painterResource(R.drawable.more_vert), contentDescription = null)
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .combinedBounceClick(
+                                                    onClick = { navController.navigate("album/${item.album.id}") },
+                                                    onLongClick = {
+                                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                        menuState.show {
+                                                            AlbumMenu(
+                                                                originalAlbum = item.album,
+                                                                navController = navController,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+                                                    }
+                                                )
+                                                .animateItem()
+                                        )
+                                    }
+                                    is LibraryMixItem.UserArtist -> {
+                                        ArtistListItem(
+                                            artist = item.artist,
+                                            flat = true,
+                                            showIconOnly = libraryIconsOnly,
+                                            trailingContent = {
+                                                if (sortType == MixSortType.CUSTOM) {
+                                                    IconButton(onClick = {}, modifier = Modifier.draggableHandle()) {
+                                                        Icon(painterResource(R.drawable.drag_handle), contentDescription = "Reorder", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    }
+                                                }
+                                                IconButton(
+                                                    onClick = {
+                                                        menuState.show {
+                                                            ArtistMenu(
+                                                                originalArtist = item.artist,
+                                                                coroutineScope = coroutineScope,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+                                                    }
+                                                ) {
+                                                    Icon(painterResource(R.drawable.more_vert), contentDescription = null)
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .combinedBounceClick(
+                                                    onClick = { navController.navigate("artist/${item.artist.id}") },
+                                                    onLongClick = {
+                                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                        menuState.show {
+                                                            ArtistMenu(
+                                                                originalArtist = item.artist,
+                                                                coroutineScope = coroutineScope,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+                                                    }
+                                                )
+                                                .animateItem()
+                                        )
+                                    }
+                                }
                             }
-                        }
-
-                        if (showDownloaded) {
-                            item(
-                                key = "downloadedPlaylist",
-                                contentType = { CONTENT_TYPE_PLAYLIST },
-                            ) {
-                                PlaylistListItem(
-                                    playlist = downloadPlaylist,
-                                    autoPlaylist = true,
-                                    flat = true,
-                                    showIconOnly = libraryIconsOnly,
-                                    thumbnailOverrideUrl = downloadThumbnail.takeIf { it.isNotBlank() },
-                                    modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .combinedBounceClick(
-                                            onClick = {
-                                                navController.navigate("auto_playlist/downloaded")
-                                            },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuState.show {
-                                                    PlaylistMenu(
-                                                        playlist = downloadPlaylist,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                        autoPlaylist = true
-                                                    )
-                                                }
-                                            }
-                                        )
-                                        .animateItem(),
-                                )
-                            }
-                        }
-
-                        if (showTop) {
-                            item(
-                                key = "TopPlaylist",
-                                contentType = { CONTENT_TYPE_PLAYLIST },
-                            ) {
-                                PlaylistListItem(
-                                    playlist = topPlaylist,
-                                    autoPlaylist = true,
-                                    flat = true,
-                                    showIconOnly = libraryIconsOnly,
-                                    thumbnailOverrideUrl = topThumbnail.takeIf { it.isNotBlank() },
-                                    modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .combinedBounceClick(
-                                            onClick = {
-                                                navController.navigate("top_playlist/$topSize")
-                                            },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuState.show {
-                                                    PlaylistMenu(
-                                                        playlist = topPlaylist,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                        autoPlaylist = true
-                                                    )
-                                                }
-                                            }
-                                        )
-                                        .animateItem(),
-                                )
-                            }
-                        }
-
-                        if (showCached) {
-                            item(
-                                key = "cachePlaylist",
-                                contentType = { CONTENT_TYPE_PLAYLIST },
-                            ) {
-                                PlaylistListItem(
-                                    playlist = cachePlaylist,
-                                    autoPlaylist = true,
-                                    flat = true,
-                                    showIconOnly = libraryIconsOnly,
-                                    thumbnailOverrideUrl = cacheThumbnail.takeIf { it.isNotBlank() },
-                                    modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .combinedBounceClick(
-                                            onClick = {
-                                                navController.navigate("cache_playlist/cached")
-                                            },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuState.show {
-                                                    PlaylistMenu(
-                                                        playlist = cachePlaylist,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                        autoPlaylist = true
-                                                    )
-                                                }
-                                            }
-                                        )
-                                        .animateItem(),
-                            )
-                        }
-                    }
-
-                    if (showUploaded) {
-                        item(
-                            key = "uploadedPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            PlaylistListItem(
-                                playlist = uploadedPlaylist,
-                                autoPlaylist = true,
-                                flat = true,
-                                showIconOnly = true,
-                                thumbnailOverrideUrl = uploadedThumbnail.takeIf { it.isNotBlank() },
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .combinedBounceClick(
-                                            onClick = {
-                                                navController.navigate("auto_playlist/uploaded")
-                                            },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuState.show {
-                                                    PlaylistMenu(
-                                                        playlist = uploadedPlaylist,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                        autoPlaylist = true
-                                                    )
-                                                }
-                                            }
-                                        )
-                                        .animateItem(),
-                            )
-                        }
-                    }
-
-                    if (showLocal) {
-                        item(
-                            key = "localPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            PlaylistListItem(
-                                playlist = localPlaylist,
-                                autoPlaylist = true,
-                                flat = true,
-                                showIconOnly = true,
-                                thumbnailOverrideUrl = localThumbnail.takeIf { it.isNotBlank() },
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .combinedBounceClick(
-                                            onClick = {
-                                                navController.navigate("auto_playlist/local")
-                                            },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuState.show {
-                                                    PlaylistMenu(
-                                                        playlist = localPlaylist,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                        autoPlaylist = true
-                                                    )
-                                                }
-                                            }
-                                        )
-                                        .animateItem(),
-                            )
-                        }
-                    }
-
-                    items(
-                        items = displayedItems,
-                        key = { it.id },
-                        contentType = { CONTENT_TYPE_PLAYLIST },
-                    ) { item ->
-                        when (item) {
-                            is Playlist -> {
-                                PlaylistListItem(
-                                    playlist = item,
-                                    flat = true,
-                                    showIconOnly = libraryIconsOnly,
-                                    trailingContent = {
-                                        IconButton(
-                                            onClick = {
-                                                menuState.show {
-                                                    PlaylistMenu(
-                                                        playlist = item,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                    )
-                                                }
-                                            },
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.more_vert),
-                                                contentDescription = null,
-                                            )
-                                        }
-                                    },
-                                    modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .combinedBounceClick(
-                                            onClick = {
-                                                navController.navigate("local_playlist/${item.id}")
-                                            },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuState.show {
-                                                    PlaylistMenu(
-                                                        playlist = item,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                    )
-                                                }
-                                            },
-                                        )
-                                        .animateItem(),
-                                )
-                            }
-
-                            is Artist -> {
-                                ArtistListItem(
-                                    artist = item,
-                                    flat = true,
-                                    showIconOnly = libraryIconsOnly,
-                                    trailingContent = {
-                                        IconButton(
-                                            onClick = {
-                                                menuState.show {
-                                                    ArtistMenu(
-                                                        originalArtist = item,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                    )
-                                                }
-                                            },
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.more_vert),
-                                                contentDescription = null,
-                                            )
-                                        }
-                                    },
-                                    modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .combinedBounceClick(
-                                            onClick = {
-                                                navController.navigate("artist/${item.id}")
-                                            },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuState.show {
-                                                    ArtistMenu(
-                                                        originalArtist = item,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                    )
-                                                }
-                                            },
-                                        )
-                                        .animateItem(),
-                                )
-                            }
-
-                            is Album -> {
-                                AlbumListItem(
-                                    album = item,
-                                    isActive = item.id == mediaMetadata?.album?.id,
-                                    isPlaying = isPlaying,
-                                    flat = true,
-                                    showIconOnly = libraryIconsOnly,
-                                    trailingContent = {
-                                        IconButton(
-                                            onClick = {
-                                                menuState.show {
-                                                    AlbumMenu(
-                                                        originalAlbum = item,
-                                                        navController = navController,
-                                                        onDismiss = menuState::dismiss,
-                                                    )
-                                                }
-                                            },
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.more_vert),
-                                                contentDescription = null,
-                                            )
-                                        }
-                                    },
-                                    modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .combinedBounceClick(
-                                            onClick = {
-                                                navController.navigate("album/${item.id}")
-                                            },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuState.show {
-                                                    AlbumMenu(
-                                                        originalAlbum = item,
-                                                        navController = navController,
-                                                        onDismiss = menuState::dismiss,
-                                                    )
-                                                }
-                                            },
-                                        )
-                                        .animateItem(),
-                                )
-                            }
-
-                            else -> {}
                         }
                     }
                 }
@@ -857,339 +784,120 @@ fun LibraryMixScreen(
                         headerContent()
                     }
 
-                    // Prioritized/moved-to-top custom playlists (e.g. "my MP4") displayed first before Liked playlist
                     items(
-                        items = topCustomPlaylists,
-                        key = { "top_mix_${it.id}" },
-                        contentType = { CONTENT_TYPE_PLAYLIST },
-                    ) { playlist ->
-                        PlaylistGridItem(
-                            playlist = playlist,
-                            fillMaxWidth = true,
-                            autoPlaylist = false,
-                            showIconOnly = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .combinedBounceClick(
-                                    onClick = { navController.navigate("local_playlist/${playlist.id}") },
-                                    onLongClick = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        menuState.show {
-                                            PlaylistMenu(
-                                                playlist = playlist,
-                                                coroutineScope = coroutineScope,
-                                                onDismiss = menuState::dismiss,
-                                                autoPlaylist = false
-                                            )
-                                        }
-                                    }
-                                )
-                                .animateItem()
-                        )
-                    }
-
-                    if (showLiked) {
-                        item(
-                            key = "likedPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            PlaylistGridItem(
-                                playlist = likedPlaylist,
-                                fillMaxWidth = true,
-                                autoPlaylist = true,
-                                showIconOnly = true,
-                                thumbnailOverrideUrl = likedThumbnail.takeIf { it.isNotBlank() },
-                                modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .combinedBounceClick(
-                                        onClick = {
-                                            navController.navigate("auto_playlist/liked")
-                                        },
-                                        onLongClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            menuState.show {
-                                                PlaylistMenu(
-                                                    playlist = likedPlaylist,
-                                                    coroutineScope = coroutineScope,
-                                                    onDismiss = menuState::dismiss,
-                                                    autoPlaylist = true
-                                                )
-                                            }
-                                        }
-                                    )
-                                    .animateItem(),
-                            )
-                        }
-                    }
-
-                    if (showDownloaded) {
-                        item(
-                            key = "downloadedPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            PlaylistGridItem(
-                                playlist = downloadPlaylist,
-                                fillMaxWidth = true,
-                                autoPlaylist = true,
-                                showIconOnly = true,
-                                thumbnailOverrideUrl = downloadThumbnail.takeIf { it.isNotBlank() },
-                                modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .combinedBounceClick(
-                                        onClick = {
-                                            navController.navigate("auto_playlist/downloaded")
-                                        },
-                                        onLongClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            menuState.show {
-                                                PlaylistMenu(
-                                                    playlist = downloadPlaylist,
-                                                    coroutineScope = coroutineScope,
-                                                    onDismiss = menuState::dismiss,
-                                                    autoPlaylist = true
-                                                )
-                                            }
-                                        }
-                                    )
-                                    .animateItem(),
-                            )
-                        }
-                    }
-
-                    if (showTop) {
-                        item(
-                            key = "TopPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            PlaylistGridItem(
-                                playlist = topPlaylist,
-                                fillMaxWidth = true,
-                                autoPlaylist = true,
-                                showIconOnly = true,
-                                thumbnailOverrideUrl = topThumbnail.takeIf { it.isNotBlank() },
-                                modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .combinedBounceClick(
-                                        onClick = {
-                                            navController.navigate("top_playlist/$topSize")
-                                        },
-                                        onLongClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            menuState.show {
-                                                PlaylistMenu(
-                                                    playlist = topPlaylist,
-                                                    coroutineScope = coroutineScope,
-                                                    onDismiss = menuState::dismiss,
-                                                    autoPlaylist = true
-                                                )
-                                            }
-                                        }
-                                    )
-                                    .animateItem(),
-                            )
-                        }
-                    }
-
-                    if (showCached) {
-                        item(
-                            key = "cachePlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            PlaylistGridItem(
-                                playlist = cachePlaylist,
-                                fillMaxWidth = true,
-                                autoPlaylist = true,
-                                showIconOnly = true,
-                                thumbnailOverrideUrl = cacheThumbnail.takeIf { it.isNotBlank() },
-                                modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .combinedBounceClick(
-                                        onClick = {
-                                            navController.navigate("cache_playlist/cached")
-                                        },
-                                        onLongClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            menuState.show {
-                                                PlaylistMenu(
-                                                    playlist = cachePlaylist,
-                                                    coroutineScope = coroutineScope,
-                                                    onDismiss = menuState::dismiss,
-                                                    autoPlaylist = true
-                                                )
-                                            }
-                                        }
-                                    )
-                                    .animateItem(),
-                            )
-                        }
-                    }
-
-                    if (showUploaded) {
-                        item(
-                            key = "uploadedPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            PlaylistGridItem(
-                                playlist = uploadedPlaylist,
-                                fillMaxWidth = true,
-                                autoPlaylist = true,
-                                showIconOnly = true,
-                                thumbnailOverrideUrl = uploadedThumbnail.takeIf { it.isNotBlank() },
-                                modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .combinedBounceClick(
-                                        onClick = {
-                                            navController.navigate("auto_playlist/uploaded")
-                                        },
-                                        onLongClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            menuState.show {
-                                                PlaylistMenu(
-                                                    playlist = uploadedPlaylist,
-                                                    coroutineScope = coroutineScope,
-                                                    onDismiss = menuState::dismiss,
-                                                    autoPlaylist = true
-                                                )
-                                            }
-                                        }
-                                    )
-                                    .animateItem(),
-                            )
-                        }
-                    }
-
-                    if (showLocal) {
-                        item(
-                            key = "localPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            PlaylistGridItem(
-                                playlist = localPlaylist,
-                                fillMaxWidth = true,
-                                autoPlaylist = true,
-                                showIconOnly = true,
-                                thumbnailOverrideUrl = localThumbnail.takeIf { it.isNotBlank() },
-                                modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .combinedBounceClick(
-                                        onClick = {
-                                            navController.navigate("auto_playlist/local")
-                                        },
-                                        onLongClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            menuState.show {
-                                                PlaylistMenu(
-                                                    playlist = localPlaylist,
-                                                    coroutineScope = coroutineScope,
-                                                    onDismiss = menuState::dismiss,
-                                                    autoPlaylist = true
-                                                )
-                                            }
-                                        }
-                                    )
-                                    .animateItem(),
-                            )
-                        }
-                    }
-
-                    items(
-                        items = displayedItems,
+                        items = localUnifiedItems,
                         key = { it.id },
                         contentType = { CONTENT_TYPE_PLAYLIST },
                     ) { item ->
-                        when (item) {
-                            is Playlist -> {
-                                PlaylistGridItem(
-                                    playlist = item,
-                                    fillMaxWidth = true,
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .combinedBounceClick(
-                                            onClick = {
-                                                navController.navigate("local_playlist/${item.id}")
-                                            },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuState.show {
-                                                    PlaylistMenu(
-                                                        playlist = item,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                    )
+                        ReorderableItem(
+                            state = reorderableGridState,
+                            key = item.id
+                        ) { isDragging ->
+                            when (item) {
+                                is LibraryMixItem.Auto -> {
+                                    PlaylistGridItem(
+                                        playlist = item.playlist,
+                                        fillMaxWidth = true,
+                                        autoPlaylist = true,
+                                        showIconOnly = true,
+                                        thumbnailOverrideUrl = item.thumbnailOverrideUrl,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .combinedBounceClick(
+                                                onClick = { navController.navigate(item.route) },
+                                                onLongClick = {
+                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                    menuState.show {
+                                                        PlaylistMenu(
+                                                            playlist = item.playlist,
+                                                            coroutineScope = coroutineScope,
+                                                            onDismiss = menuState::dismiss,
+                                                            autoPlaylist = true
+                                                        )
+                                                    }
                                                 }
-                                            },
-                                        )
-                                        .animateItem(),
-                                )
-                            }
-
-                            is Artist -> {
-                                ArtistGridItem(
-                                    artist = item,
-                                    fillMaxWidth = true,
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .combinedBounceClick(
-                                            onClick = {
-                                                navController.navigate("artist/${item.id}")
-                                            },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuState.show {
-                                                    ArtistMenu(
-                                                        originalArtist = item,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                    )
+                                            )
+                                            .longPressDraggableHandle()
+                                            .animateItem()
+                                    )
+                                }
+                                is LibraryMixItem.UserPlaylist -> {
+                                    PlaylistGridItem(
+                                        playlist = item.playlist,
+                                        fillMaxWidth = true,
+                                        autoPlaylist = false,
+                                        showIconOnly = true,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .combinedBounceClick(
+                                                onClick = { navController.navigate("local_playlist/${item.playlist.id}") },
+                                                onLongClick = {
+                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                    menuState.show {
+                                                        PlaylistMenu(
+                                                            playlist = item.playlist,
+                                                            coroutineScope = coroutineScope,
+                                                            onDismiss = menuState::dismiss,
+                                                            autoPlaylist = false
+                                                        )
+                                                    }
                                                 }
-                                            },
-                                        )
-                                        .animateItem(),
-                                )
-                            }
-
-                            is Album -> {
-                                AlbumGridItem(
-                                    album = item,
-                                    isActive = item.id == mediaMetadata?.album?.id,
-                                    isPlaying = isPlaying,
-                                    coroutineScope = coroutineScope,
-                                    fillMaxWidth = true,
-                                    showIconOnly = libraryIconsOnly,
-                                    modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .combinedBounceClick(
-                                            onClick = {
-                                                navController.navigate("album/${item.id}")
-                                            },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuState.show {
-                                                    AlbumMenu(
-                                                        originalAlbum = item,
-                                                        navController = navController,
-                                                        onDismiss = menuState::dismiss,
-                                                    )
+                                            )
+                                            .longPressDraggableHandle()
+                                            .animateItem()
+                                    )
+                                }
+                                is LibraryMixItem.UserAlbum -> {
+                                    AlbumGridItem(
+                                        album = item.album,
+                                        isActive = item.album.id == mediaMetadata?.album?.id,
+                                        isPlaying = isPlaying,
+                                        coroutineScope = coroutineScope,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .combinedBounceClick(
+                                                onClick = { navController.navigate("album/${item.album.id}") },
+                                                onLongClick = {
+                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                    menuState.show {
+                                                        AlbumMenu(
+                                                            originalAlbum = item.album,
+                                                            navController = navController,
+                                                            onDismiss = menuState::dismiss,
+                                                        )
+                                                    }
                                                 }
-                                            },
-                                        )
-                                        .animateItem(),
-                                )
+                                            )
+                                            .longPressDraggableHandle()
+                                            .animateItem()
+                                    )
+                                }
+                                is LibraryMixItem.UserArtist -> {
+                                    ArtistGridItem(
+                                        artist = item.artist,
+                                        coroutineScope = coroutineScope,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .combinedBounceClick(
+                                                onClick = { navController.navigate("artist/${item.artist.id}") },
+                                                onLongClick = {
+                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                    menuState.show {
+                                                        ArtistMenu(
+                                                            originalArtist = item.artist,
+                                                            coroutineScope = coroutineScope,
+                                                            onDismiss = menuState::dismiss,
+                                                        )
+                                                    }
+                                                }
+                                            )
+                                            .longPressDraggableHandle()
+                                            .animateItem()
+                                    )
+                                }
                             }
-
-                            else -> {}
                         }
+                    }
                     }
                 }
             }
