@@ -21,13 +21,13 @@
     <a href="https://discord.gg/spbuDTePSR">
       <img src="https://img.shields.io/badge/Discord-Join%20Us-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join Discord">
     </a>
-    <a href="https://support-akshansh.vercel.app">
+    <a href="https://github.com/BSFrameworks5253/Plusewave">
       <img src="https://img.shields.io/badge/Pulse%20Wave-Interactive%20Showcase-8A2BE2?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Visit Interactive Showcase">
     </a>
   </p>
   <p>
-    💸 <b>UPI:</b> <code>akshanshsinha67@axl</code> &nbsp;•&nbsp;
-    🌐 <b>Website:</b> <a href="https://support-akshansh.vercel.app">support-akshansh.vercel.app</a>
+    💸 <b>UPI:</b> <code>burhanuddin08@fam</code> &nbsp;•&nbsp;
+    🌐 <b>Website:</b> <a href="https://github.com/BSFrameworks5253/Plusewave">github.com/BSFrameworks5253/Plusewave</a>
   </p>
 </div>
 
@@ -90,7 +90,7 @@
 </p>
 
 <p align="center">
-  <a href="https://support-akshansh.vercel.app">
+  <a href="https://github.com/BSFrameworks5253/Plusewave">
     <img src="https://img.shields.io/badge/🚀%20OPEN%20LIVE%20INTERACTIVE%20SHOWCASE-8A2BE2?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Open Interactive Showcase">
   </a>
 </p>
@@ -98,7 +98,7 @@
 <table align="center" width="100%">
   <tr align="center">
     <td width="33%">
-      <a href="https://support-akshansh.vercel.app">
+      <a href="https://github.com/BSFrameworks5253/Plusewave">
         <img src="website/assets/screen_player.png" width="260" alt="Liquid Glass Player" style="border-radius: 16px;" />
       </a>
       <br>
@@ -106,7 +106,7 @@
       <p><sub>3D tilt physics, real-time backdrop blur, and rotating vinyl disc.</sub></p>
     </td>
     <td width="33%">
-      <a href="https://support-akshansh.vercel.app">
+      <a href="https://github.com/BSFrameworks5253/Plusewave">
         <img src="website/assets/screen_lyrics.png" width="260" alt="Synced Karaoke Lyrics" style="border-radius: 16px;" />
       </a>
       <br>
@@ -114,7 +114,7 @@
       <p><sub>Word-by-word synced highlighting powered by BetterLyrics & LRCLIB.</sub></p>
     </td>
     <td width="33%">
-      <a href="https://support-akshansh.vercel.app">
+      <a href="https://github.com/BSFrameworks5253/Plusewave">
         <img src="website/assets/screen_tablet.png" width="260" alt="Adaptive Dual-Pane" style="border-radius: 16px;" />
       </a>
       <br>
@@ -246,7 +246,7 @@
 
   <h2>🙏 Credits</h2>
 
-  <p>Pulse Wave is developed and maintained by <a href="https://github.com/BSFrameworks5253">BS.Framework5253</a>. See <a href="https://support-akshansh.vercel.app">support-akshansh.vercel.app</a> for support.</p>
+  <p>Pulse Wave is developed and maintained by <a href="https://github.com/BSFrameworks5253">BS.Framework5253</a>. See <a href="https://github.com/BSFrameworks5253/Plusewave">github.com/BSFrameworks5253/Plusewave</a> for support.</p>
 
   <table border="0" cellpadding="10" cellspacing="0" width="90%">
     <tr valign="top">

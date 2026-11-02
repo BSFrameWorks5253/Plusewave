@@ -17,12 +17,12 @@ export const Footer: React.FC = () => {
 
         <div className="flex flex-wrap items-center justify-center gap-6">
           <a
-            href="https://support-akshansh.vercel.app"
+            href="https://github.com/BSFrameworks5253/Plusewave"
             target="_blank"
             rel="noreferrer"
             className="hover:text-cyan-400 transition-colors"
           >
-            support-akshansh.vercel.app
+            github.com/BSFrameworks5253/Plusewave
           </a>
           <a
             href="https://github.com/BSFrameworks5253/Plusewave"

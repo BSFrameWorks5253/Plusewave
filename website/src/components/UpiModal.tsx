@@ -8,7 +8,7 @@ interface UpiModalProps {
 
 export const UpiModal: React.FC<UpiModalProps> = ({ isOpen, onClose }) => {
   const [copied, setCopied] = useState(false);
-  const upiId = "akshanshsinha67@axl";
+  const upiId = "burhanuddin08@fam";
 
   if (!isOpen) return null;
 
