@@ -486,6 +486,9 @@
                 <action android:name="${applicationId}.widget.NOTHING_PLAY_PAUSE" />
                 <action android:name="${applicationId}.widget.NOTHING_NEXT" />
                 <action android:name="${applicationId}.widget.NOTHING_PREVIOUS" />
+                <action android:name="${applicationId}.widget.NOTHING_REWIND" />
+                <action android:name="${applicationId}.widget.NOTHING_FORWARD" />
+                <action android:name="${applicationId}.widget.NOTHING_LIKE" />
                 <action android:name="${applicationId}.widget.UPDATE_NOTHING_WIDGET" />
             </intent-filter>
 

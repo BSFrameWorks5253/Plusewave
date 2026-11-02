@@ -2296,6 +2296,42 @@ class vivimusicWidgetManager @Inject constructor(
         )
     }
 
+    private fun getNothingRewindIntent(): PendingIntent {
+        val intent = Intent(context, NothingPlayerWidgetReceiver::class.java).apply {
+            action = NothingPlayerWidgetReceiver.ACTION_NOTHING_REWIND
+        }
+        return PendingIntent.getBroadcast(
+            context,
+            204,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun getNothingForwardIntent(): PendingIntent {
+        val intent = Intent(context, NothingPlayerWidgetReceiver::class.java).apply {
+            action = NothingPlayerWidgetReceiver.ACTION_NOTHING_FORWARD
+        }
+        return PendingIntent.getBroadcast(
+            context,
+            205,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun getNothingLikeIntent(): PendingIntent {
+        val intent = Intent(context, NothingPlayerWidgetReceiver::class.java).apply {
+            action = NothingPlayerWidgetReceiver.ACTION_NOTHING_LIKE
+        }
+        return PendingIntent.getBroadcast(
+            context,
+            206,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
     private fun createNothingPlayerRemoteViews(
         options: Bundle,
         config: WidgetConfig,
@@ -2341,12 +2377,37 @@ class vivimusicWidgetManager @Inject constructor(
         views.setTextViewText(R.id.widget_nothing_time_current, currentStr)
         views.setTextViewText(R.id.widget_nothing_time_duration, durationStr)
 
-        // Touch handlers
-        views.setOnClickPendingIntent(R.id.widget_nothing_card, getOpenAppIntent(expandPlayer = true))
+        // Play/Pause icon state
+        val playPauseRes = if (isPlaying) R.drawable.ic_widget_pause else R.drawable.ic_widget_play
+        views.setImageViewResource(R.id.widget_nothing_btn_play_pause, playPauseRes)
+
+        // Like/Favorite icon and color tint state
+        val likeRes = if (isLiked) R.drawable.ic_widget_heart_nav else R.drawable.ic_widget_heart_outline_nav
+        views.setImageViewResource(R.id.widget_nothing_btn_like, likeRes)
+        if (isLiked) {
+            views.setInt(R.id.widget_nothing_btn_like, "setColorFilter", Color.parseColor("#E11D48"))
+        } else {
+            views.setInt(R.id.widget_nothing_btn_like, "setColorFilter", Color.parseColor("#18181B"))
+        }
+
+        // Touch & click handlers
+        views.setOnClickPendingIntent(R.id.widget_nothing_track_row, getOpenAppIntent(expandPlayer = true))
         views.setOnClickPendingIntent(R.id.widget_nothing_banner, getOpenAppIntent(expandPlayer = false))
+        views.setOnClickPendingIntent(R.id.widget_nothing_badge, getOpenAppIntent(expandPlayer = false))
+
+        // Left chamber platter touch targets
         views.setOnClickPendingIntent(R.id.widget_nothing_touch_prev, getNothingPreviousIntent())
         views.setOnClickPendingIntent(R.id.widget_nothing_touch_play_pause, getNothingPlayPauseIntent())
         views.setOnClickPendingIntent(R.id.widget_nothing_touch_next, getNothingNextIntent())
+
+        // Right accent card controls dock
+        views.setOnClickPendingIntent(R.id.widget_nothing_btn_prev, getNothingPreviousIntent())
+        views.setOnClickPendingIntent(R.id.widget_nothing_btn_rewind, getNothingRewindIntent())
+        views.setOnClickPendingIntent(R.id.widget_nothing_btn_play_container, getNothingPlayPauseIntent())
+        views.setOnClickPendingIntent(R.id.widget_nothing_btn_play_pause, getNothingPlayPauseIntent())
+        views.setOnClickPendingIntent(R.id.widget_nothing_btn_forward, getNothingForwardIntent())
+        views.setOnClickPendingIntent(R.id.widget_nothing_btn_next, getNothingNextIntent())
+        views.setOnClickPendingIntent(R.id.widget_nothing_btn_like, getNothingLikeIntent())
 
         return views
     }

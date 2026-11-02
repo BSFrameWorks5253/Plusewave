@@ -70,12 +70,16 @@ class NothingPlayerWidgetReceiver : AppWidgetProvider() {
         super.onReceive(context, intent)
 
         when (intent.action) {
-            ACTION_NOTHING_PLAY_PAUSE, ACTION_NOTHING_NEXT, ACTION_NOTHING_PREVIOUS -> {
+            ACTION_NOTHING_PLAY_PAUSE, ACTION_NOTHING_NEXT, ACTION_NOTHING_PREVIOUS,
+            ACTION_NOTHING_REWIND, ACTION_NOTHING_FORWARD, ACTION_NOTHING_LIKE -> {
                 val serviceIntent = Intent(context, MusicService::class.java).apply {
                     action = when (intent.action) {
                         ACTION_NOTHING_PLAY_PAUSE -> MusicWidgetReceiver.ACTION_PLAY_PAUSE
                         ACTION_NOTHING_NEXT -> MusicWidgetReceiver.ACTION_NEXT
                         ACTION_NOTHING_PREVIOUS -> MusicWidgetReceiver.ACTION_PREVIOUS
+                        ACTION_NOTHING_REWIND -> MusicWidgetReceiver.ACTION_REWIND
+                        ACTION_NOTHING_FORWARD -> MusicWidgetReceiver.ACTION_FORWARD
+                        ACTION_NOTHING_LIKE -> MusicWidgetReceiver.ACTION_LIKE
                         else -> intent.action
                     }
                     putExtras(intent)
@@ -96,6 +100,9 @@ class NothingPlayerWidgetReceiver : AppWidgetProvider() {
         const val ACTION_NOTHING_PLAY_PAUSE = "com.pulsewave.music.widget.NOTHING_PLAY_PAUSE"
         const val ACTION_NOTHING_NEXT = "com.pulsewave.music.widget.NOTHING_NEXT"
         const val ACTION_NOTHING_PREVIOUS = "com.pulsewave.music.widget.NOTHING_PREVIOUS"
+        const val ACTION_NOTHING_REWIND = "com.pulsewave.music.widget.NOTHING_REWIND"
+        const val ACTION_NOTHING_FORWARD = "com.pulsewave.music.widget.NOTHING_FORWARD"
+        const val ACTION_NOTHING_LIKE = "com.pulsewave.music.widget.NOTHING_LIKE"
         const val ACTION_UPDATE_NOTHING_WIDGET = "com.pulsewave.music.widget.UPDATE_NOTHING_WIDGET"
     }
 }
