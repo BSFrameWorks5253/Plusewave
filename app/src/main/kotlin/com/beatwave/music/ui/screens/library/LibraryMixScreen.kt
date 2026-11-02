@@ -915,6 +915,4 @@ fun LibraryMixScreen(
                 )
             }
         }
-      }
-    }
 }
