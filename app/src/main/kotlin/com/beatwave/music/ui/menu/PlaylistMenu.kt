@@ -81,9 +81,8 @@ import com.beatwave.music.constants.MixSortType
 import com.beatwave.music.constants.MixSortTypeKey
 import com.beatwave.music.constants.PlaylistSortTypeKey
 import com.beatwave.music.constants.PlaylistSortDescendingKey
-import com.beatwave.music.constants.MixSortType
-import com.beatwave.music.constants.MixSortTypeKey
 import com.beatwave.music.constants.PlaylistSortType
+import com.beatwave.music.db.entities.PlaylistEntity
 import com.beatwave.music.ui.component.DefaultDialog
 import com.beatwave.music.ui.component.Material3MenuGroup
 import com.beatwave.music.ui.component.Material3MenuItemData

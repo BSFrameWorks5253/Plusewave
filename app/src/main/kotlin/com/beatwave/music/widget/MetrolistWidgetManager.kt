@@ -290,6 +290,7 @@ class vivimusicWidgetManager @Inject constructor(
                     artist = artist,
                     albumArt = albumArt,
                     isPlaying = isPlaying,
+                    isLiked = isLiked,
                     duration = duration,
                     currentPosition = currentPosition,
                 )

@@ -975,7 +975,7 @@ fun PlaylistListItem(
 
         val downloadState by remember(songs, allDownloads) {
             derivedStateOf {
-                val nonLocal = songs.filter { !it.isLocal }
+                val nonLocal = songs.filter { !it.song.isLocal }
                 if (nonLocal.isEmpty()) {
                     Download.STATE_STOPPED
                 } else {
@@ -1089,7 +1089,7 @@ fun PlaylistGridItem(
 
         val downloadState by remember(songs, allDownloads) {
             derivedStateOf {
-                val nonLocal = songs.filter { !it.isLocal }
+                val nonLocal = songs.filter { !it.song.isLocal }
                 if (nonLocal.isEmpty()) {
                     Download.STATE_STOPPED
                 } else {

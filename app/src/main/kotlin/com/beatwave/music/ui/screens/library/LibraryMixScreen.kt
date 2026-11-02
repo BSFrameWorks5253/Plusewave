@@ -50,6 +50,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import com.beatwave.music.utils.dataStore
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -759,7 +761,6 @@ fun LibraryMixScreen(
                             }
                         }
                     }
-                }
 
             LibraryViewType.GRID ->
                 LazyVerticalGrid(
@@ -875,7 +876,6 @@ fun LibraryMixScreen(
                                 is LibraryMixItem.UserArtist -> {
                                     ArtistGridItem(
                                         artist = item.artist,
-                                        coroutineScope = coroutineScope,
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .combinedBounceClick(
@@ -915,4 +915,5 @@ fun LibraryMixScreen(
                 )
             }
         }
+}
 }
