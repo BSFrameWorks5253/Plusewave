@@ -1693,7 +1693,7 @@ fun AppearanceSettings(
                     onClick = { onShowUploadedPlaylistChange(!showUploadedPlaylist) }
                 ),
                 Material3SettingsItem(
-                    icon = painterResource(R.drawable.folder),
+                    icon = painterResource(R.drawable.storage),
                     title = { Text(stringResource(R.string.filter_local)) },
                     trailingContent = {
                         Switch(

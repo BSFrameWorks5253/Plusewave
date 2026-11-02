@@ -61,8 +61,9 @@ jobs:
       - name: Output and Commit Build Failure
         if: failure()
         run: |
+          set +e
           echo "==== GRADLE BUILD FAILURE TRACE ===="
-          tail -n 120 build.log || true
+          grep -E "e: |FAILURE: |Compilation error" build.log || tail -n 120 build.log || true
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -B ci-build-log
